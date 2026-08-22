@@ -33,29 +33,38 @@ try {
   $rowCount = $rows.Count
   $newJson = ConvertTo-JsonArray -Rows $rows
 
-  # Compare content directly rather than trusting git's staged-diff timing --
-  # relying on `git diff --cached` here previously caused a stale/partial
-  # snapshot to get published when a prior run's git operations partially
-  # succeeded before throwing. This is unambiguous: no write, no commit, no
-  # push happen at all unless the actual data differs from what's on disk now.
+  # Two independent things can each need publishing: the data (bcp_data.json)
+  # and the dashboard code itself (index.html, mirrored from
+  # Heatmap_Dashboard.html whenever that file is edited). Check each on its
+  # own -- gating index.html's refresh behind "did the data change" previously
+  # meant a code fix committed to Heatmap_Dashboard.html never actually
+  # reached the published index.html until the data *also* happened to change.
   $dataPath = Join-Path $repoRoot 'bcp_data.json'
   $oldJson = if (Test-Path $dataPath) { Get-Content -Path $dataPath -Raw } else { $null }
+  $dataChanged = $oldJson -ne $newJson
 
-  if ($oldJson -eq $newJson) {
-    Write-Log "No data change since last run ($rowCount rows) -- nothing to publish."
+  $sourceHtml = Join-Path $repoRoot 'Heatmap_Dashboard.html'
+  $indexHtml = Join-Path $repoRoot 'index.html'
+  $oldHtml = if (Test-Path $indexHtml) { Get-Content -Path $indexHtml -Raw } else { $null }
+  $newHtml = Get-Content -Path $sourceHtml -Raw
+  $htmlChanged = $oldHtml -ne $newHtml
+
+  if (-not $dataChanged -and -not $htmlChanged) {
+    Write-Log "No data or code change since last run ($rowCount rows) -- nothing to publish."
     exit 0
   }
 
-  [System.IO.File]::WriteAllText($dataPath, $newJson, [System.Text.UTF8Encoding]::new($false))
+  if ($dataChanged) {
+    [System.IO.File]::WriteAllText($dataPath, $newJson, [System.Text.UTF8Encoding]::new($false))
+  }
+  if ($htmlChanged) {
+    Copy-Item -Path $sourceHtml -Destination $indexHtml -Force
+  }
 
-  # Keep an index.html mirror of the dashboard so GitHub Pages' root URL
-  # (.../bcp-heatmap-dashboard/) serves it directly, without renaming the
-  # canonical working file that bcp_bridge.ps1's docs and local habits refer to.
-  $sourceHtml = Join-Path $repoRoot 'Heatmap_Dashboard.html'
-  $indexHtml = Join-Path $repoRoot 'index.html'
-  Copy-Item -Path $sourceHtml -Destination $indexHtml -Force
-
-  $commitMsg = "Auto-refresh published snapshot ($rowCount rows)"
+  $changeParts = @()
+  if ($dataChanged) { $changeParts += "data: $rowCount rows" }
+  if ($htmlChanged) { $changeParts += "dashboard code" }
+  $commitMsg = "Auto-refresh published snapshot (" + ($changeParts -join ", ") + ")"
 
   Push-Location $repoRoot
   # Native commands (git) write routine warnings to stderr (e.g. CRLF-conversion
