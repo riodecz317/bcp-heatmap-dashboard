@@ -1,0 +1,711 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Executive BCP Dashboard</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+<style>
+  :root {
+    color-scheme: light;
+    --page:           #F3F4F6;
+    --surface-1:      #FFFFFF;
+    --text-primary:   #0F172A;
+    --text-secondary: #475569;
+    --text-muted:     #64748B;
+    --gridline:       #F1F5F9;
+    --border:         #E2E8F0;
+
+    --status-good:     #10B981;
+    --status-warning:  #F59E0B;
+    --status-critical: #EF4444;
+    --status-good-text:     #047857;
+    --status-warning-text:  #B45309;
+    --status-critical-text: #B91C1C;
+
+    --brand-dark:  #B91C1C;
+    --brand-mid:   #EF4444;
+    --brand-light: #FEE2E2;
+
+    --rank-1: #B91C1C; --rank-2: #EF4444; --rank-3: #F3897F; --rank-4: #F0AFA8;
+    --seq-0: #FEF2F2; --seq-1: #FECACA; --seq-2: #F3897F; --seq-3: #EF4444; --seq-4: #B91C1C;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:where(:not([data-theme="light"])) {
+      color-scheme: dark;
+      --page:           #0F172A;
+      --surface-1:      #1E293B;
+      --text-primary:   #F1F5F9;
+      --text-secondary: #CBD5E1;
+      --text-muted:     #94A3B8;
+      --gridline:       #2A3B52;
+      --border:         rgba(255,255,255,0.10);
+      --status-critical: #F87171;
+      --status-good-text:     #34D399;
+      --status-warning-text:  #FBBF24;
+      --status-critical-text: #F87171;
+      --rank-1: #F3897F; --rank-2: #EF4444; --rank-3: #B91C1C; --rank-4: #7F1D1D;
+      --seq-0: #3B1D1D; --seq-1: #5C2626; --seq-2: #8C3330; --seq-3: #B91C1C; --seq-4: #EF4444;
+    }
+  }
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --page:           #0F172A;
+    --surface-1:      #1E293B;
+    --text-primary:   #F1F5F9;
+    --text-secondary: #CBD5E1;
+    --text-muted:     #94A3B8;
+    --gridline:       #2A3B52;
+    --border:         rgba(255,255,255,0.10);
+    --status-critical: #F87171;
+    --status-good-text:     #34D399;
+    --status-warning-text:  #FBBF24;
+    --status-critical-text: #F87171;
+    --rank-1: #F3897F; --rank-2: #EF4444; --rank-3: #B91C1C; --rank-4: #7F1D1D;
+    --seq-0: #3B1D1D; --seq-1: #5C2626; --seq-2: #8C3330; --seq-3: #B91C1C; --seq-4: #EF4444;
+  }
+
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; overflow: hidden; }
+  body {
+    font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+    background: var(--page);
+    color: var(--text-primary);
+  }
+  .app-shell { height: 100vh; min-height: 0; max-width: 1920px; margin: 0 auto; padding: 24px; display: flex; flex-direction: column; gap: 16px; }
+
+  /* ---- Header row ---- */
+  .toolbar { flex: none; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; }
+  .toolbar h1 { margin: 0; font-size: 1.25rem; font-weight: 700; }
+  .toolbar .subtitle { font-size: 12px; color: var(--text-secondary); margin-top: 2px; }
+  .filters { display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap; }
+  .filters select {
+    font-size: 12px; color: var(--text-primary);
+    border: 1px solid var(--border); border-radius: 8px;
+    padding: 7px 10px; background: var(--surface-1);
+  }
+  .refresh-btn {
+    font-size: 12px; font-weight: 600; color: var(--text-primary);
+    border: 1px solid var(--border); border-radius: 8px;
+    padding: 7px 12px; background: var(--surface-1); cursor: pointer;
+  }
+  .refresh-btn:hover { background: var(--gridline); }
+  .refresh-btn:disabled { opacity: .6; cursor: default; }
+  #dataStatus.is-live   { color: var(--status-good-text); }
+  #dataStatus.is-cached { color: var(--status-warning-text); }
+  #dataStatus.is-error  { color: var(--status-critical-text); }
+
+  /* ---- Welcome card (col 1 top): compact KPI summary ---- */
+  .welcome-card { flex: none; }
+  .welcome-stats { display: flex; flex-direction: column; gap: 10px; margin-top: 4px; }
+  .welcome-stats .stat { display: flex; align-items: baseline; justify-content: space-between; border-top: 1px solid var(--gridline); padding-top: 8px; }
+  .welcome-stats .stat:first-child { border-top: none; padding-top: 0; }
+  .welcome-stats .stat-label { font-size: 0.75rem; color: var(--text-secondary); text-transform: uppercase; letter-spacing: .04em; font-weight: 600; }
+  .welcome-stats .stat-value { font-size: 1.5rem; font-weight: 700; }
+  .welcome-stats .stat-total  .stat-value { color: var(--text-primary); }
+  .welcome-stats .stat-active .stat-value { color: var(--status-critical); }
+  .welcome-stats .stat-help   .stat-value { color: var(--status-warning-text); }
+
+  /* ---- Shared card ---- */
+  .card {
+    background: var(--surface-1);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 16px 18px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    overflow: hidden;
+  }
+  .card h2 {
+    flex: none; margin: 0 0 2px 0;
+    font-size: 0.875rem; font-weight: 600; text-transform: uppercase; letter-spacing: .04em;
+    color: var(--text-primary);
+  }
+  .card h3 { flex: none; margin: 16px 0 8px 0; font-size: 0.75rem; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; letter-spacing: .04em; }
+  .card .card-sub { flex: none; font-size: 12px; color: var(--text-muted); margin: 4px 0 12px 0; text-transform: none; letter-spacing: normal; font-weight: 400; }
+  .card-head { flex: none; display: flex; justify-content: space-between; align-items: baseline; gap: 10px; }
+  .card-scroll { flex: 1; min-height: 0; overflow-y: auto; }
+  .toggle-select { font-size: 11px; color: var(--text-secondary); border: 1px solid var(--border); border-radius: 8px; padding: 4px 8px; background: var(--surface-1); }
+  .badge-note { flex: none; font-size: 10px; color: var(--text-muted); background: var(--gridline); border-radius: 999px; padding: 2px 8px; }
+
+  /* ---- 5-column operational board (fills remaining viewport height) ---- */
+  .board { flex: 1; min-height: 0; display: flex; gap: 16px; }
+  .board .col { display: flex; flex-direction: column; gap: 16px; min-height: 0; }
+  .col-welcome  { flex: 1 1 0; }
+  .col-account  { flex: 1 1 0; }
+  .col-map      { flex: 1.7 1 0; }
+  .col-feed     { flex: 1.2 1 0; }
+
+  /* cards that should absorb leftover column height and scroll internally */
+  .card-fill { flex: 1 1 0; }
+
+  @media (max-width: 1400px) {
+    html, body { overflow: auto; }
+    .app-shell { height: auto; min-height: 100vh; }
+    .board { flex-wrap: wrap; }
+    .board .col { flex: 1 1 260px; }
+  }
+
+  /* ---- Ranked legend (Impact Type) ---- */
+  .rank-legend { list-style: none; margin: 0; padding: 0; }
+  .rank-legend li { display: flex; align-items: center; gap: 8px; padding: 7px 0; font-size: 13px; border-bottom: 1px solid var(--gridline); }
+  .rank-legend li:last-child { border-bottom: none; }
+  .rank-legend .swatch { width: 9px; height: 9px; border-radius: 3px; flex: none; border: 1px solid rgba(0,0,0,0.15); }
+  .rank-legend .name { flex: 1; color: var(--text-primary); }
+  .rank-legend .pct { color: var(--text-secondary); font-variant-numeric: tabular-nums; width: 46px; text-align: right; }
+
+  /* ---- Ranked bar rows ---- */
+  .rank-bar-row { display: grid; grid-template-columns: 16px 1fr 32px; align-items: center; gap: 8px; margin-bottom: 8px; font-size: 12px; }
+  .rank-bar-row .rank-num { color: var(--text-muted); font-weight: 600; text-align: center; font-size: 11px; }
+  .rank-bar-row .rank-name { color: var(--text-primary); margin-bottom: 3px; display:flex; justify-content: space-between; gap: 6px; }
+  .rank-bar-track { height: 8px; border-radius: 3px; background: var(--gridline); overflow: hidden; border: 1px solid rgba(0,0,0,0.06); }
+  .rank-bar-fill { height: 100%; border-radius: 3px; box-shadow: inset 0 0 0 1px rgba(0,0,0,0.1); }
+  .rank-bar-row .rank-count { text-align: right; color: var(--text-secondary); font-variant-numeric: tabular-nums; }
+
+  /* ---- Status mix ---- */
+  .status-mix-track { flex: none; display: flex; height: 20px; border-radius: 5px; overflow: hidden; background: var(--gridline); }
+  .status-mix-legend { flex: none; display: flex; gap: 14px; margin-top: 10px; font-size: 12px; color: var(--text-secondary); flex-wrap: wrap; }
+  .status-mix-legend .item { display: flex; align-items: center; gap: 5px; }
+  .status-mix-legend .swatch { width: 9px; height: 9px; border-radius: 2px; }
+
+  /* ---- Impact Map (Leaflet, real Philippine province geography) ---- */
+  .map-back-arrow { flex: none; color: var(--text-muted); font-size: 14px; margin-right: 4px; }
+  #impactMapLeaflet {
+    flex: 1; min-height: 160px; border-radius: 8px; overflow: hidden;
+    background: var(--gridline); border: 1px solid var(--border);
+  }
+  .leaflet-container { font-family: inherit; background: var(--gridline); }
+  .leaflet-control-attribution { font-size: 9px; }
+  .leaflet-tooltip.province-tip { font-size: 11px; font-family: inherit; }
+
+  /* ---- Ranked table (Top office sites) ---- */
+  .table-scroll { flex: 1; min-height: 0; max-height: 220px; overflow-y: auto; }
+  table.rank-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+  table.rank-table th { position: sticky; top: 0; background: var(--surface-1); text-align: left; font-size: 10px; text-transform: uppercase; color: var(--text-muted); font-weight: 600; padding: 6px; border-bottom: 1px solid var(--gridline); }
+  table.rank-table td { padding: 8px 6px; border-bottom: 1px solid var(--gridline); }
+  table.rank-table tr:last-child td { border-bottom: none; }
+  table.rank-table tbody tr:nth-child(even) td { background: var(--gridline); }
+  table.rank-table td.total-bar { position: relative; font-weight: 600; }
+
+  /* ---- Status legend row (shared) ---- */
+  .legend-row { flex: none; display: flex; gap: 14px; font-size: 12px; color: var(--text-secondary); margin-bottom: 10px; flex-wrap: wrap; }
+  .legend-row .item { display: flex; align-items: center; gap: 5px; }
+  .legend-row .swatch { width: 9px; height: 9px; border-radius: 2px; }
+
+  /* ---- Status-stacked bars ---- */
+  #bars-account { flex: none; max-height: 180px; overflow-y: auto; }
+  #bars-lob { flex: 1; min-height: 0; overflow-y: auto; padding-right: 4px; }
+  .bar-row { display: grid; grid-template-columns: 120px 1fr 26px; align-items: center; gap: 8px; margin-bottom: 8px; font-size: 12px; }
+  .bar-row .label { color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .bar-track { display: flex; height: 9px; border-radius: 3px; overflow: hidden; background: var(--gridline); }
+  .bar-seg { height: 100%; }
+  .bar-total { text-align: right; color: var(--text-secondary); font-variant-numeric: tabular-nums; }
+
+  /* ---- Heatmap ---- */
+  .heatmap-wrap { flex: 1; min-height: 0; overflow-x: auto; overflow-y: auto; }
+  table.heatmap { border-collapse: separate; border-spacing: 3px; font-size: 12px; width: 100%; }
+  table.heatmap th { font-weight: 600; color: var(--text-secondary); font-size: 11px; padding: 5px 8px; text-align: center; position: sticky; top: 0; background: var(--surface-1); z-index: 1; }
+  table.heatmap th.row-head { text-align: left; }
+  table.heatmap td.row-head { text-align: left; padding: 7px 8px; color: var(--text-primary); font-weight: 500; white-space: nowrap; }
+  table.heatmap td.cell { text-align: center; padding: 11px 5px; border-radius: 9px; font-variant-numeric: tabular-nums; font-weight: 700; min-width: 54px; }
+  table.heatmap.hide-labels td.cell { font-size: 0; }
+  table.heatmap td.total-cell { text-align: center; font-weight: 700; color: var(--text-primary); }
+  .heatmap-scale { flex: none; display: flex; align-items: center; gap: 6px; margin-top: 12px; font-size: 10px; color: var(--text-muted); }
+  .heatmap-scale .swatch { width: 10px; height: 10px; border-radius: 50%; }
+
+  /* ---- Case feed ---- */
+  .case-list { flex: 1; min-height: 0; list-style: none; margin: 0; padding: 0; overflow-y: auto; }
+  .case-item { display: flex; gap: 10px; align-items: flex-start; padding: 10px 2px 10px 10px; border-bottom: 1px solid var(--gridline); border-left: 4px solid transparent; border-radius: 0 6px 6px 0; }
+  .case-item:last-child { border-bottom: none; }
+  .case-badge { width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 12px; flex: none; }
+  .case-body { flex: 1; min-width: 0; }
+  .case-title-row { display: flex; justify-content: space-between; gap: 8px; align-items: baseline; }
+  .case-name { font-weight: 600; font-size: 12px; }
+  .case-status-pill { font-size: 0.75rem; font-weight: 600; padding: 3px 9px; border-radius: 999px; white-space: nowrap; }
+  .case-meta { font-size: 11px; color: var(--text-secondary); margin-top: 2px; }
+  .case-fields { display: grid; grid-template-columns: 1fr 1fr; gap: 3px 10px; margin-top: 6px; font-size: 11px; }
+  .case-fields .f-label { color: var(--text-muted); font-size: 9px; text-transform: uppercase; letter-spacing: .03em; }
+  .case-fields .f-value { color: var(--text-primary); }
+
+  .footer-note { font-size: 10px; color: var(--text-muted); text-align: center; margin-top: 4px; }
+</style>
+</head>
+<body>
+<div class="app-shell">
+
+  <div class="toolbar">
+    <div>
+      <h1>Executive BCP Dashboard</h1>
+      <div class="subtitle" id="dataStatus">Loading from Power BI model <code>Fact_BCP</code>&hellip;</div>
+    </div>
+    <div class="filters">
+      <button class="refresh-btn" id="refreshBtn" title="Re-fetch from the local data bridge">&#8635; Refresh</button>
+      <select id="f-account" data-label="Account"><option value="All">Account: All</option></select>
+      <select id="f-lob" data-label="Line of Business"><option value="All">Line of Business: All</option></select>
+      <select id="f-province" data-label="Province"><option value="All">Province: All</option></select>
+      <select id="f-status" data-label="Status"><option value="All">Status: All</option></select>
+    </div>
+  </div>
+
+  <div class="board">
+
+    <!-- Column 1: Welcome / Status Mix / Impact Type -->
+    <div class="col col-welcome">
+      <div class="card welcome-card">
+        <h2>Welcome to the BCP Dashboard</h2>
+        <div class="card-sub">Business continuity impact snapshot</div>
+        <div class="welcome-stats">
+          <div class="stat stat-total"><span class="stat-label">Employees Impacted</span><span class="stat-value" id="kpi-total">0</span></div>
+          <div class="stat stat-active"><span class="stat-label">Active Cases</span><span class="stat-value" id="kpi-active">0</span></div>
+          <div class="stat stat-help"><span class="stat-label">Need Help</span><span class="stat-value" id="kpi-help">0</span></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-head">
+          <h2>Status Mix</h2>
+          <span class="badge-note">no timestamp data &mdash; snapshot only</span>
+        </div>
+        <div class="card-sub">Active vs. Monitoring vs. Resolved, current snapshot</div>
+        <div class="status-mix-track" id="statusMixTrack"></div>
+        <div class="status-mix-legend" id="statusMixLegend"></div>
+      </div>
+
+      <div class="card card-fill">
+        <h2>Impact Type</h2>
+        <div class="card-sub">Share of employees by nature of impact</div>
+        <div class="card-scroll">
+          <ul class="rank-legend" id="impact-legend"></ul>
+          <h3>Most Common BCP Issue</h3>
+          <div id="issue-ranked"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Column 2: Impact by Account / Impact by Line of Business -->
+    <div class="col col-account">
+      <div class="card">
+        <h2>Impact by Account</h2>
+        <div class="legend-row" id="legend-account"></div>
+        <div id="bars-account"></div>
+      </div>
+
+      <div class="card card-fill">
+        <h2>Impact by Line of Business</h2>
+        <div class="legend-row" id="legend-lob"></div>
+        <div id="bars-lob"></div>
+      </div>
+    </div>
+
+    <!-- Column 3: Impact Map + Heatmap (combined) / Top Office Sites -->
+    <div class="col col-map">
+      <div class="card card-fill">
+        <div class="card-head">
+          <div>
+            <h2><span class="map-back-arrow">&#8592;</span>Impact Map &amp; Heatmap</h2>
+            <div class="card-sub">Employees impacted by province &middot; map + status heatmap</div>
+          </div>
+          <select class="toggle-select" id="labelToggle">
+            <option value="yes">Show counts: Yes</option>
+            <option value="no">Show counts: No</option>
+          </select>
+        </div>
+        <div id="impactMapLeaflet"></div>
+        <div class="heatmap-scale">
+          <span>Less</span>
+          <span class="swatch" style="background:var(--seq-0)"></span>
+          <span class="swatch" style="background:var(--seq-1)"></span>
+          <span class="swatch" style="background:var(--seq-2)"></span>
+          <span class="swatch" style="background:var(--seq-3)"></span>
+          <span class="swatch" style="background:var(--seq-4)"></span>
+          <span>More</span>
+        </div>
+        <div class="heatmap-wrap"><table class="heatmap" id="heatmapTable"></table></div>
+      </div>
+
+      <div class="card">
+        <h2>Top Office Sites</h2>
+        <div class="card-sub">Ranked by employees impacted</div>
+        <div class="table-scroll">
+          <table class="rank-table" id="officeTable">
+            <thead><tr><th>#</th><th>Office Site</th><th>Total</th><th>Active</th></tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Column 4: Case Feed -->
+    <div class="col col-feed">
+      <div class="card card-fill">
+        <div class="card-head">
+          <h2>Case Feed</h2>
+          <select class="toggle-select" id="sortToggle">
+            <option value="severity">Sort: Status</option>
+            <option value="name">Sort: Name</option>
+          </select>
+        </div>
+        <div class="card-sub">Employee-level BCP records, most severe first</div>
+        <ul class="case-list" id="caseList"></ul>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="footer-note">Generated from Fact_BCP &mdash; live Power BI model, catalog 0dc22c54-08bb-444d-a496-536441e43000. Layout modeled on the Tableau "Emergency Calls Dashboard" reference; response-time/SLA/dispatch and calendar-heatmap elements were omitted because Fact_BCP has no timestamp fields to compute them from.</div>
+
+</div>
+
+<script>
+  const BRIDGE_URL = 'http://localhost:8790/data';
+
+  // Cached fallback snapshot — used until (or unless) the local data bridge
+  // (bcp_bridge.ps1) responds with a live pull from the Power BI model.
+  let RAW_DATA = [
+    { id:"EMP013", name:"Pedro Gil", account:"Deloitte", lob:"Manufacturing", office:"QC Office", province:"Batangas", island:"Luzon", status:"Active", impact:"Building Integrity", issue:"Earthquake", help:"Yes", remarks:"Structural inspection needed" },
+    { id:"EMP011", name:"Mark Gomez", account:"Deloitte", lob:"Supply Chain", office:"QC Office", province:"Benguet", island:"Luzon", status:"Active", impact:"Flooded", issue:"Typhoon", help:"Yes", remarks:"Evacuation plan needed" },
+    { id:"EMP003", name:"Anna Rivera", account:"JP Morgan", lob:"Cloud", office:"Iloilo Office", province:"Cebu", island:"Visayas", status:"Monitoring", impact:"Internet Outage", issue:"Internet Outage", help:"Yes", remarks:"Mobile data requested" },
+    { id:"EMP004", name:"Roberto Tan", account:"Microsoft", lob:"Sales", office:"Alabang Office", province:"Davao del Sur", island:"Mindanao", status:"Resolved", impact:"Flooded", issue:"Typhoon", help:"No", remarks:"Floodwater subsided" },
+    { id:"EMP006", name:"Michael Reyes", account:"JP Morgan", lob:"Finance", office:"Iloilo Office", province:"Iloilo", island:"Visayas", status:"Monitoring", impact:"Power Outage", issue:"Power Outage", help:"Yes", remarks:"Generator needed" },
+    { id:"EMP001", name:"Maria Santos", account:"Deloitte", lob:"Consulting", office:"QC Office", province:"Metro Manila", island:"Luzon", status:"Active", impact:"Building Integrity", issue:"Typhoon", help:"Yes", remarks:"Generator, Water requested" },
+    { id:"EMP015", name:"Ana Reyes", account:"Deloitte", lob:"Food & Beverage", office:"QC Office", province:"Metro Manila", island:"Luzon", status:"Active", impact:"Flooded", issue:"Typhoon", help:"Yes", remarks:"Pumps and sandbags needed" },
+    { id:"EMP007", name:"Patricia Go", account:"Deloitte", lob:"Advisory", office:"QC Office", province:"Metro Manila", island:"Luzon", status:"Active", impact:"Internet Outage", issue:"Internet Outage", help:"Yes", remarks:"Backup ISP needed" },
+    { id:"EMP008", name:"Eduardo Santos", account:"Deloitte", lob:"Audit", office:"QC Office", province:"Metro Manila", island:"Luzon", status:"Resolved", impact:"Flooded", issue:"Typhoon", help:"No", remarks:"Basement cleaned" },
+    { id:"EMP002", name:"John Dela Cruz", account:"Deloitte", lob:"Technology", office:"QC Office", province:"Metro Manila", island:"Luzon", status:"Active", impact:"Power Outage", issue:"Power Outage", help:"Yes", remarks:"UPS, Flashlight needed" },
+    { id:"EMP010", name:"Francis Lopez", account:"JP Morgan", lob:"Risk", office:"Iloilo Office", province:"Misamis Oriental", island:"Mindanao", status:"Monitoring", impact:"Power Outage", issue:"Power Outage", help:"Yes", remarks:"Generator fuel needed" },
+    { id:"EMP009", name:"Catherine Lim", account:"JP Morgan", lob:"Tax", office:"Iloilo Office", province:"Negros Occidental", island:"Visayas", status:"Active", impact:"Building Integrity", issue:"Earthquake", help:"Yes", remarks:"Engineer inspection required" },
+    { id:"EMP014", name:"Jose Rizal", account:"Deloitte", lob:"Energy", office:"QC Office", province:"Palawan", island:"Luzon", status:"Monitoring", impact:"Power Outage", issue:"Power Outage", help:"Yes", remarks:"Generator needed" },
+    { id:"EMP005", name:"Lisa Mendoza", account:"Deloitte", lob:"Operations", office:"QC Office", province:"Pampanga", island:"Luzon", status:"Active", impact:"Building Integrity", issue:"Earthquake", help:"Yes", remarks:"Structural assessment needed" },
+    { id:"EMP012", name:"Elena Cruz", account:"Microsoft", lob:"Marketing", office:"Alabang Office", province:"Zamboanga del Sur", island:"Mindanao", status:"Resolved", impact:"Internet Outage", issue:"Internet Outage", help:"No", remarks:"Service restored" }
+  ];
+
+  const css = getComputedStyle(document.documentElement);
+  const v = (name) => css.getPropertyValue(name).trim();
+  const STATUS_COLOR = { Active: v('--status-critical'), Monitoring: v('--status-warning'), Resolved: v('--status-good') };
+  const STATUS_TEXT  = { Active: v('--status-critical-text'), Monitoring: v('--status-warning-text'), Resolved: v('--status-good-text') };
+  const STATUS_ICON  = { Active: '!', Monitoring: '◐', Resolved: '✓' };
+  const STATUS_ORDER = ["Active", "Monitoring", "Resolved"];
+  const RANK_COLORS = [v('--rank-1'), v('--rank-2'), v('--rank-3'), v('--rank-4')];
+  const SEQ = [v('--seq-0'), v('--seq-1'), v('--seq-2'), v('--seq-3'), v('--seq-4')];
+
+  const activeFilters = { account: 'All', lob: 'All', province: 'All', status: 'All' };
+  const FILTER_SELECTS = [['f-account', 'account'], ['f-lob', 'lob'], ['f-province', 'province'], ['f-status', 'status']];
+
+  function uniqueSorted(data, key) { return [...new Set(data.map(d => d[key]))].sort(); }
+
+  // Rebuilds every filter dropdown's options from whatever RAW_DATA currently
+  // holds — needed because live data can introduce/remove offices, provinces,
+  // accounts, etc. compared to the cached snapshot.
+  function refreshFilterOptions() {
+    FILTER_SELECTS.forEach(([selectId, key]) => {
+      const el = document.getElementById(selectId);
+      const current = el.value;
+      el.innerHTML = `<option value="All">${el.dataset.label}: All</option>`;
+      uniqueSorted(RAW_DATA, key).forEach(val => {
+        const opt = document.createElement('option');
+        opt.value = val; opt.textContent = val;
+        el.appendChild(opt);
+      });
+      // keep the user's current selection if it still exists in the new data, else reset to All
+      if ([...el.options].some(o => o.value === current)) { el.value = current; }
+      else { el.value = 'All'; activeFilters[key] = 'All'; }
+    });
+  }
+
+  function initFilters() {
+    FILTER_SELECTS.forEach(([selectId, key]) => {
+      document.getElementById(selectId).addEventListener('change', (e) => { activeFilters[key] = e.target.value; renderAll(); });
+    });
+    refreshFilterOptions();
+  }
+
+  function getFilteredData() {
+    return RAW_DATA.filter(d =>
+      (activeFilters.account === 'All' || d.account === activeFilters.account) &&
+      (activeFilters.lob === 'All' || d.lob === activeFilters.lob) &&
+      (activeFilters.province === 'All' || d.province === activeFilters.province) &&
+      (activeFilters.status === 'All' || d.status === activeFilters.status)
+    );
+  }
+
+  function groupByStatus(data, key) {
+    const groups = {};
+    data.forEach(d => {
+      const k = d[key];
+      if (!groups[k]) groups[k] = { name: k, Active: 0, Monitoring: 0, Resolved: 0, total: 0, island: d.island };
+      groups[k][d.status]++;
+      groups[k].total++;
+    });
+    return Object.values(groups).sort((a, b) => b.total - a.total || a.name.localeCompare(b.name));
+  }
+  function countBy(data, key) {
+    const counts = {};
+    data.forEach(d => { counts[d[key]] = (counts[d[key]] || 0) + 1; });
+    return Object.entries(counts).map(([name, count]) => ({ name, count })).sort((a, b) => b.count - a.count || a.name.localeCompare(b.name));
+  }
+  function empty(el, msg) { el.innerHTML = `<div style="font-size:12px;color:var(--text-muted);padding:8px 0;">${msg}</div>`; }
+
+  // ---- Impact Map: Leaflet + real Philippine province boundaries ----
+  // Source: faeldon/philippines-json-maps (PSGC-based, lowres). Only the region
+  // files that contain provinces present in Fact_BCP are fetched.
+  const PH_REGION_CODES = ['03', '04', '06', '07', '09', '10', '11', '13', '14', '17', '18'];
+  const PH_GEOJSON_BASE = 'https://raw.githubusercontent.com/faeldon/philippines-json-maps/master/2019/geojson/provinces/lowres/provinces-region-ph';
+
+  let leafletMap = null;
+  let provinceLayerGroup = null;
+  let matchedFeatureGroups = null; // { provinceName: [geojson features] }
+  let lastProvinceRows = [];
+
+  function provinceKeyFor(feature) {
+    const p = feature.properties;
+    return p.ADM1_EN === 'National Capital Region' ? 'Metro Manila' : p.ADM2_EN;
+  }
+
+  async function loadMapGeoData() {
+    leafletMap = L.map('impactMapLeaflet', { scrollWheelZoom: false, attributionControl: true }).setView([12.6, 122.5], 5.3);
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
+      subdomains: 'abcd', maxZoom: 12
+    }).addTo(leafletMap);
+    provinceLayerGroup = L.layerGroup().addTo(leafletMap);
+
+    try {
+      const urls = PH_REGION_CODES.map(c => `${PH_GEOJSON_BASE}${c}0000000.0.001.json`);
+      const fetched = await Promise.all(urls.map(u => fetch(u).then(r => r.json())));
+      const allFeatures = fetched.flatMap(fc => fc.features);
+      const ourProvinces = new Set(uniqueSorted(RAW_DATA, 'province'));
+
+      const baseFeatures = [];
+      matchedFeatureGroups = {};
+      allFeatures.forEach(f => {
+        const key = provinceKeyFor(f);
+        if (ourProvinces.has(key)) {
+          (matchedFeatureGroups[key] = matchedFeatureGroups[key] || []).push(f);
+        } else {
+          baseFeatures.push(f);
+        }
+      });
+
+      L.geoJSON(baseFeatures, {
+        style: { fillColor: v('--gridline'), fillOpacity: 1, color: v('--border'), weight: 0.6 }
+      }).addTo(leafletMap);
+
+      renderMapLayer(lastProvinceRows);
+    } catch (err) {
+      const el = document.getElementById('impactMapLeaflet');
+      el.innerHTML = '<div style="padding:12px;font-size:12px;color:var(--text-muted);">Map data unavailable (no network access to load Philippine province boundaries).</div>';
+    }
+    setTimeout(() => leafletMap && leafletMap.invalidateSize(), 200);
+  }
+
+  function renderMapLayer(provinceRows) {
+    lastProvinceRows = provinceRows;
+    if (!leafletMap || !provinceLayerGroup || !matchedFeatureGroups) return; // geo data not loaded yet
+    provinceLayerGroup.clearLayers();
+    if (!provinceRows.length) return;
+
+    const maxProvince = Math.max(...provinceRows.map(r => r.total), 1);
+    provinceRows.forEach(r => {
+      const feats = matchedFeatureGroups[r.name];
+      if (!feats) return; // province not resolvable in the boundary source
+      const idx = Math.round((r.total / maxProvince) * (SEQ.length - 1));
+      const fillColor = SEQ[Math.max(0, Math.min(SEQ.length - 1, idx))];
+
+      const poly = L.geoJSON(feats, { style: { fillColor, fillOpacity: 0.85, color: '#4B5563', weight: 1 } });
+      poly.addTo(provinceLayerGroup);
+
+      const center = poly.getBounds().getCenter();
+      const radius = 6 + (r.total / maxProvince) * 13;
+      L.circleMarker(center, { radius, color: '#4B5563', weight: 1.5, fillColor: '#FFFFFF', fillOpacity: 0.95 })
+        .bindTooltip(`${r.name}: ${r.total} employee${r.total === 1 ? '' : 's'} impacted`, { className: 'province-tip' })
+        .addTo(provinceLayerGroup);
+    });
+  }
+
+  let sortMode = 'severity';
+
+  function renderAll() {
+    const data = getFilteredData();
+
+    document.getElementById('kpi-total').innerText = data.length;
+    document.getElementById('kpi-active').innerText = data.filter(d => d.status === 'Active').length;
+    document.getElementById('kpi-help').innerText = data.filter(d => d.help === 'Yes').length;
+
+    // Impact Type ranked legend
+    const impactEl = document.getElementById('impact-legend');
+    if (!data.length) { empty(impactEl, 'No cases match the current filters.'); }
+    else {
+      const impactRows = countBy(data, 'impact');
+      impactEl.innerHTML = impactRows.map((r, i) => {
+        const pct = ((r.count / data.length) * 100).toFixed(1);
+        return `<li><span class="swatch" style="background:${RANK_COLORS[i % RANK_COLORS.length]}"></span><span class="name">${r.name}</span><span class="pct">${pct}%</span></li>`;
+      }).join('');
+    }
+
+    // Most common BCP issue
+    const issueEl = document.getElementById('issue-ranked');
+    if (!data.length) { empty(issueEl, ''); }
+    else {
+      const issueRows = countBy(data, 'issue');
+      const issueMax = Math.max(...issueRows.map(r => r.count), 1);
+      issueEl.innerHTML = issueRows.map((r, i) => `
+        <div class="rank-bar-row">
+          <div class="rank-num">${i + 1}</div>
+          <div class="rank-body">
+            <div class="rank-name">${r.name}</div>
+            <div class="rank-bar-track"><div class="rank-bar-fill" style="width:${(r.count / issueMax) * 100}%;background:${RANK_COLORS[i % RANK_COLORS.length]}"></div></div>
+          </div>
+          <div class="rank-count">${r.count}</div>
+        </div>`).join('');
+    }
+
+    // Status mix
+    const mixTrack = document.getElementById('statusMixTrack');
+    const mixLegend = document.getElementById('statusMixLegend');
+    if (!data.length) { empty(mixTrack, 'No cases match the current filters.'); mixLegend.innerHTML = ''; }
+    else {
+      const total = data.length;
+      mixTrack.innerHTML = STATUS_ORDER.map(s => {
+        const n = data.filter(d => d.status === s).length;
+        const pct = (n / total) * 100;
+        return pct > 0 ? `<div style="width:${pct}%;background:${STATUS_COLOR[s]}" title="${s}: ${n}"></div>` : '';
+      }).join('');
+      mixLegend.innerHTML = STATUS_ORDER.map(s => {
+        const n = data.filter(d => d.status === s).length;
+        return `<span class="item"><span class="swatch" style="background:${STATUS_COLOR[s]}"></span>${s} (${n})</span>`;
+      }).join('');
+    }
+
+    // Impact Map (real Leaflet choropleth + bubbles) — shares provinceRows with the Heatmap below it
+    const provinceRows = groupByStatus(data, 'province');
+    renderMapLayer(provinceRows);
+
+    // Top office sites table
+    const officeBody = document.querySelector('#officeTable tbody');
+    const officeRows = groupByStatus(data, 'office').slice(0, 6);
+    if (!officeRows.length) { officeBody.innerHTML = `<tr><td colspan="4" style="color:var(--text-muted);font-size:12px;">No cases match the current filters.</td></tr>`; }
+    else {
+      const officeMax = Math.max(...officeRows.map(r => r.total), 1);
+      officeBody.innerHTML = officeRows.map((r, i) => {
+        const pct = (r.total / officeMax) * 100;
+        const barStyle = `background:linear-gradient(to right, rgba(239,68,68,0.18) ${pct}%, transparent ${pct}%)`;
+        return `<tr><td>${i + 1}</td><td>${r.name}</td><td class="total-bar" style="${barStyle}">${r.total}</td><td>${r.Active}</td></tr>`;
+      }).join('');
+    }
+
+    // Heatmap
+    const heatmapTable = document.getElementById('heatmapTable');
+    if (!provinceRows.length) { heatmapTable.innerHTML = ''; empty(heatmapTable.parentElement, 'No cases match the current filters.'); }
+    else {
+      const maxCell = Math.max(...provinceRows.flatMap(r => STATUS_ORDER.map(s => r[s])), 1);
+      const seqColor = (count) => count === 0 ? null : SEQ[Math.max(0, Math.min(SEQ.length - 1, Math.round((count / maxCell) * (SEQ.length - 1))))];
+      const textColorFor = (count) => Math.round((count / maxCell) * (SEQ.length - 1)) >= 3 ? '#ffffff' : 'var(--text-primary)';
+      const thead = '<tr><th class="row-head">Province</th>' + STATUS_ORDER.map(s => `<th>${s}</th>`).join('') + '<th>Total</th></tr>';
+      const tbody = provinceRows.map(r => {
+        const cells = STATUS_ORDER.map(s => {
+          const bg = seqColor(r[s]);
+          const style = bg ? `background:${bg};color:${textColorFor(r[s])}` : `background:transparent;color:var(--text-muted);border:1px dashed var(--gridline)`;
+          return `<td class="cell" style="${style}">${r[s] || ''}</td>`;
+        }).join('');
+        return `<tr><td class="row-head">${r.name}</td>${cells}<td class="total-cell">${r.total}</td></tr>`;
+      }).join('');
+      heatmapTable.innerHTML = thead + tbody;
+    }
+
+    // Status legends + stacked bars
+    function renderLegend(containerId) {
+      document.getElementById(containerId).innerHTML = STATUS_ORDER.map(s =>
+        `<span class="item"><span class="swatch" style="background:${STATUS_COLOR[s]}"></span>${s}</span>`
+      ).join('');
+    }
+    function renderBars(containerId, rows) {
+      const el = document.getElementById(containerId);
+      if (!rows.length) { empty(el, 'No cases match the current filters.'); return; }
+      const max = Math.max(...rows.map(r => r.total), 1);
+      el.innerHTML = rows.map(r => {
+        const segs = STATUS_ORDER.map(s => {
+          const pct = max ? (r[s] / max) * 100 : 0;
+          return r[s] > 0 ? `<div class="bar-seg" style="width:${pct}%;background:${STATUS_COLOR[s]}" title="${s}: ${r[s]}"></div>` : '';
+        }).join('');
+        return `<div class="bar-row"><div class="label" title="${r.name}">${r.name}</div><div class="bar-track">${segs}</div><div class="bar-total">${r.total}</div></div>`;
+      }).join('');
+    }
+    renderLegend('legend-account'); renderBars('bars-account', groupByStatus(data, 'account'));
+    renderLegend('legend-lob');     renderBars('bars-lob', groupByStatus(data, 'lob'));
+
+    // Case feed
+    const rows = data.slice().sort((a, b) => sortMode === 'name'
+      ? a.name.localeCompare(b.name)
+      : STATUS_ORDER.indexOf(a.status) - STATUS_ORDER.indexOf(b.status) || a.name.localeCompare(b.name));
+    const caseListEl = document.getElementById('caseList');
+    if (!rows.length) { empty(caseListEl, 'No cases match the current filters.'); }
+    else {
+      caseListEl.innerHTML = rows.map(d => `
+        <li class="case-item" style="border-left-color:${STATUS_COLOR[d.status]}">
+          <div class="case-badge" style="background:${STATUS_COLOR[d.status]}">${STATUS_ICON[d.status]}</div>
+          <div class="case-body">
+            <div class="case-title-row">
+              <span class="case-name">${d.name} &middot; ${d.id}</span>
+              <span class="case-status-pill" style="background:${STATUS_COLOR[d.status]}22;color:${STATUS_TEXT[d.status]}">${d.status}</span>
+            </div>
+            <div class="case-meta">${d.account} &middot; ${d.lob}</div>
+            <div class="case-fields">
+              <div><div class="f-label">Office / Province</div><div class="f-value">${d.office}, ${d.province}</div></div>
+              <div><div class="f-label">Impact</div><div class="f-value">${d.impact} (${d.issue})</div></div>
+              <div><div class="f-label">Needed Help</div><div class="f-value">${d.help}</div></div>
+              <div><div class="f-label">Remarks</div><div class="f-value">${d.remarks}</div></div>
+            </div>
+          </div>
+        </li>`).join('');
+    }
+
+    document.getElementById('labelToggle').onchange = (e) => heatmapTable.classList.toggle('hide-labels', e.target.value === 'no');
+  }
+
+  // ---- Live data bridge (bcp_bridge.ps1) ----
+  function setDataStatus(mode, text) {
+    const el = document.getElementById('dataStatus');
+    el.className = mode ? `is-${mode}` : '';
+    el.innerHTML = text;
+  }
+
+  async function loadLiveData(isManualRefresh) {
+    const btn = document.getElementById('refreshBtn');
+    if (isManualRefresh) { btn.disabled = true; btn.innerText = '⟳ Refreshing…'; }
+    try {
+      const res = await fetch(BRIDGE_URL, { cache: 'no-store' });
+      if (!res.ok) throw new Error(`Bridge responded ${res.status}`);
+      const rows = await res.json();
+      if (!Array.isArray(rows) || !rows.length) throw new Error('Bridge returned no rows');
+      RAW_DATA = rows;
+      refreshFilterOptions();
+      renderAll();
+      const now = new Date().toLocaleTimeString();
+      setDataStatus('live', `&#9679; Live from Power BI model <code>Fact_BCP</code> &middot; refreshed ${now}`);
+    } catch (err) {
+      // No bridge running (or PBI/Fact_BCP unreachable) — keep showing whatever
+      // RAW_DATA currently holds (the embedded snapshot, or the last successful live pull).
+      setDataStatus('cached', `&#9679; Cached snapshot (data bridge unavailable: ${err.message}) &mdash; run <code>bcp_bridge.ps1</code> for live data`);
+    } finally {
+      if (isManualRefresh) { btn.disabled = false; btn.innerText = '⟳ Refresh'; }
+    }
+  }
+
+  initFilters();
+  document.getElementById('sortToggle').addEventListener('change', (e) => { sortMode = e.target.value; renderAll(); });
+  document.getElementById('refreshBtn').addEventListener('click', () => loadLiveData(true));
+
+  renderAll();
+  setDataStatus('cached', '&#9679; Cached snapshot &mdash; checking for a live data bridge&hellip;');
+  loadLiveData(false);
+  loadMapGeoData();
+
+  if (window.ResizeObserver) {
+    new ResizeObserver(() => leafletMap && leafletMap.invalidateSize()).observe(document.getElementById('impactMapLeaflet'));
+  }
+</script>
+</body>
+</html>

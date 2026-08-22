@@ -1,0 +1,7 @@
+# Local tooling / environment (never portable across machines)
+.venv/
+.claude/settings.local.json
+.vscode/
+
+# Windows folder metadata
+desktop.ini
