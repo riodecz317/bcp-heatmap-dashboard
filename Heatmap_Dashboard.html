@@ -674,13 +674,19 @@
 
   // Two independent data sources, tried in order:
   //  1. The local bridge (bcp_bridge.ps1) — only reachable when this page is
-  //     opened on the same machine that's running it (works for file:// use,
-  //     and for the dashboard owner's own browser even when Pages-hosted,
-  //     browser/network permitting).
+  //     opened as a local file:// page on the same machine that's running it.
+  //     Skipped entirely on a hosted (http/https) origin: the bridge's CORS
+  //     policy only allows the null origin that file:// pages send (that's
+  //     the fix for the vulnerability where any website could otherwise read
+  //     this data), so a hosted page's attempt would always be blocked
+  //     anyway — trying it would just log a scary-looking (but harmless)
+  //     CORS error on every load for no benefit.
   //  2. bcp_data.json, fetched relative to wherever this page is served from —
   //     this is what makes a GitHub Pages-hosted copy stay current for ANY
   //     visitor: bcp_publish.ps1 regenerates that file and pushes it on a
   //     schedule, so this fetch is a same-origin request, no CORS involved.
+  const IS_LOCAL_FILE = location.protocol === 'file:';
+
   async function tryFetchJson(url) {
     const res = await fetch(url, { cache: 'no-store' });
     if (!res.ok) throw new Error(`${url} responded ${res.status}`);
@@ -692,17 +698,18 @@
   async function loadLiveData(isManualRefresh) {
     const btn = document.getElementById('refreshBtn');
     if (isManualRefresh) { btn.disabled = true; btn.innerText = '⟳ Refreshing…'; }
-    try {
-      RAW_DATA = await tryFetchJson(BRIDGE_URL);
-      refreshFilterOptions();
-      renderAll();
-      const now = new Date().toLocaleTimeString();
-      setDataStatus('live', `&#9679; Live from Power BI model <code>Fact_BCP</code> &middot; refreshed ${now}`);
-      return;
-    } catch (bridgeErr) {
-      // Bridge unreachable — normal when hosted for other viewers, or when
-      // running locally without the bridge started. Fall through to the
-      // published snapshot before giving up.
+    if (IS_LOCAL_FILE) {
+      try {
+        RAW_DATA = await tryFetchJson(BRIDGE_URL);
+        refreshFilterOptions();
+        renderAll();
+        const now = new Date().toLocaleTimeString();
+        setDataStatus('live', `&#9679; Live from Power BI model <code>Fact_BCP</code> &middot; refreshed ${now}`);
+        return;
+      } catch (bridgeErr) {
+        // Bridge unreachable — normal when running locally without the
+        // bridge started. Fall through to the published snapshot.
+      }
     }
     try {
       RAW_DATA = await tryFetchJson('./bcp_data.json');
