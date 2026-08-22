@@ -86,8 +86,15 @@ SELECTCOLUMNS(
 
 # Windows PowerShell 5.1 has no ConvertTo-Json -AsArray; a single-item
 # collection collapses to a bare object, so wrap that case manually.
+#
+# Deliberately NOT ValueFromPipeline: piping an array into a pipeline
+# parameter with no process{} block calls this once per element, each
+# call overwriting $Rows -- by the time a flat function body ("end" block)
+# runs, only the LAST element survives. Always call this as
+# ConvertTo-JsonArray -Rows $rows (or the positional equivalent), never
+# `$rows | ConvertTo-JsonArray`.
 function ConvertTo-JsonArray {
-  param([Parameter(ValueFromPipeline)] $Rows)
+  param([Parameter(Mandatory)] $Rows)
   $json = $Rows | ConvertTo-Json -Depth 3
   if (@($Rows).Count -eq 1) { $json = "[$json]" }
   return $json

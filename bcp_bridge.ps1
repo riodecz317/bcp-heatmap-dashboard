@@ -60,7 +60,7 @@ try {
         $response.Close()
         continue
       }
-      $json = Get-FactBcpRows | ConvertTo-JsonArray
+      $json = ConvertTo-JsonArray -Rows (Get-FactBcpRows)
       $bytes = [System.Text.Encoding]::UTF8.GetBytes($json)
       $response.ContentType = "application/json"
       $response.StatusCode = 200

@@ -30,19 +30,31 @@ try {
   Add-Type -Path $adomdPath
 
   $rows = Get-FactBcpRows
-  $json = $rows | ConvertTo-JsonArray
+  $rowCount = $rows.Count
+  $newJson = ConvertTo-JsonArray -Rows $rows
 
+  # Compare content directly rather than trusting git's staged-diff timing --
+  # relying on `git diff --cached` here previously caused a stale/partial
+  # snapshot to get published when a prior run's git operations partially
+  # succeeded before throwing. This is unambiguous: no write, no commit, no
+  # push happen at all unless the actual data differs from what's on disk now.
   $dataPath = Join-Path $repoRoot 'bcp_data.json'
-  [System.IO.File]::WriteAllText($dataPath, $json, [System.Text.UTF8Encoding]::new($false))
+  $oldJson = if (Test-Path $dataPath) { Get-Content -Path $dataPath -Raw } else { $null }
+
+  if ($oldJson -eq $newJson) {
+    Write-Log "No data change since last run ($rowCount rows) -- nothing to publish."
+    exit 0
+  }
+
+  [System.IO.File]::WriteAllText($dataPath, $newJson, [System.Text.UTF8Encoding]::new($false))
 
   # Keep an index.html mirror of the dashboard so GitHub Pages' root URL
-  # (…/bcp-heatmap-dashboard/) serves it directly, without renaming the
+  # (.../bcp-heatmap-dashboard/) serves it directly, without renaming the
   # canonical working file that bcp_bridge.ps1's docs and local habits refer to.
   $sourceHtml = Join-Path $repoRoot 'Heatmap_Dashboard.html'
   $indexHtml = Join-Path $repoRoot 'index.html'
   Copy-Item -Path $sourceHtml -Destination $indexHtml -Force
 
-  $rowCount = $rows.Count
   $commitMsg = "Auto-refresh published snapshot ($rowCount rows)"
 
   Push-Location $repoRoot
@@ -54,16 +66,12 @@ try {
   $ErrorActionPreference = 'Continue'
   try {
     git add bcp_data.json index.html *> $null
-    git diff --cached --quiet --exit-code *> $null
-    if ($LASTEXITCODE -eq 0) {
-      Write-Log "No data change since last run ($rowCount rows) -- nothing to publish."
-    } else {
-      git commit -m $commitMsg --quiet *> $null
-      if ($LASTEXITCODE -ne 0) { throw "git commit failed (exit $LASTEXITCODE)" }
-      git push --quiet *> $null
-      if ($LASTEXITCODE -ne 0) { throw "git push failed (exit $LASTEXITCODE)" }
-      Write-Log "Published $rowCount rows to GitHub Pages."
-    }
+    if ($LASTEXITCODE -ne 0) { throw "git add failed (exit $LASTEXITCODE)" }
+    git commit -m $commitMsg --quiet *> $null
+    if ($LASTEXITCODE -ne 0) { throw "git commit failed (exit $LASTEXITCODE)" }
+    git push --quiet *> $null
+    if ($LASTEXITCODE -ne 0) { throw "git push failed (exit $LASTEXITCODE)" }
+    Write-Log "Published $rowCount rows to GitHub Pages."
   } finally {
     $ErrorActionPreference = $prevEAP
     Pop-Location
