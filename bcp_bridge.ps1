@@ -116,9 +116,18 @@ try {
   while ($listener.IsListening) {
     $context = $listener.GetContext()
     $response = $context.Response
-    $response.Headers.Add("Access-Control-Allow-Origin", "*")
-    $response.Headers.Add("Access-Control-Allow-Methods", "GET, OPTIONS")
-    $response.Headers.Add("Access-Control-Allow-Headers", "*")
+
+    # The dashboard is opened as a local file:// page, so browsers send
+    # "Origin: null" (or omit Origin) for its fetch() calls. Only echo the
+    # CORS header back in that case, instead of a wildcard "*" — a wildcard
+    # would let ANY website open in another tab of the same browser also
+    # read this live employee data while the bridge happens to be running.
+    $origin = $context.Request.Headers["Origin"]
+    if ([string]::IsNullOrEmpty($origin) -or $origin -eq "null") {
+      $response.Headers.Add("Access-Control-Allow-Origin", "null")
+      $response.Headers.Add("Access-Control-Allow-Methods", "GET, OPTIONS")
+      $response.Headers.Add("Access-Control-Allow-Headers", "*")
+    }
 
     try {
       if ($context.Request.HttpMethod -eq 'OPTIONS') {
