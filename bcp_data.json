@@ -112,6 +112,22 @@
         "remarks":  "Pumps and sandbags needed"
     },
     {
+        "id":  "EMP016",
+        "name":  "Ricky Dela Torre",
+        "account":  "Shadow Realm",
+        "lob":  "Technology",
+        "office":  "QC Office",
+        "city":  "Mandaluyong",
+        "province":  "Metro Manila",
+        "region":  "National Capital Region",
+        "island":  "Luzon",
+        "status":  "Active",
+        "impact":  "Flooded",
+        "issue":  "Typhoon",
+        "help":  "Yes",
+        "remarks":  "UPS, Flashlight needed"
+    },
+    {
         "id":  "EMP007",
         "name":  "Patricia Go",
         "account":  "Deloitte",
