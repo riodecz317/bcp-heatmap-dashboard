@@ -48,13 +48,15 @@
     --gradient-pink-peach:    linear-gradient(135deg, #FBCFE8 0%, #FED7AA 100%);
 
     --font-sans: "Inter", "SF Pro Display", -apple-system, system-ui, sans-serif;
-    --radius-outer:   40px;
-    --radius-card:    26px;
+    --radius-outer:   32px;
+    --radius-card:    16px;
     --radius-control: 12px;
     --radius-pill:    999px;
     --gray-500: #6B7280;
-    --shadow-outer: 0 20px 60px rgba(0,0,0,0.08);
+    --shadow-outer: 0 16px 48px rgba(0,0,0,0.06);
     --shadow-card:  0 8px 24px rgba(0,0,0,0.04);
+    --shell-glass-bg:     rgba(255,255,255,0.90);
+    --shell-glass-border: rgba(255,255,255,0.60);
 
     /* Single-screen band heights: clamp() so the layout stays sane from a
        1366x768 laptop up to a 1920x1080 monitor without ever needing the
@@ -85,6 +87,8 @@
       --status-critical-text: #F87171;
       --rank-1: #F3897F; --rank-2: #EF4444; --rank-3: #B91C1C; --rank-4: #7F1D1D;
       --seq-0: #3B1D1D; --seq-1: #5C2626; --seq-2: #8C3330; --seq-3: #B91C1C; --seq-4: #EF4444;
+      --shell-glass-bg:     rgba(30,41,59,0.85);
+      --shell-glass-border: rgba(255,255,255,0.08);
     }
   }
   :root[data-theme="dark"] {
@@ -104,6 +108,8 @@
     --status-critical-text: #F87171;
     --rank-1: #F3897F; --rank-2: #EF4444; --rank-3: #B91C1C; --rank-4: #7F1D1D;
     --seq-0: #3B1D1D; --seq-1: #5C2626; --seq-2: #8C3330; --seq-3: #B91C1C; --seq-4: #EF4444;
+    --shell-glass-bg:     rgba(30,41,59,0.85);
+    --shell-glass-border: rgba(255,255,255,0.08);
   }
 
   * { box-sizing: border-box; }
@@ -146,7 +152,14 @@
     display: flex; flex-direction: column;
     padding: var(--gap) var(--pad-x);
     gap: var(--gap);
-    background: var(--surface-1);
+    /* Genuinely translucent (not just a shadow) so the blurred pastel
+       shapes behind the page read through faintly — the one place this
+       skin uses real glass; every card inside stays fully opaque for
+       readability of the data itself. */
+    background: var(--shell-glass-bg);
+    -webkit-backdrop-filter: blur(28px) saturate(160%);
+    backdrop-filter: blur(28px) saturate(160%);
+    border: 1px solid var(--shell-glass-border);
     border-radius: var(--radius-outer);
     box-shadow: var(--shadow-outer);
   }
