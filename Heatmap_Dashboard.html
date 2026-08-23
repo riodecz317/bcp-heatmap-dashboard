@@ -222,7 +222,6 @@
      evenly. min-height here is a hard floor the map can't shrink past, so
      .heatmap-wrap MUST stay shrinkable (flex-shrink, not flex:none) or a
      short card clips it out of view entirely instead of just scrolling it. */
-  .map-back-arrow { flex: none; color: var(--text-muted); font-size: 14px; margin-right: 4px; }
   #impactMapLeaflet {
     flex: 1; min-height: 220px; border-radius: 8px; overflow: hidden;
     background: #FFFFFF; border: none;
@@ -396,7 +395,7 @@
       <div class="card card-fill" id="mapCard">
         <div class="card-head">
           <div>
-            <h2><span class="map-back-arrow">&#8592;</span>Heatmap</h2>
+            <h2>Heatmap</h2>
             <div class="card-sub">Employees impacted by province &middot; map + status heatmap</div>
           </div>
           <div class="card-head-actions">
