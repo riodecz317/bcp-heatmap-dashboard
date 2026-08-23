@@ -96,28 +96,34 @@
   #dataStatus.is-cached { color: var(--status-warning-text); }
   #dataStatus.is-error  { color: var(--status-critical-text); }
 
-  /* ---- Executive Summary card (spans full width, top of dashboard) ---- */
-  .exec-summary-card { flex: none; margin-top: 16px; background: #FFFFFF; color: #0F172A; }
-  .exec-summary-card h2 { font-size: 1rem; font-weight: 700; text-transform: none; letter-spacing: 0; color: #0F172A; }
-  .exec-summary-card h3 { color: #0F172A; margin: 16px 0 6px 0; }
-  .exec-summary-card .card-sub { color: #64748B; }
+  /* ---- Executive Summary card (spans full width, top of dashboard) ----
+     Deliberately compact and horizontal (stat row + pill + 3-col recos)
+     instead of a tall stacked bullet list -- this card sits above the
+     4-column board and used to eat 300px+ of vertical space, starving the
+     board and forcing every card below into its own internal scrollbar. */
+  .exec-summary-card { flex: none; margin-top: 16px; padding: 14px 18px; background: #FFFFFF; color: #0F172A; }
+  .exec-summary-card h2 { font-size: 0.95rem; font-weight: 700; text-transform: none; letter-spacing: 0; color: #0F172A; margin: 0 0 2px 0; }
+  .exec-summary-card .card-sub { color: #64748B; margin: 0 0 8px 0; }
 
-  /* Professional bullet list: custom marker dot, row spacing, subtle dividers */
-  .exec-bullets { list-style: none; margin: 8px 0 0 0; padding: 0; font-size: 13.5px; line-height: 1.6; color: #1E293B; }
-  .exec-bullets li { position: relative; padding: 7px 0 7px 22px; border-bottom: 1px solid #F1F5F9; }
-  .exec-bullets li:last-child { border-bottom: none; }
-  .exec-bullets li::before { content: "\25CF"; position: absolute; left: 2px; top: 7px; color: #C93636; font-size: 9px; line-height: 1; }
-  .exec-bullets li strong { color: #0F172A; }
+  .exec-top-row { display: flex; align-items: center; justify-content: space-between; gap: 14px 24px; flex-wrap: wrap; padding: 8px 0; border-bottom: 1px solid #F1F5F9; }
+  .exec-stats-row { display: flex; gap: 22px; flex-wrap: wrap; }
+  .exec-stat { display: flex; align-items: baseline; gap: 6px; font-size: 12.5px; color: #475569; white-space: nowrap; }
+  .exec-stat strong { font-size: 15px; color: #0F172A; }
 
-  /* Top Risk callout: pops out from the rest of the bullets */
+  /* Top Risk callout: compact pill that pops out via color, not size */
   .exec-risk-callout {
-    display: flex; align-items: baseline; gap: 8px;
+    display: flex; align-items: center; gap: 8px;
     background: #FCE9E9; color: #C93636;
-    border-radius: 8px; padding: 10px 14px; margin: 10px 0;
-    font-size: 13.5px; font-weight: 600; line-height: 1.5;
+    border-radius: 999px; padding: 5px 14px 5px 6px;
+    font-size: 12px; font-weight: 600; line-height: 1.4;
   }
-  .exec-risk-callout .risk-tag { flex: none; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; background: #C93636; color: #FFFFFF; border-radius: 999px; padding: 2px 8px; }
+  .exec-risk-callout .risk-tag { flex: none; font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; background: #C93636; color: #FFFFFF; border-radius: 999px; padding: 3px 8px; }
   .exec-risk-callout strong { color: #C93636; }
+
+  .exec-reco-label { display: block; margin: 10px 0 6px 0; font-size: 0.68rem; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; color: #64748B; }
+  .exec-reco-row { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px 18px; }
+  .exec-reco-item { position: relative; padding-left: 12px; border-left: 3px solid #C93636; font-size: 12.5px; line-height: 1.45; color: #1E293B; }
+  .exec-reco-item strong { color: #0F172A; }
 
   /* ---- Welcome card (col 1 top): compact KPI summary ---- */
   .welcome-card { flex: none; }
@@ -622,18 +628,21 @@
     const recommendations = buildStrategicRecommendations(s);
 
     el.innerHTML = `
-      <ul class="exec-bullets">
-        <li><strong>${s.total}</strong> total employee${s.total === 1 ? '' : 's'} impacted, with <strong>${s.active}</strong> active issue${s.active === 1 ? '' : 's'} currently open.</li>
-        <li>Most critical line of business: <strong>${s.criticalLob.name}</strong> (${s.criticalLob.Active} active case${s.criticalLob.Active === 1 ? '' : 's'} of ${s.criticalLob.total} total).</li>
-      </ul>
-      <div class="exec-risk-callout">
-        <span class="risk-tag">Top Risk</span>
-        <span><strong>${s.topRisk.row.name}</strong> (${s.topRisk.kind}) has the highest number of active cases &mdash; <strong>${s.topRisk.row.Active}</strong>${s.topIssue ? `, driven mainly by ${s.topIssue.name}` : ''}.</span>
+      <div class="exec-top-row">
+        <div class="exec-stats-row">
+          <span class="exec-stat"><strong>${s.total}</strong> total employee${s.total === 1 ? '' : 's'} impacted</span>
+          <span class="exec-stat"><strong>${s.active}</strong> active issue${s.active === 1 ? '' : 's'}</span>
+          <span class="exec-stat"><strong>${s.criticalLob.name}</strong> most critical LOB (${s.criticalLob.Active}/${s.criticalLob.total} active)</span>
+        </div>
+        <div class="exec-risk-callout">
+          <span class="risk-tag">Top Risk</span>
+          <span><strong>${s.topRisk.row.name}</strong> (${s.topRisk.kind}) &mdash; <strong>${s.topRisk.row.Active}</strong> active${s.topIssue ? `, driven mainly by ${s.topIssue.name}` : ''}</span>
+        </div>
       </div>
-      <h3>Strategic Recommendations</h3>
-      <ul class="exec-bullets">
-        ${recommendations.map(r => `<li>${r}</li>`).join('')}
-      </ul>`;
+      <span class="exec-reco-label">Strategic Recommendations</span>
+      <div class="exec-reco-row">
+        ${recommendations.map(r => `<div class="exec-reco-item">${r}</div>`).join('')}
+      </div>`;
   }
 
   function renderAll() {
