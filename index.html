@@ -34,6 +34,12 @@
     --status-good-text:     #166534;
     --status-warning-text:  #854D0E;
     --status-critical-text: #9A3412;
+    /* Light tints for pills/badges — text is the dark -text color above,
+       never white and never the bright fill itself, so contrast stays
+       readable (the bright fills above are for swatches/dots/bars only). */
+    --status-good-soft:     #F0FDF4;
+    --status-warning-soft:  #FEFCE8;
+    --status-critical-soft: #FFF7ED;
 
     --accent-orange: #F97316;
     --accent-navy:   #21263F;
@@ -241,16 +247,16 @@
   .exec-stats-row { display: flex; gap: 20px; flex-wrap: wrap; }
   .exec-stat { display: flex; align-items: baseline; gap: 6px; font-size: clamp(10.5px, 0.78vw, 12.5px); color: var(--text-secondary); white-space: nowrap; }
   .exec-stat strong { font-size: 1.15em; color: var(--text-primary); }
-  /* Top Risk pill: solid Active-orange background per the master status
-     palette, with the Active text color on top (both read straight off
-     --status-critical / --status-critical-text, not a separate accent). */
+  /* Top Risk pill: light Active-orange tint (never the bright solid fill
+     or white text) with the dark Active text color throughout, per the
+     strict contrast rule. */
   .exec-risk-callout {
     display: flex; align-items: center; gap: 8px;
-    background: var(--status-critical); color: var(--status-critical-text);
+    background: var(--status-critical-soft); color: var(--status-critical-text);
     border-radius: var(--radius-pill); padding: 5px 14px 5px 6px; margin-right: 16px;
     font-size: clamp(10px, 0.72vw, 12px); font-weight: 600; line-height: 1.4;
   }
-  .exec-risk-callout .risk-tag { flex: none; font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; background: var(--status-critical-text); color: #FFFFFF; border-radius: var(--radius-pill); padding: 3px 8px; }
+  .exec-risk-callout .risk-tag { flex: none; font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; background: #FFFFFF; color: var(--status-critical-text); border-radius: var(--radius-pill); padding: 3px 8px; }
   .exec-risk-callout strong { color: var(--status-critical-text); }
 
   .exec-reco-label { display: block; margin: 10px 0 6px; font-size: 0.68rem; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; color: var(--text-muted); }
@@ -288,7 +294,7 @@
   .kpi-caption-secondary { font-size: clamp(7.5px, 0.56vw, 9px); color: var(--text-muted); margin-top: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .kpi-caption-secondary strong { color: var(--text-secondary); font-weight: 600; }
   .kpi-bar-caption { font-size: clamp(7.5px, 0.56vw, 9px); color: var(--text-muted); text-transform: uppercase; letter-spacing: .03em; font-weight: 700; margin-top: 5px; }
-  .kpi-mini-legend { font-size: clamp(8.5px, 0.65vw, 10px); font-weight: 600; color: #374151; display: flex; justify-content: center; gap: 6px; flex-wrap: wrap; }
+  .kpi-mini-legend { font-size: clamp(9.5px, 0.72vw, 11px); font-weight: 600; color: #1E293B; display: flex; justify-content: center; gap: 6px; flex-wrap: wrap; }
   .kpi-mini-legend .dot { display: inline-block; width: 6px; height: 6px; border-radius: 50%; margin-right: 2px; vertical-align: middle; }
 
   /* Status donut: SVG ring flex-centered in the leftover vertical space
@@ -297,7 +303,7 @@
   .kpi-donut-wrap { flex: 1 1 auto; min-height: 64px; display: flex; align-items: center; justify-content: center; position: relative; }
   .kpi-donut { width: 60%; max-width: 84px; aspect-ratio: 1 / 1; }
   .kpi-donut-center { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; pointer-events: none; }
-  .kpi-donut-value { font-size: clamp(0.95rem, 1.6vw, 1.3rem); font-weight: 800; color: var(--text-primary); line-height: 1; }
+  .kpi-donut-value { font-size: clamp(0.95rem, 1.6vw, 1.3rem); font-weight: 800; color: #1E293B; line-height: 1; }
   .kpi-donut-sub { font-size: clamp(6.5px, 0.5vw, 7.5px); color: var(--text-muted); opacity: .75; margin-top: 2px; text-transform: uppercase; letter-spacing: .03em; }
 
   /* ---- Band 4: main 3-column grid ---- */
@@ -309,7 +315,7 @@
   .main-col:first-child .card { border-top: 3px solid var(--accent-orange); }
 
   /* Left column: compact bar charts */
-  .legend-row { flex: none; display: flex; gap: 10px; font-size: clamp(9px, 0.68vw, 10.5px); color: var(--text-secondary); margin-bottom: 4px; flex-wrap: wrap; }
+  .legend-row { flex: none; display: flex; gap: 10px; font-size: clamp(10px, 0.72vw, 11.5px); font-weight: 600; margin-bottom: 4px; flex-wrap: wrap; }
   .legend-row .item { display: flex; align-items: center; gap: 4px; }
   .legend-row .swatch { width: 7px; height: 7px; border-radius: 2px; }
   .bar-row { display: grid; grid-template-columns: 76px 1fr 22px; align-items: center; gap: 6px; margin-bottom: 5px; font-size: clamp(9.5px, 0.7vw, 11px); }
@@ -355,13 +361,13 @@
   }
   .province-row-head {
     background: var(--surface-1); padding: 4px 16px; position: sticky; top: 0; z-index: 1;
-    font-weight: 700; color: #374151; font-size: clamp(8.5px, 0.62vw, 10px);
+    font-weight: 700; color: #1E293B; font-size: clamp(9.5px, 0.68vw, 11px);
   }
   .province-row-head .col-stat, .province-row-head .col-total { text-align: center; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .col-name { display: flex; align-items: center; min-width: 0; }
   .province-name { font-weight: 500; color: #1E293B; white-space: normal; overflow: visible; text-overflow: clip; line-height: 1.3; font-size: clamp(9.5px, 0.7vw, 11px); }
   .col-stat { text-align: center; font-variant-numeric: tabular-nums; min-width: 0; }
-  .col-total { text-align: center; font-weight: 700; color: #374151; font-variant-numeric: tabular-nums; font-size: clamp(9.5px, 0.7vw, 11px); min-width: 0; }
+  .col-total { text-align: center; font-weight: 700; color: #1E293B; font-variant-numeric: tabular-nums; font-size: clamp(9.5px, 0.7vw, 11px); min-width: 0; }
   .status-pill { display: inline-block; min-width: 26px; padding: 2px 10px; border-radius: 50px; font-weight: 700; font-size: clamp(9px, 0.65vw, 10.5px); }
   .province-list.hide-labels .status-pill { font-size: 0; }
 
@@ -372,10 +378,10 @@
   .case-badge { width: 20px; height: 20px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 9.5px; flex: none; margin-top: 1px; }
   .case-body { flex: 1; min-width: 0; }
   .case-title-row { display: flex; justify-content: space-between; gap: 6px; align-items: baseline; }
-  .case-name { font-weight: 600; font-size: clamp(9.5px, 0.7vw, 11px); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .case-name { font-weight: 600; color: #1E293B; font-size: clamp(9.5px, 0.7vw, 11px); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .case-status-pill { flex: none; font-size: clamp(8.5px, 0.6vw, 10px); font-weight: 600; padding: 2px 7px; border-radius: var(--radius-pill); white-space: nowrap; }
-  .case-account-lob { font-size: clamp(10px, 0.6vw, 12px); color: var(--gray-500); margin-top: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .case-meta { font-size: clamp(8.5px, 0.6vw, 10px); color: var(--text-secondary); margin-top: 2px; }
+  .case-account-lob { font-size: clamp(10px, 0.6vw, 12px); color: #1E293B; margin-top: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .case-meta { font-size: clamp(8.5px, 0.6vw, 10px); color: #1E293B; margin-top: 2px; }
   .case-help-line { font-size: clamp(8.5px, 0.6vw, 10px); margin-top: 2px; }
   .case-help-line.is-yes { color: var(--status-critical-text); font-weight: 700; }
   .case-help-line.is-no { color: var(--text-muted); }
@@ -393,15 +399,14 @@
   .office-chip .stat { color: var(--text-muted); }
   .office-chip .stat strong { color: var(--status-critical-text); font-weight: 700; }
 
-  /* "Sort Status" is one of the two named action buttons, styled with
-     the Walenteer gradient like Refresh. */
+  /* "Sort Status" and "Counts: Yes/No" — dark navy text on white/light
+     gray, per the strict contrast rule (no white text on a colored fill
+     for either control). */
   #sortToggle {
-    background: var(--gradient-walenteer); color: #FFFFFF; border: none;
+    background: #F3F4F6; color: #1E293B; border: 1px solid var(--border);
   }
-  /* "Counts: Yes/No" — outlined pill with a light blue border, like the
-     reference's "Add New Orders" button. */
   #labelToggle {
-    border-radius: 50px; border: 1px solid #93C5FD; color: #374151; background: #FFFFFF;
+    border-radius: 50px; border: 1px solid #93C5FD; color: #1E293B; background: #FFFFFF;
   }
 </style>
 </head>
@@ -521,6 +526,7 @@
   const v = (name) => css.getPropertyValue(name).trim();
   const STATUS_COLOR = { Active: v('--status-critical'), Monitoring: v('--status-warning'), Resolved: v('--status-good') };
   const STATUS_TEXT  = { Active: v('--status-critical-text'), Monitoring: v('--status-warning-text'), Resolved: v('--status-good-text') };
+  const STATUS_SOFT  = { Active: v('--status-critical-soft'), Monitoring: v('--status-warning-soft'), Resolved: v('--status-good-soft') };
   const STATUS_ICON  = { Active: '!', Monitoring: '◐', Resolved: '✓' };
   const STATUS_ORDER = ["Active", "Monitoring", "Resolved"];
   const RANK_COLORS = [v('--rank-1'), v('--rank-2'), v('--rank-3'), v('--rank-4')];
@@ -843,7 +849,7 @@
     const statusDonut = buildStatusDonut(data, total);
     const statusLegend = STATUS_ORDER.map(st => {
       const n = data.filter(d => d.status === st).length;
-      return `<span><span class="dot" style="background:${STATUS_COLOR[st]}"></span>${st} ${n}</span>`;
+      return `<span><span class="dot" style="background:${STATUS_COLOR[st]}"></span><span style="color:${STATUS_TEXT[st]}">${st} ${n}</span></span>`;
     }).join('');
     const statusCardHtml = `
       <div class="card kpi-card kpi-card-donut">
@@ -954,7 +960,7 @@
     // Status legends + stacked bars (Impact by Account / Impact by Line of Business)
     function renderLegend(containerId) {
       document.getElementById(containerId).innerHTML = STATUS_ORDER.map(st =>
-        `<span class="item"><span class="swatch" style="background:${STATUS_COLOR[st]}"></span>${st}</span>`
+        `<span class="item"><span class="swatch" style="background:${STATUS_COLOR[st]}"></span><span style="color:${STATUS_TEXT[st]}">${st}</span></span>`
       ).join('');
     }
     function renderBars(containerId, rows) {
@@ -985,7 +991,7 @@
           <div class="case-body">
             <div class="case-title-row">
               <span class="case-name">${d.name} &middot; ${d.id}</span>
-              <span class="case-status-pill" style="background:${STATUS_COLOR[d.status]};color:${STATUS_TEXT[d.status]}">${d.status}</span>
+              <span class="case-status-pill" style="background:${STATUS_SOFT[d.status]};color:${STATUS_TEXT[d.status]}">${d.status}</span>
             </div>
             <div class="case-account-lob">Account: ${d.account} | LOB: ${d.lob}</div>
             <div class="case-meta">${d.office}, ${d.province} &middot; ${d.impact} (${d.issue})</div>
