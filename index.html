@@ -214,12 +214,14 @@
   .status-mix-legend .swatch { width: 9px; height: 9px; border-radius: 2px; }
 
   /* ---- Impact Map (Leaflet, real Philippine province geography) ----
-     flex:1 with no competing flex on .heatmap-wrap below (that's capped to
-     a fixed max-height instead) means the map claims essentially all of
-     the card's leftover space rather than splitting it evenly. */
+     flex:1 with flex-grow:0 on .heatmap-wrap below means the map claims
+     essentially all of the card's leftover space rather than splitting it
+     evenly. min-height here is a hard floor the map can't shrink past, so
+     .heatmap-wrap MUST stay shrinkable (flex-shrink, not flex:none) or a
+     short card clips it out of view entirely instead of just scrolling it. */
   .map-back-arrow { flex: none; color: var(--text-muted); font-size: 14px; margin-right: 4px; }
   #impactMapLeaflet {
-    flex: 1; min-height: 280px; border-radius: 8px; overflow: hidden;
+    flex: 1; min-height: 220px; border-radius: 8px; overflow: hidden;
     background: #FFFFFF; border: none;
   }
   .leaflet-container { font-family: inherit; background: #FFFFFF; }
@@ -249,8 +251,12 @@
   .bar-seg { height: 100%; }
   .bar-total { text-align: right; color: var(--text-secondary); font-variant-numeric: tabular-nums; }
 
-  /* ---- Heatmap (compact strip under the map, capped so the map stays dominant) ---- */
-  .heatmap-wrap { flex: none; max-height: 180px; min-height: 0; overflow-x: auto; overflow-y: auto; }
+  /* ---- Heatmap (compact strip under the map, capped so the map stays dominant) ----
+     flex-grow:0 so it never competes with the map for space, but flex-shrink
+     stays enabled (unlike flex:none) with a small min-height floor so a
+     short card shrinks+scrolls this table instead of clipping it out of
+     view entirely via the parent .card's overflow:hidden. */
+  .heatmap-wrap { flex: 0 1 180px; min-height: 46px; overflow-x: auto; overflow-y: auto; }
   table.heatmap { border-collapse: separate; border-spacing: 3px; font-size: 12px; width: 100%; }
   table.heatmap th { font-weight: 600; color: var(--text-secondary); font-size: 11px; padding: 5px 8px; text-align: center; position: sticky; top: 0; background: var(--surface-1); z-index: 1; }
   table.heatmap th.row-head { text-align: left; }
