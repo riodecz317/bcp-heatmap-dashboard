@@ -15,52 +15,53 @@
      ============================================================ */
   :root {
     color-scheme: light;
-    --page:           #FAFAFC;
+    --page:           #F0F0F0;
     --surface-1:      #FFFFFF;
-    --text-primary:   #0A0A0C;
+    --text-primary:   #21263F;
     --text-secondary: #6B7280;
     --text-muted:     #9CA3AF;
-    --gridline:       #F3F4F6;
-    --border:         #E1E6EF;
-    --row-hover:      #F8F9FC;
-    --focus-ring:     #8587FF;
+    --gridline:       #F9FAFB;
+    --border:         #ECEDF1;
+    --row-hover:      #F3F4F6;
+    --focus-ring:     #FF5C00;
 
-    --status-good:     #34C77B;
-    --status-warning:  #F5A623;
-    --status-critical: #FF6B6B;
-    --status-good-text:     #1F8F57;
-    --status-warning-text:  #B4720C;
-    --status-critical-text: #D64545;
+    /* "MoonRow" reserves deep orange for Active states explicitly, so
+       Monitoring shifts to a distinguishable gold (not orange) to avoid
+       two statuses reading as the same color — Resolved stays green. */
+    --status-good:     #22C55E;
+    --status-warning:  #F2B705;
+    --status-critical: #FF5C00;
+    --status-good-text:     #15803D;
+    --status-warning-text:  #92730B;
+    --status-critical-text: #C2410C;
 
-    --brand-dark:  #E4574F;
-    --brand-mid:   #FF6B6B;
-    --brand-light: #FFE3E0;
+    --accent-orange: #FF5C00;
+    --accent-navy:   #21263F;
+    --brand-dark:  #C2410C;
+    --brand-mid:   #FF5C00;
+    --brand-light: #FFE8DC;
     --accent:         var(--brand-mid);
     --accent-strong:  var(--brand-dark);
     --accent-soft:    var(--brand-light);
 
-    --rank-1: #E4574F; --rank-2: #FF6B6B; --rank-3: #FCA5A5; --rank-4: #FBCFE8;
-    --seq-0: #FFF1F0; --seq-1: #FED7D2; --seq-2: #FCA5A5; --seq-3: #FF6B6B; --seq-4: #E4574F;
+    /* Ranking bar (BCP Type distribution — impact TYPE, not status):
+       1st = deep orange, 2nd = navy, rest fade to neutral slate. */
+    --rank-1: #FF5C00; --rank-2: #21263F; --rank-3: #94A3B8; --rank-4: #CBD5E1;
+    --seq-0: #FFF3EC; --seq-1: #FFD9BE; --seq-2: #FFB37D; --seq-3: #FF8A3D; --seq-4: #FF5C00;
 
-    /* "Lightcore Prism" skin: the holographic rainbow gradient is reserved
-       for the one primary CTA (Refresh) and for non-semantic "ranking"
-       progress bars (BCP Type) — it never touches Active/Monitoring/
-       Resolved, which must stay unambiguous, so those keep solid status
-       colors throughout. */
-    --gradient-prism:       linear-gradient(90deg, #FFB866, #FDE834, #A73FFF, #8587FF, #FFBDD6);
-    --gradient-pink-purple: linear-gradient(90deg, #FFBDD6, #A73FFF);
-    --gradient-blue-teal:   linear-gradient(90deg, #8587FF, #5EEAD4);
+    /* Track background for progress/distribution bars — light gray
+       diagonal hatching per the reference's Duckticket/Seevent bars.
+       Applied only to the empty/unfilled track, never to a status fill. */
+    --hatch-track: repeating-linear-gradient(135deg, #F3F4F6, #F3F4F6 4px, #EAEBEF 4px, #EAEBEF 8px);
 
-    --font-sans: "Inter", "SF Pro Display", -apple-system, system-ui, sans-serif;
-    --radius-outer:   32px;
-    --radius-card:    18px;
+    --font-sans: "Inter", "Poppins", "Manrope", -apple-system, system-ui, sans-serif;
+    --radius-outer:   24px;
+    --radius-card:    16px;
     --radius-control: 12px;
     --radius-pill:    999px;
     --gray-500: #6B7280;
-    --shadow-outer: 0 20px 56px rgba(10,10,12,0.05);
-    --shadow-card:  0 4px 20px rgba(0,0,0,0.03);
-    --shell-glass-bg:     rgba(255,255,255,0.94);
-    --shell-glass-border: #E1E6EF;
+    --shadow-outer: 0 16px 40px rgba(0,0,0,0.05);
+    --shadow-card:  0 10px 30px rgba(0,0,0,0.04);
 
     /* Single-screen band heights: clamp() so the layout stays sane from a
        1366x768 laptop up to a 1920x1080 monitor without ever needing the
@@ -91,8 +92,6 @@
       --status-critical-text: #F87171;
       --rank-1: #F3897F; --rank-2: #EF4444; --rank-3: #B91C1C; --rank-4: #7F1D1D;
       --seq-0: #3B1D1D; --seq-1: #5C2626; --seq-2: #8C3330; --seq-3: #B91C1C; --seq-4: #EF4444;
-      --shell-glass-bg:     rgba(30,41,59,0.85);
-      --shell-glass-border: rgba(255,255,255,0.08);
     }
   }
   :root[data-theme="dark"] {
@@ -112,8 +111,6 @@
     --status-critical-text: #F87171;
     --rank-1: #F3897F; --rank-2: #EF4444; --rank-3: #B91C1C; --rank-4: #7F1D1D;
     --seq-0: #3B1D1D; --seq-1: #5C2626; --seq-2: #8C3330; --seq-3: #B91C1C; --seq-4: #EF4444;
-    --shell-glass-bg:     rgba(30,41,59,0.85);
-    --shell-glass-border: rgba(255,255,255,0.08);
   }
 
   * { box-sizing: border-box; }
@@ -135,9 +132,9 @@
 
   /* ============================================================
      SHELL: five fixed/flexible bands, zero page scroll — also the large
-     floating "glass" container itself (Apple Vision Pro reference: a
-     rounded white panel floating on the creamy background with a soft
-     pillowy shadow). height:100% (not 100vh) so it fills exactly the
+     floating white container itself ("MoonRow" reference: a crisp flat
+     white panel on a soft gray page, thin border, wide soft shadow — no
+     glass/blur effect). height:100% (not 100vh) so it fills exactly the
      area body's own padding (--shell-margin) leaves for it.
      ============================================================ */
   .shell {
@@ -145,14 +142,8 @@
     display: flex; flex-direction: column;
     padding: var(--gap) var(--pad-x);
     gap: var(--gap);
-    /* Genuinely translucent (not just a shadow) so the blurred pastel
-       shapes behind the page read through faintly — the one place this
-       skin uses real glass; every card inside stays fully opaque for
-       readability of the data itself. */
-    background: var(--shell-glass-bg);
-    -webkit-backdrop-filter: blur(28px) saturate(160%);
-    backdrop-filter: blur(28px) saturate(160%);
-    border: 1px solid var(--shell-glass-border);
+    background: var(--surface-1);
+    border: 1px solid var(--border);
     border-radius: var(--radius-outer);
     box-shadow: var(--shadow-outer);
   }
@@ -180,15 +171,7 @@
      content; expanding the summary grows this card and the main grid
      below (flex:1, min-height:0) shrinks to absorb it, so .shell still
      never exceeds 100vh. ---- */
-  .main-banner.card { flex: 0 0 auto; position: relative; }
-  /* Prism ribbon: a very low-opacity holographic sweep behind the header
-     content only — clipped to the banner's own rounded corners via the
-     card's existing overflow:hidden, sits behind everything via a
-     negative z-index within the banner's own stacking context. */
-  .main-banner::before {
-    content: ''; position: absolute; inset: 0; z-index: -1;
-    background: var(--gradient-prism); opacity: 0.12;
-  }
+  .main-banner.card { flex: 0 0 auto; }
   .banner-top-row { flex: none; display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; flex-wrap: wrap; margin-bottom: 10px; }
   .brand-block { flex: none; min-width: 0; }
   .brand-block h1 { margin: 0; font-size: clamp(24px, 2vw, 32px); font-weight: 700; white-space: nowrap; }
@@ -205,17 +188,16 @@
     flex: none; transition: border-color .15s ease;
   }
   .filters-cluster select:hover { border-color: var(--text-muted); }
-  /* Primary CTA: the dashboard's one "Get Started"-style button, so it
-     carries the prism gradient; every other control stays a plain white
-     secondary button (surface-1 + thin border + dark text). */
+  /* Primary CTA: the dashboard's one action button, styled solid Accent 1
+     (deep orange) per "primary buttons use Accent 1"; every other control
+     stays a plain white secondary button (surface-1 + thin border + navy text). */
   .refresh-btn {
     flex: none; font-size: clamp(10px, 0.72vw, 12px); font-weight: 600; color: #FFFFFF;
     border: none; border-radius: var(--radius-control);
-    padding: clamp(5px, 0.7vh, 7px) 14px; background: var(--gradient-prism); cursor: pointer;
-    transition: opacity .15s ease, transform .15s ease; white-space: nowrap;
-    box-shadow: 0 2px 8px rgba(133,135,255,0.25);
+    padding: clamp(5px, 0.7vh, 7px) 14px; background: var(--accent-orange); cursor: pointer;
+    transition: background .15s ease, transform .15s ease; white-space: nowrap;
   }
-  .refresh-btn:hover { opacity: .92; transform: translateY(-1px); }
+  .refresh-btn:hover { background: var(--brand-dark); transform: translateY(-1px); }
   .refresh-btn:disabled { opacity: .6; cursor: default; transform: none; }
 
   /* ---- Executive Summary (inside the banner, collapsible) ---- */
@@ -237,12 +219,12 @@
   .exec-stat strong { font-size: 1.15em; color: var(--text-primary); }
   .exec-risk-callout {
     display: flex; align-items: center; gap: 8px;
-    background: #FFFFFF; border: 1px solid var(--status-critical); color: var(--status-critical-text);
+    background: var(--accent-soft); color: var(--accent-strong);
     border-radius: var(--radius-pill); padding: 5px 14px 5px 6px;
     font-size: clamp(10px, 0.72vw, 12px); font-weight: 600; line-height: 1.4;
   }
-  .exec-risk-callout .risk-tag { flex: none; font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; background: #FFFFFF; border: 1px solid var(--status-critical); color: var(--status-critical-text); border-radius: var(--radius-pill); padding: 3px 8px; }
-  .exec-risk-callout strong { color: var(--status-critical-text); }
+  .exec-risk-callout .risk-tag { flex: none; font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; background: var(--accent-orange); color: #FFFFFF; border-radius: var(--radius-pill); padding: 3px 8px; }
+  .exec-risk-callout strong { color: var(--accent-strong); }
 
   .exec-reco-label { display: block; margin: 10px 0 6px; font-size: 0.68rem; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; color: var(--text-muted); }
   .exec-reco-row { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px 18px; }
@@ -261,21 +243,17 @@
   .kpi-card-label { font-size: clamp(8.5px, 0.65vw, 10px); font-weight: 700; letter-spacing: .04em; text-transform: uppercase; color: var(--text-muted); }
   .kpi-card-value { font-size: clamp(1.05rem, 1.9vw, 1.55rem); font-weight: 800; line-height: 1.15; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .kpi-card-value .unit { font-size: 0.55em; font-weight: 600; color: var(--text-muted); }
-  .kpi-pill { font-size: clamp(8px, 0.6vw, 9.5px); font-weight: 700; padding: 1px 6px; border-radius: var(--radius-pill); margin-left: 4px; background: #FFFFFF; border: 1px solid currentColor; }
-  .kpi-pill.good { color: var(--status-good-text); }
-  .kpi-pill.warn { color: var(--status-warning-text); }
-  .kpi-pill.bad  { color: var(--status-critical-text); }
-  /* BCP Type is the 5th card in render order (Employees, Active, Need
-     Help, Status, BCP Type, Resolution Rate) — its distribution bar
-     ranks impact TYPES (not operational status), so it's the one place
-     the holographic prism treatment replaces a solid fill; the card
-     itself stays pure white like every other card. CSS-only override
-     (!important) of the per-segment inline colors the renderer sets,
-     alternating two prism gradients for variety without touching JS. */
-  .kpi-row .kpi-card:nth-child(5) .kpi-spark span:nth-child(odd)  { background: var(--gradient-pink-purple) !important; }
-  .kpi-row .kpi-card:nth-child(5) .kpi-spark span:nth-child(even) { background: var(--gradient-blue-teal) !important; }
+  .kpi-pill { font-size: clamp(8px, 0.6vw, 9.5px); font-weight: 700; padding: 1px 6px; border-radius: var(--radius-pill); margin-left: 4px; }
+  .kpi-pill.good { background: #DCFCE7; color: var(--status-good-text); }
+  .kpi-pill.warn { background: #FEF3C7; color: var(--status-warning-text); }
+  .kpi-pill.bad  { background: #FFE8DC; color: var(--status-critical-text); }
+  /* BCP Type is the 5th card (Employees, Active, Need Help, Status, BCP
+     Type, Resolution Rate) — its distribution bar ranks impact TYPES
+     (not operational status), so the --rank-* tokens (1st=orange,
+     2nd=navy, fading to slate) drive its segment colors already, read
+     straight from CSS by JS at load time — no override needed here. */
   .kpi-bottom-group { margin-top: auto; padding-top: 8px; display: flex; flex-direction: column; gap: 4px; }
-  .kpi-spark { height: 6px; border-radius: 3px; overflow: hidden; display: flex; background: var(--gridline); }
+  .kpi-spark { height: 6px; border-radius: 3px; overflow: hidden; display: flex; background: var(--hatch-track); }
   .kpi-spark span { display: block; height: 100%; }
   .kpi-card-foot { font-size: clamp(8px, 0.6vw, 9.5px); color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .kpi-caption-primary { font-size: clamp(8.5px, 0.62vw, 10.5px); color: var(--text-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -297,7 +275,7 @@
   .legend-row .swatch { width: 7px; height: 7px; border-radius: 2px; }
   .bar-row { display: grid; grid-template-columns: 76px 1fr 22px; align-items: center; gap: 6px; margin-bottom: 5px; font-size: clamp(9.5px, 0.7vw, 11px); }
   .bar-row .label { color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .bar-track { display: flex; height: 7px; border-radius: 3px; overflow: hidden; background: var(--gridline); }
+  .bar-track { display: flex; height: 7px; border-radius: 3px; overflow: hidden; background: var(--hatch-track); }
   .bar-seg { height: 100%; }
   .bar-total { text-align: right; color: var(--text-secondary); font-variant-numeric: tabular-nums; }
 
@@ -340,10 +318,7 @@
   .case-body { flex: 1; min-width: 0; }
   .case-title-row { display: flex; justify-content: space-between; gap: 6px; align-items: baseline; }
   .case-name { font-weight: 600; font-size: clamp(9.5px, 0.7vw, 11px); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  /* JS sets an inline text color per status; override the inline fill
-     with a white pill + thin border in that same color (currentColor) so
-     every status badge reads as an outline pill, not a filled block. */
-  .case-status-pill { flex: none; font-size: clamp(8.5px, 0.6vw, 10px); font-weight: 600; padding: 2px 7px; border-radius: var(--radius-pill); white-space: nowrap; background: #FFFFFF !important; border: 1px solid currentColor; }
+  .case-status-pill { flex: none; font-size: clamp(8.5px, 0.6vw, 10px); font-weight: 600; padding: 2px 7px; border-radius: var(--radius-pill); white-space: nowrap; }
   .case-account-lob { font-size: clamp(10px, 0.6vw, 12px); color: var(--gray-500); margin-top: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .case-meta { font-size: clamp(8.5px, 0.6vw, 10px); color: var(--text-secondary); margin-top: 2px; }
   .case-help-line { font-size: clamp(8.5px, 0.6vw, 10px); margin-top: 2px; }
@@ -356,12 +331,19 @@
   .office-chip {
     flex: none; display: flex; align-items: center; gap: 7px; white-space: nowrap;
     font-size: clamp(9.5px, 0.72vw, 11.5px); padding: 5px 12px; border-radius: var(--radius-pill);
-    background: #FFFFFF; border: 1px solid var(--border);
+    background: var(--gridline);
   }
   .office-chip .rank { font-weight: 700; color: var(--text-muted); font-size: 0.82em; }
   .office-chip .name { font-weight: 600; color: var(--text-primary); }
   .office-chip .stat { color: var(--text-muted); }
   .office-chip .stat strong { color: var(--status-critical-text); font-weight: 700; }
+
+  /* "Sort Status" dropdown: navy fill with an orange outline, called out
+     by name in the reference as its own distinct control. */
+  #sortToggle {
+    background: var(--accent-navy); color: #FFFFFF;
+    border: 1px solid var(--accent-orange);
+  }
 </style>
 </head>
 <body>
