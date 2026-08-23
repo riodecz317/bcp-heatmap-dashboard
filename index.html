@@ -212,6 +212,9 @@
   .status-mix-legend { flex: none; display: flex; gap: 14px; margin-top: 10px; font-size: 12px; color: var(--text-secondary); flex-wrap: wrap; }
   .status-mix-legend .item { display: flex; align-items: center; gap: 5px; }
   .status-mix-legend .swatch { width: 9px; height: 9px; border-radius: 2px; }
+  .status-mix-legend .swatch.dot { border-radius: 50%; }
+  .status-mix-legend .legend-caption { font-weight: 600; color: var(--text-muted); margin-right: 2px; }
+  #mapStatusLegend { margin: 6px 0 4px; }
 
   /* ---- Impact Map (Leaflet, real Philippine province geography) ----
      flex:1 with flex-grow:0 on .heatmap-wrap below means the map claims
@@ -405,6 +408,7 @@
           </div>
         </div>
         <div id="impactMapLeaflet"></div>
+        <div class="status-mix-legend" id="mapStatusLegend"></div>
         <div id="provinceTableSection">
           <div class="heatmap-scale">
             <span>Less</span>
@@ -662,10 +666,17 @@
       const poly = L.geoJSON(feats, { style: { fillColor, fillOpacity: 0.85, color: '#4B5563', weight: 1 } });
       poly.addTo(provinceLayerGroup);
 
+      // Dot color follows the province's most urgent status present
+      // (Active > Monitoring > Resolved), reusing the same coding as
+      // the Status Mix / heatmap legends elsewhere on the dashboard.
+      const dotStatus = r.Active > 0 ? 'Active' : r.Monitoring > 0 ? 'Monitoring' : 'Resolved';
       const center = poly.getBounds().getCenter();
       const radius = 6 + (r.total / maxProvince) * 13;
-      L.circleMarker(center, { radius, color: '#4B5563', weight: 1.5, fillColor: '#FFFFFF', fillOpacity: 0.95 })
-        .bindTooltip(`${r.name}: ${r.total} employee${r.total === 1 ? '' : 's'} impacted`, { className: 'province-tip' })
+      L.circleMarker(center, { radius, color: '#FFFFFF', weight: 2, fillColor: STATUS_COLOR[dotStatus], fillOpacity: 0.95 })
+        .bindTooltip(
+          `<strong>${r.name}</strong>: ${r.total} employee${r.total === 1 ? '' : 's'} impacted<br>${r.Active} Active &middot; ${r.Monitoring} Monitoring &middot; ${r.Resolved} Resolved`,
+          { className: 'province-tip' }
+        )
         .addTo(provinceLayerGroup);
 
       // Permanent data callout: the count itself, always visible on the map
@@ -817,6 +828,9 @@
     // Impact Map (real Leaflet choropleth + bubbles) — shares provinceRows with the Heatmap below it
     const provinceRows = groupByStatus(data, 'province');
     renderMapLayer(provinceRows);
+    document.getElementById('mapStatusLegend').innerHTML =
+      '<span class="legend-caption">Dot status:</span>' +
+      STATUS_ORDER.map(s => `<span class="item"><span class="swatch dot" style="background:${STATUS_COLOR[s]}"></span>${s}</span>`).join('');
 
     // Top office sites table
     const officeBody = document.querySelector('#officeTable tbody');
