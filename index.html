@@ -327,17 +327,31 @@
   .status-mix-legend .legend-caption { font-weight: 600; color: var(--text-muted); margin-right: 2px; }
 
   /* Right column: heatmap + case feed */
-  /* Clean modern table: no per-cell block fills, just a thin row
-     separator — the "Active" column carries its own pill highlight
-     (applied inline per cell below) since it's the one column meant
-     to draw the eye. */
-  table.heatmap { border-collapse: collapse; font-size: clamp(9.5px, 0.7vw, 11px); width: 100%; background: var(--surface-1); }
-  table.heatmap th { font-weight: 700; color: #1E293B; font-size: clamp(8.5px, 0.62vw, 10px); padding: 10px 16px; text-align: right; position: sticky; top: 0; background: var(--surface-1); z-index: 1; border-bottom: 1px solid #E5E7EB; }
-  table.heatmap th.row-head { text-align: left; }
-  table.heatmap td.row-head { text-align: left; padding: 12px 16px; color: #374151; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 90px; border-bottom: 1px solid #E5E7EB; }
-  table.heatmap td.cell { text-align: right; padding: 12px 16px; font-variant-numeric: tabular-nums; font-weight: 600; border-bottom: 1px solid #E5E7EB; }
-  table.heatmap.hide-labels td.cell { font-size: 0; }
-  table.heatmap td.total-cell { text-align: right; padding: 12px 16px; font-weight: 700; color: #374151; border-bottom: 1px solid #E5E7EB; }
+  /* Province list: no grid lines at all — each row is its own floating
+     pastel container, not a spreadsheet row. Header row shares the same
+     grid-template-columns so every column still lines up. */
+  .province-list { display: flex; flex-direction: column; gap: 8px; }
+  .province-row {
+    display: grid; grid-template-columns: minmax(0, 1.6fr) repeat(4, minmax(0, 1fr));
+    align-items: center; gap: 8px;
+    background: #F8F9FC; border-radius: 8px; padding: 12px 16px;
+  }
+  .province-row-head {
+    background: var(--surface-1); padding: 4px 16px; position: sticky; top: 0; z-index: 1;
+    font-weight: 700; color: #374151; font-size: clamp(8.5px, 0.62vw, 10px);
+  }
+  .province-row-head .col-stat, .province-row-head .col-total { text-align: center; }
+  .col-name { display: flex; align-items: center; gap: 8px; min-width: 0; }
+  .province-avatar {
+    flex: none; width: 24px; height: 24px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 10px; font-weight: 700;
+  }
+  .province-name { font-weight: 500; color: #1E293B; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: clamp(9.5px, 0.7vw, 11px); }
+  .col-stat { text-align: center; font-variant-numeric: tabular-nums; }
+  .col-total { text-align: center; font-weight: 700; color: #374151; font-variant-numeric: tabular-nums; font-size: clamp(9.5px, 0.7vw, 11px); }
+  .status-pill { display: inline-block; min-width: 26px; padding: 2px 10px; border-radius: 50px; font-weight: 700; font-size: clamp(9px, 0.65vw, 10.5px); }
+  .province-list.hide-labels .status-pill { font-size: 0; }
   .heatmap-scale { flex: none; display: flex; align-items: center; gap: 6px; margin-top: 8px; font-size: clamp(8px, 0.6vw, 9.5px); color: var(--text-muted); }
   .heatmap-scale .swatch { width: 8px; height: 8px; border-radius: 50%; }
 
@@ -373,6 +387,11 @@
      the Walenteer gradient like Refresh. */
   #sortToggle {
     background: var(--gradient-walenteer); color: #FFFFFF; border: none;
+  }
+  /* "Counts: Yes/No" — outlined pill with a light blue border, like the
+     reference's "Add New Orders" button. */
+  #labelToggle {
+    border-radius: 50px; border: 1px solid #93C5FD; color: #374151; background: #FFFFFF;
   }
 </style>
 </head>
@@ -442,7 +461,7 @@
             <option value="no">Counts: No</option>
           </select>
         </div>
-        <div class="card-body"><table class="heatmap" id="heatmapTable"></table></div>
+        <div class="card-body"><div class="province-list" id="heatmapTable"></div></div>
         <div class="heatmap-scale">
           <span class="swatch" style="background:#FCE9E9"></span>
           <span>Active cases are highlighted</span>
@@ -854,27 +873,49 @@
       '<span class="legend-caption">Status:</span>' +
       STATUS_ORDER.map(st => `<span class="item"><span class="swatch dot" style="background:${STATUS_COLOR[st]}"></span>${st}</span>`).join('');
 
-    // Heatmap
+    // Heatmap — rendered as a list of pastel "row" cards (not a table):
+    // each status count becomes a colored pill, each province gets an
+    // initial-letter avatar, matching the reference's Orders-list look.
     const heatmapTable = document.getElementById('heatmapTable');
-    if (!provinceRows.length) { heatmapTable.innerHTML = '<tr><td style="padding:8px;color:var(--text-muted);font-size:11px;">No cases match the current filters.</td></tr>'; }
+    if (!provinceRows.length) { heatmapTable.innerHTML = '<div style="padding:8px;color:var(--text-muted);font-size:11px;">No cases match the current filters.</div>'; }
     else {
-      // Flat, non-graduated fills: only the Active column gets the pink
-      // highlight (a fixed tint, not a magnitude scale) with bold dark-red
-      // text; Monitoring/Resolved stay plain with dark-gray text; zero
-      // cells stay empty/dashed as before.
-      const thead = '<tr><th class="row-head">Province</th>' + STATUS_ORDER.map(st => `<th>${st}</th>`).join('') + '<th>Total</th></tr>';
-      const tbody = provinceRows.map(r => {
+      const PILL_STYLE = {
+        Active:     { bg: '#FCE9E9', text: '#C93636' },
+        Monitoring: { bg: '#FFF4D6', text: '#B45309' },
+        Resolved:   { bg: '#E6F4EA', text: '#1B7F3B' }
+      };
+      const AVATAR_PALETTE = [
+        { bg: '#FCE7F3', text: '#BE185D' }, { bg: '#EDE9FE', text: '#6D28D9' },
+        { bg: '#DBEAFE', text: '#1D4ED8' }, { bg: '#FEF3C7', text: '#B45309' },
+        { bg: '#D1FAE5', text: '#047857' }, { bg: '#FFE4E6', text: '#BE123C' }
+      ];
+      const head = `
+        <div class="province-row province-row-head">
+          <span class="col-name">Province</span>
+          <span class="col-stat">Active</span>
+          <span class="col-stat">Monitoring</span>
+          <span class="col-stat">Resolved</span>
+          <span class="col-total">Total</span>
+        </div>`;
+      const rows = provinceRows.map((r, i) => {
+        const av = AVATAR_PALETTE[i % AVATAR_PALETTE.length];
         const cells = STATUS_ORDER.map(st => {
           const val = r[st];
-          if (!val) return `<td class="cell" style="color:var(--text-muted);border:1px dashed var(--gridline)"></td>`;
-          const style = st === 'Active'
-            ? `background:#FCE9E9;color:#C93636;font-weight:800;border-radius:6px;`
-            : `background:transparent;color:#374151;`;
-          return `<td class="cell" style="${style}">${val}</td>`;
+          if (!val) return '<span class="col-stat"></span>';
+          const p = PILL_STYLE[st];
+          return `<span class="col-stat"><span class="status-pill" style="background:${p.bg};color:${p.text}">${val}</span></span>`;
         }).join('');
-        return `<tr><td class="row-head">${r.name}</td>${cells}<td class="total-cell">${r.total}</td></tr>`;
+        return `
+        <div class="province-row">
+          <span class="col-name">
+            <span class="province-avatar" style="background:${av.bg};color:${av.text}">${r.name.charAt(0)}</span>
+            <span class="province-name" title="${r.name}">${r.name}</span>
+          </span>
+          ${cells}
+          <span class="col-total">${r.total}</span>
+        </div>`;
       }).join('');
-      heatmapTable.innerHTML = thead + tbody;
+      heatmapTable.innerHTML = head + rows;
     }
 
     // Status legends + stacked bars (Impact by Account / Impact by Line of Business)
