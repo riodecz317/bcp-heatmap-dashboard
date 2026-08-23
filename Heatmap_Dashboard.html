@@ -216,7 +216,12 @@
   /* ---- Executive Summary (inside the banner, collapsible) ----
      .main-banner.card has padding:0 so the header band above can bleed
      to the card edges; these two re-add the card's normal inset. ---- */
-  .exec-summary-head { flex: none; display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; padding: 10px 24px 0; border-top: 1px solid var(--gridline); margin-top: 10px; margin-bottom: 8px; }
+  /* Right padding lives on the button's own margin (below), not on this
+     row, so the button's right edge lines up with the filters row above
+     — that row's own inset is a ~14-20px clamp, and margin-right:16px on
+     the button lands in that same range instead of stacking on top of a
+     second, larger padding here. */
+  .exec-summary-head { flex: none; display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; padding: 10px 0 0 24px; border-top: 1px solid var(--gridline); margin-top: 10px; margin-bottom: 8px; }
   .exec-summary-head h2 { margin: 0; }
   #execSummaryBody { padding: 16px 24px; }
   .exec-toggle-btn {
@@ -224,7 +229,7 @@
     font-size: clamp(10px, 0.7vw, 11.5px); font-weight: 600; color: #1E293B;
     border: 1px solid var(--border); border-radius: 50px; padding: 6px 14px;
     background: #F3F4F6; cursor: pointer; white-space: nowrap;
-    margin-top: 16px; margin-right: 16px;
+    align-self: flex-start; margin-top: 0; margin-right: 16px;
     transition: background .15s ease, border-color .15s ease;
   }
   .exec-toggle-btn:hover { background: #E9EAEE; border-color: var(--text-muted); }
