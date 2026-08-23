@@ -829,7 +829,7 @@
     const provinceRows = groupByStatus(data, 'province');
     renderMapLayer(provinceRows);
     document.getElementById('mapStatusLegend').innerHTML =
-      '<span class="legend-caption">Dot status:</span>' +
+      '<span class="legend-caption">Status:</span>' +
       STATUS_ORDER.map(s => `<span class="item"><span class="swatch dot" style="background:${STATUS_COLOR[s]}"></span>${s}</span>`).join('');
 
     // Top office sites table
