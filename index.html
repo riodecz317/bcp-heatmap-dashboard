@@ -105,6 +105,19 @@
   .exec-summary-card h2 { font-size: 0.95rem; font-weight: 700; text-transform: none; letter-spacing: 0; color: #0F172A; margin: 0 0 2px 0; }
   .exec-summary-card .card-sub { color: #64748B; margin: 0 0 8px 0; }
 
+  /* Accordion: collapsed by default (localStorage-remembered) so the card
+     costs almost nothing until a leader deliberately wants the detail. */
+  .exec-summary-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+  .exec-summary-head .card-sub { margin-bottom: 0; }
+  .exec-toggle-btn {
+    flex: none; font-size: 11px; font-weight: 600; color: #475569;
+    border: 1px solid #E2E8F0; border-radius: 8px; padding: 6px 12px;
+    background: #FFFFFF; cursor: pointer; white-space: nowrap;
+  }
+  .exec-toggle-btn:hover { background: #F8FAFC; }
+  #execSummaryCard.is-collapsed #execSummaryBody { display: none; }
+  #execSummaryCard:not(.is-collapsed) .exec-summary-head { margin-bottom: 4px; }
+
   .exec-top-row { display: flex; align-items: center; justify-content: space-between; gap: 14px 24px; flex-wrap: wrap; padding: 8px 0; border-bottom: 1px solid #F1F5F9; }
   .exec-stats-row { display: flex; gap: 22px; flex-wrap: wrap; }
   .exec-stat { display: flex; align-items: baseline; gap: 6px; font-size: 12.5px; color: #475569; white-space: nowrap; }
@@ -283,8 +296,13 @@
   </div>
 
   <div class="card exec-summary-card" id="execSummaryCard">
-    <h2>Executive Summary</h2>
-    <div class="card-sub">Auto-generated from the current data snapshot &middot; updates with filters and live refresh</div>
+    <div class="exec-summary-head">
+      <div>
+        <h2>Executive Summary</h2>
+        <div class="card-sub">Auto-generated from the current data snapshot &middot; updates with filters and live refresh</div>
+      </div>
+      <button class="exec-toggle-btn" id="execToggleBtn" type="button" aria-expanded="false" aria-controls="execSummaryBody">&#9660; Expand</button>
+    </div>
     <div id="execSummaryBody"></div>
   </div>
 
@@ -458,6 +476,31 @@
       document.getElementById(selectId).addEventListener('change', (e) => { activeFilters[key] = e.target.value; renderAll(); });
     });
     refreshFilterOptions();
+  }
+
+  // ---- Executive Summary accordion: collapsed by default, remembers the
+  // viewer's last choice (per-browser) so it doesn't fight leaders every visit.
+  const EXEC_COLLAPSE_KEY = 'bcpExecSummaryCollapsed';
+
+  function initExecSummaryToggle() {
+    const card = document.getElementById('execSummaryCard');
+    const btn = document.getElementById('execToggleBtn');
+
+    function setCollapsed(collapsed) {
+      card.classList.toggle('is-collapsed', collapsed);
+      btn.setAttribute('aria-expanded', String(!collapsed));
+      btn.innerHTML = collapsed ? '&#9660; Expand' : '&#9650; Collapse';
+    }
+
+    let stored = null;
+    try { stored = localStorage.getItem(EXEC_COLLAPSE_KEY); } catch (e) { /* storage unavailable — fall back to default */ }
+    setCollapsed(stored === null ? true : stored === '1');
+
+    btn.addEventListener('click', () => {
+      const collapsed = !card.classList.contains('is-collapsed');
+      setCollapsed(collapsed);
+      try { localStorage.setItem(EXEC_COLLAPSE_KEY, collapsed ? '1' : '0'); } catch (e) { /* ignore — nothing to persist to */ }
+    });
   }
 
   function getFilteredData() {
@@ -847,6 +890,7 @@
   }
 
   initFilters();
+  initExecSummaryToggle();
   document.getElementById('sortToggle').addEventListener('change', (e) => { sortMode = e.target.value; renderAll(); });
   document.getElementById('refreshBtn').addEventListener('click', () => loadLiveData(true));
 
