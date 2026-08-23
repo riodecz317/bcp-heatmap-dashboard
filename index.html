@@ -943,7 +943,7 @@
         const cells = STATUS_ORDER.map(st => {
           const val = r[st];
           if (!val) return '<span class="col-stat"></span>';
-          return `<span class="col-stat"><span class="status-pill" style="background:${STATUS_COLOR[st]};color:${STATUS_TEXT[st]}">${val}</span></span>`;
+          return `<span class="col-stat"><span class="status-pill" style="background:${STATUS_SOFT[st]};color:${STATUS_TEXT[st]}">${val}</span></span>`;
         }).join('');
         return `
         <div class="province-row">
