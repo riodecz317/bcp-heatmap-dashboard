@@ -316,6 +316,7 @@
         <select id="f-lob" data-label="Line of Business"><option value="All">Line of Business: All</option></select>
         <select id="f-province" data-label="Province"><option value="All">Province: All</option></select>
         <select id="f-status" data-label="Status"><option value="All">Status: All</option></select>
+        <select id="f-help" data-label="Needed Help"><option value="All">Needed Help: All</option></select>
       </div>
     </div>
 
@@ -430,8 +431,8 @@
   const RANK_COLORS = [v('--rank-1'), v('--rank-2'), v('--rank-3'), v('--rank-4')];
   const SEQ = [v('--seq-0'), v('--seq-1'), v('--seq-2'), v('--seq-3'), v('--seq-4')];
 
-  const activeFilters = { account: 'All', lob: 'All', province: 'All', status: 'All' };
-  const FILTER_SELECTS = [['f-account', 'account'], ['f-lob', 'lob'], ['f-province', 'province'], ['f-status', 'status']];
+  const activeFilters = { account: 'All', lob: 'All', province: 'All', status: 'All', help: 'All' };
+  const FILTER_SELECTS = [['f-account', 'account'], ['f-lob', 'lob'], ['f-province', 'province'], ['f-status', 'status'], ['f-help', 'help']];
 
   function uniqueSorted(data, key) { return [...new Set(data.map(d => d[key]))].sort(); }
 
@@ -466,7 +467,8 @@
       (activeFilters.account === 'All' || d.account === activeFilters.account) &&
       (activeFilters.lob === 'All' || d.lob === activeFilters.lob) &&
       (activeFilters.province === 'All' || d.province === activeFilters.province) &&
-      (activeFilters.status === 'All' || d.status === activeFilters.status)
+      (activeFilters.status === 'All' || d.status === activeFilters.status) &&
+      (activeFilters.help === 'All' || d.help === activeFilters.help)
     );
   }
 
