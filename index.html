@@ -228,6 +228,32 @@
   .leaflet-control-attribution { display: none; }
   .leaflet-tooltip.province-tip { font-size: 11px; font-family: inherit; }
 
+  /* Permanent data callouts on the map itself -- the count is always
+     visible, no hover required. The full "Province: N impacted" text
+     stays available as a hover tooltip on the circle marker underneath. */
+  .leaflet-div-icon { background: transparent; border: none; }
+  .province-count-label { transform: translate(-50%, -50%); pointer-events: none; }
+  .province-count-label span {
+    display: inline-block; background: #1E293B; color: #FFFFFF;
+    font-size: 10px; font-weight: 700; line-height: 1;
+    padding: 2px 6px; border-radius: 999px; white-space: nowrap;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.35);
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* ---- Province table accordion: collapsed by default so the map alone
+     fills the card; expanding it lets the map+table share space (that
+     share is still handled by #impactMapLeaflet/.heatmap-wrap's flex rules
+     above/below). ---- */
+  .card-head-actions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  /* Nested flex column so .heatmap-scale/.heatmap-wrap keep their flex
+     sizing (flex:none / flex:0 1 180px) now that they're wrapped in this
+     div instead of being direct children of .card. flex:0 1 auto + this
+     wrapper: don't grow into the map's space, but do shrink (down to the
+     min-heights already set on the children) when the card is tight. */
+  #provinceTableSection { display: flex; flex-direction: column; flex: 0 1 auto; min-height: 0; }
+  #mapCard.is-table-collapsed #provinceTableSection { display: none; }
+
   /* ---- Ranked table (Top office sites) ---- */
   .table-scroll { flex: 1; min-height: 0; max-height: 220px; overflow-y: auto; }
   table.rank-table { width: 100%; border-collapse: collapse; font-size: 12px; }
@@ -364,28 +390,33 @@
 
     <!-- Column 3: Impact Map + Heatmap (combined) / Top Office Sites -->
     <div class="col col-map">
-      <div class="card card-fill">
+      <div class="card card-fill" id="mapCard">
         <div class="card-head">
           <div>
             <h2><span class="map-back-arrow">&#8592;</span>Impact Map &amp; Heatmap</h2>
             <div class="card-sub">Employees impacted by province &middot; map + status heatmap</div>
           </div>
-          <select class="toggle-select" id="labelToggle">
-            <option value="yes">Show counts: Yes</option>
-            <option value="no">Show counts: No</option>
-          </select>
+          <div class="card-head-actions">
+            <button class="exec-toggle-btn" id="provinceTableToggleBtn" type="button" aria-expanded="false" aria-controls="provinceTableSection">&#9660; Province Table</button>
+            <select class="toggle-select" id="labelToggle">
+              <option value="yes">Show counts: Yes</option>
+              <option value="no">Show counts: No</option>
+            </select>
+          </div>
         </div>
         <div id="impactMapLeaflet"></div>
-        <div class="heatmap-scale">
-          <span>Less</span>
-          <span class="swatch" style="background:var(--seq-0)"></span>
-          <span class="swatch" style="background:var(--seq-1)"></span>
-          <span class="swatch" style="background:var(--seq-2)"></span>
-          <span class="swatch" style="background:var(--seq-3)"></span>
-          <span class="swatch" style="background:var(--seq-4)"></span>
-          <span>More</span>
+        <div id="provinceTableSection">
+          <div class="heatmap-scale">
+            <span>Less</span>
+            <span class="swatch" style="background:var(--seq-0)"></span>
+            <span class="swatch" style="background:var(--seq-1)"></span>
+            <span class="swatch" style="background:var(--seq-2)"></span>
+            <span class="swatch" style="background:var(--seq-3)"></span>
+            <span class="swatch" style="background:var(--seq-4)"></span>
+            <span>More</span>
+          </div>
+          <div class="heatmap-wrap"><table class="heatmap" id="heatmapTable"></table></div>
         </div>
-        <div class="heatmap-wrap"><table class="heatmap" id="heatmapTable"></table></div>
       </div>
 
       <div class="card">
@@ -509,6 +540,33 @@
     });
   }
 
+  // ---- Province table accordion (under the map): collapsed by default so
+  // the map alone fills the card; expanding gives leaders the full
+  // province/status breakdown table on demand.
+  const PROVINCE_TABLE_COLLAPSE_KEY = 'bcpProvinceTableCollapsed';
+
+  function initProvinceTableToggle() {
+    const card = document.getElementById('mapCard');
+    const btn = document.getElementById('provinceTableToggleBtn');
+
+    function setCollapsed(collapsed) {
+      card.classList.toggle('is-table-collapsed', collapsed);
+      btn.setAttribute('aria-expanded', String(!collapsed));
+      btn.innerHTML = collapsed ? '&#9660; Province Table' : '&#9650; Hide Table';
+      setTimeout(() => leafletMap && leafletMap.invalidateSize(), 220);
+    }
+
+    let stored = null;
+    try { stored = localStorage.getItem(PROVINCE_TABLE_COLLAPSE_KEY); } catch (e) { /* storage unavailable — fall back to default */ }
+    setCollapsed(stored === null ? true : stored === '1');
+
+    btn.addEventListener('click', () => {
+      const collapsed = !card.classList.contains('is-table-collapsed');
+      setCollapsed(collapsed);
+      try { localStorage.setItem(PROVINCE_TABLE_COLLAPSE_KEY, collapsed ? '1' : '0'); } catch (e) { /* ignore — nothing to persist to */ }
+    });
+  }
+
   function getFilteredData() {
     return RAW_DATA.filter(d =>
       (activeFilters.account === 'All' || d.account === activeFilters.account) &&
@@ -609,6 +667,14 @@
       L.circleMarker(center, { radius, color: '#4B5563', weight: 1.5, fillColor: '#FFFFFF', fillOpacity: 0.95 })
         .bindTooltip(`${r.name}: ${r.total} employee${r.total === 1 ? '' : 's'} impacted`, { className: 'province-tip' })
         .addTo(provinceLayerGroup);
+
+      // Permanent data callout: the count itself, always visible on the map
+      // without hovering. The circleMarker above still carries the fuller
+      // "Province: N impacted" text as a hover tooltip.
+      L.marker(center, {
+        icon: L.divIcon({ className: 'province-count-label', html: `<span>${r.total}</span>`, iconSize: [0, 0], iconAnchor: [0, 0] }),
+        interactive: false, keyboard: false
+      }).addTo(provinceLayerGroup);
     });
   }
 
@@ -897,6 +963,7 @@
 
   initFilters();
   initExecSummaryToggle();
+  initProvinceTableToggle();
   document.getElementById('sortToggle').addEventListener('change', (e) => { sortMode = e.target.value; renderAll(); });
   document.getElementById('refreshBtn').addEventListener('click', () => loadLiveData(true));
 
