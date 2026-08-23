@@ -285,7 +285,7 @@
   .kpi-caption-secondary { font-size: clamp(7.5px, 0.56vw, 9px); color: var(--text-muted); margin-top: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .kpi-caption-secondary strong { color: var(--text-secondary); font-weight: 600; }
   .kpi-bar-caption { font-size: clamp(7.5px, 0.56vw, 9px); color: var(--text-muted); text-transform: uppercase; letter-spacing: .03em; font-weight: 700; margin-top: 5px; }
-  .kpi-mini-legend { font-size: clamp(7.5px, 0.58vw, 9px); color: var(--text-muted); display: flex; gap: 6px; flex-wrap: wrap; }
+  .kpi-mini-legend { font-size: clamp(8.5px, 0.65vw, 10px); font-weight: 600; color: #374151; display: flex; gap: 6px; flex-wrap: wrap; }
   .kpi-mini-legend .dot { display: inline-block; width: 6px; height: 6px; border-radius: 50%; margin-right: 2px; vertical-align: middle; }
 
   /* ---- Band 4: main 3-column grid ---- */
@@ -331,8 +331,11 @@
      pastel container, not a spreadsheet row. Header row shares the same
      grid-template-columns so every column still lines up. */
   .province-list { display: flex; flex-direction: column; gap: 8px; }
+  /* Explicit px floors (not just fr) on every column — grid items default
+     to min-width:auto, which was letting "Monitoring"'s own text force
+     its track wider than its share and overlap "Resolved" next to it. */
   .province-row {
-    display: grid; grid-template-columns: minmax(0, 2.4fr) repeat(4, minmax(0, 1fr));
+    display: grid; grid-template-columns: minmax(110px, 2fr) repeat(4, minmax(60px, 1fr));
     align-items: center; gap: 8px;
     background: #F8F9FC; border-radius: 8px; padding: 12px 16px;
   }
@@ -340,15 +343,13 @@
     background: var(--surface-1); padding: 4px 16px; position: sticky; top: 0; z-index: 1;
     font-weight: 700; color: #374151; font-size: clamp(8.5px, 0.62vw, 10px);
   }
-  .province-row-head .col-stat, .province-row-head .col-total { text-align: center; }
+  .province-row-head .col-stat, .province-row-head .col-total { text-align: center; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .col-name { display: flex; align-items: center; min-width: 0; }
   .province-name { font-weight: 500; color: #1E293B; white-space: normal; overflow: visible; text-overflow: clip; line-height: 1.3; font-size: clamp(9.5px, 0.7vw, 11px); }
-  .col-stat { text-align: center; font-variant-numeric: tabular-nums; }
-  .col-total { text-align: center; font-weight: 700; color: #374151; font-variant-numeric: tabular-nums; font-size: clamp(9.5px, 0.7vw, 11px); }
+  .col-stat { text-align: center; font-variant-numeric: tabular-nums; min-width: 0; }
+  .col-total { text-align: center; font-weight: 700; color: #374151; font-variant-numeric: tabular-nums; font-size: clamp(9.5px, 0.7vw, 11px); min-width: 0; }
   .status-pill { display: inline-block; min-width: 26px; padding: 2px 10px; border-radius: 50px; font-weight: 700; font-size: clamp(9px, 0.65vw, 10.5px); }
   .province-list.hide-labels .status-pill { font-size: 0; }
-  .heatmap-scale { flex: none; display: flex; align-items: center; gap: 6px; margin-top: 8px; font-size: clamp(8px, 0.6vw, 9.5px); color: var(--text-muted); }
-  .heatmap-scale .swatch { width: 8px; height: 8px; border-radius: 50%; }
 
   .case-list { flex: 1 1 0; min-height: 0; list-style: none; margin: 0; padding: 0; overflow-y: auto; }
   .case-item { display: flex; gap: 8px; align-items: flex-start; padding: 6px 2px 6px 8px; border-bottom: 1px solid var(--gridline); border-left: 3px solid transparent; border-radius: 0 5px 5px 0; transition: background .1s ease; }
@@ -457,10 +458,6 @@
           </select>
         </div>
         <div class="card-body"><div class="province-list" id="heatmapTable"></div></div>
-        <div class="heatmap-scale">
-          <span class="swatch" style="background:#FCE9E9"></span>
-          <span>Active cases are highlighted</span>
-        </div>
       </div>
       <div class="card">
         <div class="card-head">
