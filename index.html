@@ -15,15 +15,15 @@
      ============================================================ */
   :root {
     color-scheme: light;
-    --page:           #F7F3F0;
+    --page:           #FAFAFC;
     --surface-1:      #FFFFFF;
-    --text-primary:   #1C1C1E;
-    --text-secondary: #6E6E73;
-    --text-muted:     #8E8E93;
-    --gridline:       #F2EDE9;
-    --border:         rgba(0,0,0,0.05);
-    --row-hover:      #F7F3F0;
-    --focus-ring:     #FF6B6B;
+    --text-primary:   #0A0A0C;
+    --text-secondary: #6B7280;
+    --text-muted:     #9CA3AF;
+    --gridline:       #F3F4F6;
+    --border:         #E1E6EF;
+    --row-hover:      #F8F9FC;
+    --focus-ring:     #8587FF;
 
     --status-good:     #34C77B;
     --status-warning:  #F5A623;
@@ -42,21 +42,25 @@
     --rank-1: #E4574F; --rank-2: #FF6B6B; --rank-3: #FCA5A5; --rank-4: #FBCFE8;
     --seq-0: #FFF1F0; --seq-1: #FED7D2; --seq-2: #FCA5A5; --seq-3: #FF6B6B; --seq-4: #E4574F;
 
-    /* Apple Vision Pro "Product Design" skin: pastel gradients used
-       sparingly for the Top Risk callout and the BCP Type highlight card. */
-    --gradient-blue-lavender: linear-gradient(135deg, #C7D2FE 0%, #DDD6FE 100%);
-    --gradient-pink-peach:    linear-gradient(135deg, #FBCFE8 0%, #FED7AA 100%);
+    /* "Lightcore Prism" skin: the holographic rainbow gradient is reserved
+       for the one primary CTA (Refresh) and for non-semantic "ranking"
+       progress bars (BCP Type) — it never touches Active/Monitoring/
+       Resolved, which must stay unambiguous, so those keep solid status
+       colors throughout. */
+    --gradient-prism:       linear-gradient(90deg, #FFB866, #FDE834, #A73FFF, #8587FF, #FFBDD6);
+    --gradient-pink-purple: linear-gradient(90deg, #FFBDD6, #A73FFF);
+    --gradient-blue-teal:   linear-gradient(90deg, #8587FF, #5EEAD4);
 
     --font-sans: "Inter", "SF Pro Display", -apple-system, system-ui, sans-serif;
     --radius-outer:   32px;
-    --radius-card:    16px;
+    --radius-card:    18px;
     --radius-control: 12px;
     --radius-pill:    999px;
     --gray-500: #6B7280;
-    --shadow-outer: 0 16px 48px rgba(0,0,0,0.06);
-    --shadow-card:  0 8px 24px rgba(0,0,0,0.04);
-    --shell-glass-bg:     rgba(255,255,255,0.90);
-    --shell-glass-border: rgba(255,255,255,0.60);
+    --shadow-outer: 0 20px 56px rgba(10,10,12,0.05);
+    --shadow-card:  0 4px 20px rgba(0,0,0,0.03);
+    --shell-glass-bg:     rgba(255,255,255,0.94);
+    --shell-glass-border: #E1E6EF;
 
     /* Single-screen band heights: clamp() so the layout stays sane from a
        1366x768 laptop up to a 1920x1080 monitor without ever needing the
@@ -122,17 +126,6 @@
     padding: var(--shell-margin);
     position: relative;
   }
-  /* Soft organic blur shapes behind the floating shell — pure decoration,
-     fixed + low-opacity + blurred, never intercepts clicks. */
-  body::before {
-    content: ''; position: fixed; inset: -15%; z-index: 0; pointer-events: none;
-    background:
-      radial-gradient(38% 34% at 14% 18%, rgba(196,181,253,0.18), transparent 70%),
-      radial-gradient(34% 30% at 88% 12%, rgba(147,197,253,0.16), transparent 70%),
-      radial-gradient(46% 40% at 78% 88%, rgba(251,207,232,0.20), transparent 70%),
-      radial-gradient(30% 28% at 8% 86%, rgba(253,230,138,0.12), transparent 70%);
-    filter: blur(60px);
-  }
   ::-webkit-scrollbar { width: 7px; height: 7px; }
   ::-webkit-scrollbar-track { background: transparent; }
   ::-webkit-scrollbar-thumb { background: var(--border); border-radius: var(--radius-pill); }
@@ -187,7 +180,15 @@
      content; expanding the summary grows this card and the main grid
      below (flex:1, min-height:0) shrinks to absorb it, so .shell still
      never exceeds 100vh. ---- */
-  .main-banner.card { flex: 0 0 auto; }
+  .main-banner.card { flex: 0 0 auto; position: relative; }
+  /* Prism ribbon: a very low-opacity holographic sweep behind the header
+     content only — clipped to the banner's own rounded corners via the
+     card's existing overflow:hidden, sits behind everything via a
+     negative z-index within the banner's own stacking context. */
+  .main-banner::before {
+    content: ''; position: absolute; inset: 0; z-index: -1;
+    background: var(--gradient-prism); opacity: 0.12;
+  }
   .banner-top-row { flex: none; display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; flex-wrap: wrap; margin-bottom: 10px; }
   .brand-block { flex: none; min-width: 0; }
   .brand-block h1 { margin: 0; font-size: clamp(24px, 2vw, 32px); font-weight: 700; white-space: nowrap; }
@@ -204,14 +205,18 @@
     flex: none; transition: border-color .15s ease;
   }
   .filters-cluster select:hover { border-color: var(--text-muted); }
+  /* Primary CTA: the dashboard's one "Get Started"-style button, so it
+     carries the prism gradient; every other control stays a plain white
+     secondary button (surface-1 + thin border + dark text). */
   .refresh-btn {
-    flex: none; font-size: clamp(10px, 0.72vw, 12px); font-weight: 600; color: var(--text-primary);
-    border: 1px solid var(--border); border-radius: var(--radius-control);
-    padding: clamp(5px, 0.7vh, 7px) 11px; background: var(--surface-1); cursor: pointer;
-    transition: background .15s ease, border-color .15s ease; white-space: nowrap;
+    flex: none; font-size: clamp(10px, 0.72vw, 12px); font-weight: 600; color: #FFFFFF;
+    border: none; border-radius: var(--radius-control);
+    padding: clamp(5px, 0.7vh, 7px) 14px; background: var(--gradient-prism); cursor: pointer;
+    transition: opacity .15s ease, transform .15s ease; white-space: nowrap;
+    box-shadow: 0 2px 8px rgba(133,135,255,0.25);
   }
-  .refresh-btn:hover { background: var(--gridline); border-color: var(--text-muted); }
-  .refresh-btn:disabled { opacity: .6; cursor: default; }
+  .refresh-btn:hover { opacity: .92; transform: translateY(-1px); }
+  .refresh-btn:disabled { opacity: .6; cursor: default; transform: none; }
 
   /* ---- Executive Summary (inside the banner, collapsible) ---- */
   .exec-summary-head { flex: none; display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; padding-top: 10px; border-top: 1px solid var(--gridline); }
@@ -232,12 +237,12 @@
   .exec-stat strong { font-size: 1.15em; color: var(--text-primary); }
   .exec-risk-callout {
     display: flex; align-items: center; gap: 8px;
-    background: var(--gradient-pink-peach); color: #9A3412;
+    background: #FFFFFF; border: 1px solid var(--status-critical); color: var(--status-critical-text);
     border-radius: var(--radius-pill); padding: 5px 14px 5px 6px;
     font-size: clamp(10px, 0.72vw, 12px); font-weight: 600; line-height: 1.4;
   }
-  .exec-risk-callout .risk-tag { flex: none; font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; background: var(--gradient-blue-lavender); color: #312E81; border-radius: var(--radius-pill); padding: 3px 8px; }
-  .exec-risk-callout strong { color: #9A3412; }
+  .exec-risk-callout .risk-tag { flex: none; font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; background: #FFFFFF; border: 1px solid var(--status-critical); color: var(--status-critical-text); border-radius: var(--radius-pill); padding: 3px 8px; }
+  .exec-risk-callout strong { color: var(--status-critical-text); }
 
   .exec-reco-label { display: block; margin: 10px 0 6px; font-size: 0.68rem; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; color: var(--text-muted); }
   .exec-reco-row { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px 18px; }
@@ -253,17 +258,22 @@
      the label+value stay pinned to the top. */
   .kpi-row { flex: 0 0 auto; display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: var(--gap); min-width: 0; align-items: stretch; }
   .kpi-card { min-height: 80px; padding: 10px 16px; }
-  /* BCP Type is the 5th card in render order (Employees, Active, Need
-     Help, Status, BCP Type, Resolution Rate) — soft gradient highlight
-     per the reference's "active state" pastel treatment. */
-  .kpi-row .kpi-card:nth-child(5) { background: var(--gradient-blue-lavender); border-color: transparent; }
   .kpi-card-label { font-size: clamp(8.5px, 0.65vw, 10px); font-weight: 700; letter-spacing: .04em; text-transform: uppercase; color: var(--text-muted); }
   .kpi-card-value { font-size: clamp(1.05rem, 1.9vw, 1.55rem); font-weight: 800; line-height: 1.15; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .kpi-card-value .unit { font-size: 0.55em; font-weight: 600; color: var(--text-muted); }
-  .kpi-pill { font-size: clamp(8px, 0.6vw, 9.5px); font-weight: 700; padding: 1px 6px; border-radius: var(--radius-pill); margin-left: 4px; }
-  .kpi-pill.good { background: #D1FAE5; color: var(--status-good-text); }
-  .kpi-pill.warn { background: #FEF3C7; color: var(--status-warning-text); }
-  .kpi-pill.bad  { background: #FEE2E2; color: var(--status-critical-text); }
+  .kpi-pill { font-size: clamp(8px, 0.6vw, 9.5px); font-weight: 700; padding: 1px 6px; border-radius: var(--radius-pill); margin-left: 4px; background: #FFFFFF; border: 1px solid currentColor; }
+  .kpi-pill.good { color: var(--status-good-text); }
+  .kpi-pill.warn { color: var(--status-warning-text); }
+  .kpi-pill.bad  { color: var(--status-critical-text); }
+  /* BCP Type is the 5th card in render order (Employees, Active, Need
+     Help, Status, BCP Type, Resolution Rate) — its distribution bar
+     ranks impact TYPES (not operational status), so it's the one place
+     the holographic prism treatment replaces a solid fill; the card
+     itself stays pure white like every other card. CSS-only override
+     (!important) of the per-segment inline colors the renderer sets,
+     alternating two prism gradients for variety without touching JS. */
+  .kpi-row .kpi-card:nth-child(5) .kpi-spark span:nth-child(odd)  { background: var(--gradient-pink-purple) !important; }
+  .kpi-row .kpi-card:nth-child(5) .kpi-spark span:nth-child(even) { background: var(--gradient-blue-teal) !important; }
   .kpi-bottom-group { margin-top: auto; padding-top: 8px; display: flex; flex-direction: column; gap: 4px; }
   .kpi-spark { height: 6px; border-radius: 3px; overflow: hidden; display: flex; background: var(--gridline); }
   .kpi-spark span { display: block; height: 100%; }
@@ -330,7 +340,10 @@
   .case-body { flex: 1; min-width: 0; }
   .case-title-row { display: flex; justify-content: space-between; gap: 6px; align-items: baseline; }
   .case-name { font-weight: 600; font-size: clamp(9.5px, 0.7vw, 11px); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .case-status-pill { flex: none; font-size: clamp(8.5px, 0.6vw, 10px); font-weight: 600; padding: 2px 7px; border-radius: var(--radius-pill); white-space: nowrap; }
+  /* JS sets an inline text color per status; override the inline fill
+     with a white pill + thin border in that same color (currentColor) so
+     every status badge reads as an outline pill, not a filled block. */
+  .case-status-pill { flex: none; font-size: clamp(8.5px, 0.6vw, 10px); font-weight: 600; padding: 2px 7px; border-radius: var(--radius-pill); white-space: nowrap; background: #FFFFFF !important; border: 1px solid currentColor; }
   .case-account-lob { font-size: clamp(10px, 0.6vw, 12px); color: var(--gray-500); margin-top: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .case-meta { font-size: clamp(8.5px, 0.6vw, 10px); color: var(--text-secondary); margin-top: 2px; }
   .case-help-line { font-size: clamp(8.5px, 0.6vw, 10px); margin-top: 2px; }
@@ -342,7 +355,8 @@
   .footer-strip .foot-label { flex: none; font-size: clamp(8.5px, 0.62vw, 10px); font-weight: 700; text-transform: uppercase; letter-spacing: .04em; color: var(--text-muted); margin-right: 4px; }
   .office-chip {
     flex: none; display: flex; align-items: center; gap: 7px; white-space: nowrap;
-    font-size: clamp(9.5px, 0.72vw, 11.5px); padding: 5px 12px; border-radius: var(--radius-pill); background: var(--gridline);
+    font-size: clamp(9.5px, 0.72vw, 11.5px); padding: 5px 12px; border-radius: var(--radius-pill);
+    background: #FFFFFF; border: 1px solid var(--border);
   }
   .office-chip .rank { font-weight: 700; color: var(--text-muted); font-size: 0.82em; }
   .office-chip .name { font-weight: 600; color: var(--text-primary); }
