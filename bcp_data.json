@@ -9,10 +9,10 @@
         "province":  "Batangas",
         "region":  "Calabarzon",
         "island":  "Luzon",
-        "status":  "Active",
+        "status":  "Resolved",
         "impact":  "Building Integrity",
         "issue":  "Earthquake",
-        "help":  "Yes",
+        "help":  "No",
         "remarks":  "Structural inspection needed"
     },
     {
