@@ -300,14 +300,16 @@
      separate layer spanning the FULL row width regardless of the fill's
      length, so short bars (e.g. Monitoring at 20%) never force their own
      text to overlap; text reads fine on both the fill and the plain
-     track since the dark status-text colors have good contrast on both. */
-  .status-bars { flex: 1 1 auto; display: flex; flex-direction: column; justify-content: center; gap: 8px; margin-top: 4px; }
-  .status-bar-row { position: relative; height: 26px; border-radius: 6px; overflow: hidden; background: var(--gridline); }
-  .status-bar-fill { position: absolute; inset: 0; border-radius: 6px; }
+     track since the dark status-text colors have good contrast on both.
+     A min-width floor on the fill keeps the status label from ever
+     landing on bare track even for a small percentage. */
+  .status-bars { flex: 1 1 auto; display: flex; flex-direction: column; justify-content: center; gap: 10px; margin-top: 6px; }
+  .status-bar-row { position: relative; height: 30px; border-radius: 6px; overflow: hidden; background: var(--gridline); }
+  .status-bar-fill { position: absolute; inset: 0; min-width: 34%; border-radius: 6px; }
   .status-bar-content {
     position: relative; z-index: 1; height: 100%;
     display: flex; align-items: center; justify-content: space-between;
-    padding: 0 10px; font-size: clamp(9px, 0.68vw, 10.5px); font-weight: 700;
+    padding: 0 12px; font-size: clamp(10.5px, 0.78vw, 12px); font-weight: 800; letter-spacing: .01em;
   }
 
   /* ---- Band 4: main 3-column grid ---- */
@@ -845,8 +847,6 @@
     const statusCardHtml = `
       <div class="card kpi-card">
         <div class="kpi-card-label">Status</div>
-        <div class="kpi-card-value">${total}</div>
-        <div class="kpi-card-foot">Total Cases</div>
         <div class="status-bars">${statusBars}</div>
       </div>`;
 
