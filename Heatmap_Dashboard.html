@@ -343,10 +343,10 @@
 
   <div class="board">
 
-    <!-- Column 1: Welcome / Status Mix / Impact Type -->
+    <!-- Column 1: Overview / Status / BCP Type -->
     <div class="col col-welcome">
       <div class="card welcome-card">
-        <h2>Welcome to the BCP Dashboard</h2>
+        <h2>Overview</h2>
         <div class="card-sub">Business continuity impact snapshot</div>
         <div class="welcome-stats">
           <div class="stat stat-total"><span class="stat-label">Employees Impacted</span><span class="stat-value" id="kpi-total">0</span></div>
@@ -357,7 +357,7 @@
 
       <div class="card">
         <div class="card-head">
-          <h2>Status Mix</h2>
+          <h2>Status</h2>
           <span class="badge-note">no timestamp data &mdash; snapshot only</span>
         </div>
         <div class="card-sub">Active vs. Monitoring vs. Resolved, current snapshot</div>
@@ -366,7 +366,7 @@
       </div>
 
       <div class="card card-fill">
-        <h2>Impact Type</h2>
+        <h2>BCP Type</h2>
         <div class="card-sub">Share of employees by nature of impact</div>
         <div class="card-scroll">
           <ul class="rank-legend" id="impact-legend"></ul>
@@ -391,12 +391,12 @@
       </div>
     </div>
 
-    <!-- Column 3: Impact Map + Heatmap (combined) / Top Office Sites -->
+    <!-- Column 3: Heatmap (map + table combined) / Office Sites -->
     <div class="col col-map">
       <div class="card card-fill" id="mapCard">
         <div class="card-head">
           <div>
-            <h2><span class="map-back-arrow">&#8592;</span>Impact Map &amp; Heatmap</h2>
+            <h2><span class="map-back-arrow">&#8592;</span>Heatmap</h2>
             <div class="card-sub">Employees impacted by province &middot; map + status heatmap</div>
           </div>
           <div class="card-head-actions">
@@ -424,7 +424,7 @@
       </div>
 
       <div class="card">
-        <h2>Top Office Sites</h2>
+        <h2>Office Sites</h2>
         <div class="card-sub">Ranked by employees impacted</div>
         <div class="table-scroll">
           <table class="rank-table" id="officeTable">
@@ -668,7 +668,7 @@
 
       // Dot color follows the province's most urgent status present
       // (Active > Monitoring > Resolved), reusing the same coding as
-      // the Status Mix / heatmap legends elsewhere on the dashboard.
+      // the Status / heatmap legends elsewhere on the dashboard.
       const dotStatus = r.Active > 0 ? 'Active' : r.Monitoring > 0 ? 'Monitoring' : 'Resolved';
       const center = poly.getBounds().getCenter();
       const radius = 6 + (r.total / maxProvince) * 13;
