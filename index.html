@@ -67,89 +67,113 @@
   }
 
   * { box-sizing: border-box; }
-  html, body { margin: 0; height: 100%; overflow: hidden; }
+  html, body { margin: 0; height: 100%; }
   body {
     font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
     background: var(--page);
     color: var(--text-primary);
   }
-  .app-shell { height: 100vh; min-height: 0; max-width: 1920px; margin: 0 auto; padding: 24px; display: flex; flex-direction: column; }
 
-  /* ---- Header row: title pinned top-left, refresh+filters pinned top-right, no margin below ---- */
-  .toolbar { flex: none; display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 12px; margin: 0; }
-  .toolbar h1 { margin: 0; font-size: 1.25rem; font-weight: 700; }
-  .toolbar .subtitle { font-size: 12px; color: var(--text-secondary); margin-top: 2px; }
-  .filters { display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap; }
-  .filters select {
-    font-size: 12px; color: var(--text-primary);
-    border: 1px solid var(--border); border-radius: 8px;
-    padding: 7px 10px; background: var(--surface-1);
+  /* ==================================================================
+     SHELL: fixed-height sidebar + independently scrolling main column
+     ================================================================== */
+  .shell { display: flex; height: 100vh; min-height: 0; }
+
+  /* ---- Sidebar ---- */
+  .sidebar {
+    flex: 0 0 232px; height: 100vh; overflow-y: auto;
+    background: var(--surface-1); border-right: 1px solid var(--border);
+    display: flex; flex-direction: column; padding: 22px 18px;
   }
-  .refresh-btn {
-    font-size: 12px; font-weight: 600; color: var(--text-primary);
-    border: 1px solid var(--border); border-radius: 8px;
-    padding: 7px 12px; background: var(--surface-1); cursor: pointer;
+  .brand { font-size: 1.05rem; font-weight: 800; letter-spacing: -.01em; margin-bottom: 26px; display: flex; align-items: baseline; gap: 6px; }
+  .brand small { font-size: 0.6rem; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: .08em; }
+
+  .side-nav { list-style: none; margin: 0 0 22px 0; padding: 0; display: flex; flex-direction: column; gap: 2px; }
+  .side-nav a {
+    display: flex; align-items: center; gap: 10px; text-decoration: none;
+    color: var(--text-secondary); font-size: 13px; font-weight: 600;
+    padding: 9px 10px; border-radius: 8px; cursor: pointer;
   }
-  .refresh-btn:hover { background: var(--gridline); }
-  .refresh-btn:disabled { opacity: .6; cursor: default; }
-  #dataStatus.is-live   { color: var(--status-good-text); }
-  #dataStatus.is-cached { color: var(--status-warning-text); }
-  #dataStatus.is-error  { color: var(--status-critical-text); }
+  .side-nav a:hover { background: var(--gridline); }
+  .side-nav a.active { background: var(--brand-light); color: var(--brand-dark); }
+  .side-nav a .nav-icon { flex: none; font-size: 14px; width: 16px; text-align: center; }
+  .side-nav a .nav-label { flex: 1; }
+  .side-nav a .nav-count { flex: none; font-size: 10.5px; font-weight: 700; color: var(--text-muted); background: var(--gridline); border-radius: 999px; padding: 2px 7px; font-variant-numeric: tabular-nums; }
+  .side-nav a.active .nav-count { background: #FFFFFF; color: var(--brand-dark); }
 
-  /* ---- Executive Summary card (spans full width, top of dashboard) ----
-     Deliberately compact and horizontal (stat row + pill + 3-col recos)
-     instead of a tall stacked bullet list -- this card sits above the
-     4-column board and used to eat 300px+ of vertical space, starving the
-     board and forcing every card below into its own internal scrollbar. */
-  .exec-summary-card { flex: none; margin-top: 16px; padding: 14px 18px; background: #FFFFFF; color: #0F172A; }
-  .exec-summary-card h2 { font-size: 0.95rem; font-weight: 700; text-transform: none; letter-spacing: 0; color: #0F172A; margin: 0 0 2px 0; }
-  .exec-summary-card .card-sub { color: #64748B; margin: 0 0 8px 0; }
-
-  /* Accordion: collapsed by default (localStorage-remembered) so the card
-     costs almost nothing until a leader deliberately wants the detail. */
-  .exec-summary-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
-  .exec-summary-head .card-sub { margin-bottom: 0; }
-  .exec-toggle-btn {
-    flex: none; font-size: 11px; font-weight: 600; color: #475569;
-    border: 1px solid #E2E8F0; border-radius: 8px; padding: 6px 12px;
-    background: #FFFFFF; cursor: pointer; white-space: nowrap;
+  .sidebar-alert {
+    position: relative; background: var(--gridline); border: 1px solid var(--border);
+    border-radius: 12px; padding: 14px 14px 12px; margin-bottom: 16px; flex: none;
   }
-  .exec-toggle-btn:hover { background: #F8FAFC; }
-  #execSummaryCard.is-collapsed #execSummaryBody { display: none; }
-  #execSummaryCard:not(.is-collapsed) .exec-summary-head { margin-bottom: 4px; }
-
-  .exec-top-row { display: flex; align-items: center; justify-content: space-between; gap: 14px 24px; flex-wrap: wrap; padding: 8px 0; border-bottom: 1px solid #F1F5F9; }
-  .exec-stats-row { display: flex; gap: 22px; flex-wrap: wrap; }
-  .exec-stat { display: flex; align-items: baseline; gap: 6px; font-size: 12.5px; color: #475569; white-space: nowrap; }
-  .exec-stat strong { font-size: 15px; color: #0F172A; }
-
-  /* Top Risk callout: compact pill that pops out via color, not size */
-  .exec-risk-callout {
-    display: flex; align-items: center; gap: 8px;
-    background: #FCE9E9; color: #C93636;
-    border-radius: 999px; padding: 5px 14px 5px 6px;
-    font-size: 12px; font-weight: 600; line-height: 1.4;
+  .sidebar-alert .dismiss { position: absolute; top: 8px; right: 8px; border: none; background: transparent; color: var(--text-muted); font-size: 13px; cursor: pointer; line-height: 1; padding: 3px; }
+  .sidebar-alert .alert-icon { font-size: 18px; margin-bottom: 6px; }
+  .sidebar-alert .alert-title { font-size: 12.5px; font-weight: 700; color: var(--text-primary); margin-bottom: 5px; line-height: 1.35; }
+  .sidebar-alert .alert-body { font-size: 11.5px; color: var(--text-secondary); line-height: 1.5; margin-bottom: 10px; }
+  .sidebar-alert .alert-body strong { color: var(--text-primary); }
+  .sidebar-alert .learn-more {
+    display: inline-block; font-size: 10.5px; font-weight: 700; letter-spacing: .03em;
+    color: var(--brand-dark); text-decoration: none; border-bottom: 1.5px solid var(--brand-dark); padding-bottom: 1px;
   }
-  .exec-risk-callout .risk-tag { flex: none; font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; background: #C93636; color: #FFFFFF; border-radius: 999px; padding: 3px 8px; }
-  .exec-risk-callout strong { color: #C93636; }
 
-  .exec-reco-label { display: block; margin: 10px 0 6px 0; font-size: 0.68rem; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; color: #64748B; }
-  .exec-reco-row { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px 18px; }
-  .exec-reco-item { position: relative; padding-left: 12px; border-left: 3px solid #C93636; font-size: 12.5px; line-height: 1.45; color: #1E293B; }
-  .exec-reco-item strong { color: #0F172A; }
+  .sidebar-footer { margin-top: auto; padding-top: 14px; }
+  .side-settings { list-style: none; margin: 0 0 14px 0; padding: 0; border-top: 1px solid var(--border); padding-top: 12px; }
+  .side-settings li { font-size: 11.5px; color: var(--text-muted); padding: 6px 4px; }
+  .profile-pill { display: flex; align-items: center; gap: 9px; padding: 8px; border-radius: 10px; border: 1px solid var(--border); }
+  .profile-avatar { flex: none; width: 28px; height: 28px; border-radius: 50%; background: var(--brand-mid); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; }
+  .profile-name { flex: 1; font-size: 12px; font-weight: 600; }
+  .profile-role { font-size: 10px; color: var(--text-muted); }
 
-  /* ---- Welcome card (col 1 top): compact KPI summary ---- */
-  .welcome-card { flex: none; }
-  .welcome-stats { display: flex; flex-direction: column; gap: 10px; margin-top: 4px; }
-  .welcome-stats .stat { display: flex; align-items: baseline; justify-content: space-between; border-top: 1px solid var(--gridline); padding-top: 8px; }
-  .welcome-stats .stat:first-child { border-top: none; padding-top: 0; }
-  .welcome-stats .stat-label { font-size: 0.75rem; color: var(--text-secondary); text-transform: uppercase; letter-spacing: .04em; font-weight: 600; }
-  .welcome-stats .stat-value { font-size: 1.5rem; font-weight: 700; }
-  .welcome-stats .stat-total  .stat-value { color: var(--text-primary); }
-  .welcome-stats .stat-active .stat-value { color: var(--status-critical); }
-  .welcome-stats .stat-help   .stat-value { color: var(--status-warning-text); }
+  /* ---- Main column ---- */
+  .main { flex: 1; min-width: 0; height: 100vh; overflow-y: auto; }
+  .main-inner { max-width: 1600px; margin: 0 auto; padding: 22px 28px 40px; }
 
-  /* ---- Shared card ---- */
+  /* ---- Top bar: status tabs + search + bell ---- */
+  .topbar { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+  .tabs { display: flex; align-items: center; gap: 22px; flex-wrap: wrap; }
+  .tab {
+    background: none; border: none; cursor: pointer; padding: 4px 0 10px;
+    font-size: 12.5px; font-weight: 600; color: var(--text-muted);
+    border-bottom: 2px solid transparent; white-space: nowrap;
+  }
+  .tab.active { color: var(--text-primary); border-bottom-color: var(--brand-mid); }
+  .topbar-actions { display: flex; align-items: center; gap: 10px; }
+  .search-wrap { position: relative; }
+  .search-wrap input {
+    font-size: 12.5px; color: var(--text-primary); background: var(--surface-1);
+    border: 1px solid var(--border); border-radius: 10px; padding: 8px 12px 8px 32px; width: 240px;
+  }
+  .search-wrap .search-icon { position: absolute; left: 11px; top: 50%; transform: translateY(-50%); font-size: 12px; color: var(--text-muted); }
+  .icon-btn {
+    flex: none; width: 32px; height: 32px; border-radius: 8px; border: 1px solid var(--border);
+    background: var(--surface-1); color: var(--text-secondary); cursor: pointer; font-size: 13px;
+    display: flex; align-items: center; justify-content: center; position: relative;
+  }
+  .icon-btn:hover { background: var(--gridline); }
+  .icon-btn:disabled { opacity: .6; cursor: default; }
+  .icon-btn .badge-dot { position: absolute; top: -3px; right: -3px; background: var(--status-critical); color: #fff; font-size: 8.5px; font-weight: 700; border-radius: 999px; min-width: 14px; height: 14px; display: flex; align-items: center; justify-content: center; padding: 0 2px; }
+
+  /* ---- Greeting + inline KPI strip ---- */
+  .greeting-row { display: flex; align-items: flex-end; justify-content: space-between; gap: 20px 32px; flex-wrap: wrap; margin: 22px 0 20px; }
+  .greeting-row h1 { margin: 0; font-size: 1.5rem; font-weight: 700; }
+  .greeting-sub { font-size: 12.5px; color: var(--text-secondary); margin-top: 4px; }
+  .data-status-line { font-size: 10.5px; color: var(--text-muted); margin-top: 3px; }
+  .data-status-line.is-live   { color: var(--status-good-text); }
+  .data-status-line.is-cached { color: var(--status-warning-text); }
+  .data-status-line.is-error  { color: var(--status-critical-text); }
+
+  .kpi-strip { display: flex; gap: 28px 34px; flex-wrap: wrap; }
+  .kpi-inline { text-align: right; }
+  .kpi-inline .kpi-label { display: flex; align-items: center; justify-content: flex-end; gap: 4px; font-size: 10px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; color: var(--text-muted); }
+  .kpi-inline .kpi-value { font-size: 1.3rem; font-weight: 700; margin-top: 2px; display: flex; align-items: baseline; justify-content: flex-end; gap: 6px; }
+  .kpi-pill { font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 999px; }
+  .kpi-pill.good { background: #D1FAE5; color: var(--status-good-text); }
+  .kpi-pill.warn { background: #FEF3C7; color: var(--status-warning-text); }
+  .kpi-pill.bad  { background: #FEE2E2; color: var(--status-critical-text); }
+
+  /* ---- Hero content: map (left) + stat cards (right) ---- */
+  .hero-grid { display: grid; grid-template-columns: minmax(0, 1.7fr) minmax(280px, 1fr); gap: 18px; align-items: start; }
+  @media (max-width: 1180px) { .hero-grid { grid-template-columns: 1fr; } }
+
   .card {
     background: var(--surface-1);
     border: 1px solid var(--border);
@@ -159,7 +183,6 @@
     display: flex;
     flex-direction: column;
     min-height: 0;
-    overflow: hidden;
   }
   .card h2 {
     flex: none; margin: 0 0 2px 0;
@@ -172,67 +195,22 @@
   .card-scroll { flex: 1; min-height: 0; overflow-y: auto; }
   .toggle-select { font-size: 11px; color: var(--text-secondary); border: 1px solid var(--border); border-radius: 8px; padding: 4px 8px; background: var(--surface-1); }
   .badge-note { flex: none; font-size: 10px; color: var(--text-muted); background: var(--gridline); border-radius: 999px; padding: 2px 8px; }
-
-  /* ---- Strict 4-column operational grid (fills remaining viewport height) ----
-     Col 1: Overview  Col 2: Metrics/LOB  Col 3: Map & Top Offices  Col 4: Case Feed
-     Equal-width grid columns via display:grid; each column is itself a flex
-     column so its cards can share height evenly. min-height:0 throughout is
-     what lets a card's own content scroll (see .card-fill) instead of
-     blowing out the grid or overlapping the row below it. */
-  .board { flex: 1; min-height: 0; margin-top: 16px; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; }
-  .board .col { display: flex; flex-direction: column; gap: 16px; min-height: 0; }
-
-  /* cards that should absorb leftover column height and scroll internally */
-  .card-fill { flex: 1 1 0; min-height: 0; }
-
-  @media (max-width: 1400px) {
-    html, body { overflow: auto; }
-    .app-shell { height: auto; min-height: 100vh; }
-    .board { grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); }
+  .exec-toggle-btn {
+    flex: none; font-size: 11px; font-weight: 600; color: var(--text-secondary);
+    border: 1px solid var(--border); border-radius: 8px; padding: 6px 12px;
+    background: var(--surface-1); cursor: pointer; white-space: nowrap;
   }
+  .exec-toggle-btn:hover { background: var(--gridline); }
 
-  /* ---- Ranked legend (Impact Type) ---- */
-  .rank-legend { list-style: none; margin: 0; padding: 0; }
-  .rank-legend li { display: flex; align-items: center; gap: 8px; padding: 7px 0; font-size: 13px; border-bottom: 1px solid var(--gridline); }
-  .rank-legend li:last-child { border-bottom: none; }
-  .rank-legend .swatch { width: 9px; height: 9px; border-radius: 3px; flex: none; border: 1px solid rgba(0,0,0,0.15); }
-  .rank-legend .name { flex: 1; color: var(--text-primary); }
-  .rank-legend .pct { color: var(--text-secondary); font-variant-numeric: tabular-nums; width: 46px; text-align: right; }
-
-  /* ---- Ranked bar rows ---- */
-  .rank-bar-row { display: grid; grid-template-columns: 16px 1fr 32px; align-items: center; gap: 8px; margin-bottom: 8px; font-size: 12px; }
-  .rank-bar-row .rank-num { color: var(--text-muted); font-weight: 600; text-align: center; font-size: 11px; }
-  .rank-bar-row .rank-name { color: var(--text-primary); margin-bottom: 3px; display:flex; justify-content: space-between; gap: 6px; }
-  .rank-bar-track { height: 8px; border-radius: 3px; background: var(--gridline); overflow: hidden; border: 1px solid rgba(0,0,0,0.06); }
-  .rank-bar-fill { height: 100%; border-radius: 3px; box-shadow: inset 0 0 0 1px rgba(0,0,0,0.1); }
-  .rank-bar-row .rank-count { text-align: right; color: var(--text-secondary); font-variant-numeric: tabular-nums; }
-
-  /* ---- Status mix ---- */
-  .status-mix-track { flex: none; display: flex; height: 20px; border-radius: 5px; overflow: hidden; background: var(--gridline); }
-  .status-mix-legend { flex: none; display: flex; gap: 14px; margin-top: 10px; font-size: 12px; color: var(--text-secondary); flex-wrap: wrap; }
-  .status-mix-legend .item { display: flex; align-items: center; gap: 5px; }
-  .status-mix-legend .swatch { width: 9px; height: 9px; border-radius: 2px; }
-  .status-mix-legend .swatch.dot { border-radius: 50%; }
-  .status-mix-legend .legend-caption { font-weight: 600; color: var(--text-muted); margin-right: 2px; }
-  #mapStatusLegend { margin: 6px 0 4px; }
-
-  /* ---- Impact Map (Leaflet, real Philippine province geography) ----
-     flex:1 with flex-grow:0 on .heatmap-wrap below means the map claims
-     essentially all of the card's leftover space rather than splitting it
-     evenly. min-height here is a hard floor the map can't shrink past, so
-     .heatmap-wrap MUST stay shrinkable (flex-shrink, not flex:none) or a
-     short card clips it out of view entirely instead of just scrolling it. */
+  /* ---- Map panel ---- */
+  .map-back-arrow { flex: none; color: var(--text-muted); font-size: 14px; margin-right: 4px; }
   #impactMapLeaflet {
-    flex: 1; min-height: 220px; border-radius: 8px; overflow: hidden;
-    background: #FFFFFF; border: none;
+    height: 420px; border-radius: 8px; overflow: hidden;
+    background: #FFFFFF; border: none; flex: none;
   }
   .leaflet-container { font-family: inherit; background: #FFFFFF; }
   .leaflet-control-attribution { display: none; }
   .leaflet-tooltip.province-tip { font-size: 11px; font-family: inherit; }
-
-  /* Permanent data callouts on the map itself -- the count is always
-     visible, no hover required. The full "Province: N impacted" text
-     stays available as a hover tooltip on the circle marker underneath. */
   .leaflet-div-icon { background: transparent; border: none; }
   .province-count-label { transform: translate(-50%, -50%); pointer-events: none; }
   .province-count-label span {
@@ -242,21 +220,16 @@
     box-shadow: 0 1px 3px rgba(0,0,0,0.35);
     font-variant-numeric: tabular-nums;
   }
+  .status-mix-legend { flex: none; display: flex; gap: 14px; margin-top: 10px; font-size: 12px; color: var(--text-secondary); flex-wrap: wrap; }
+  .status-mix-legend .item { display: flex; align-items: center; gap: 5px; }
+  .status-mix-legend .swatch { width: 9px; height: 9px; border-radius: 2px; }
+  .status-mix-legend .swatch.dot { border-radius: 50%; }
+  .status-mix-legend .legend-caption { font-weight: 600; color: var(--text-muted); margin-right: 2px; }
+  #mapStatusLegend { margin: 10px 0 4px; }
 
-  /* ---- Province table accordion: collapsed by default so the map alone
-     fills the card; expanding it lets the map+table share space (that
-     share is still handled by #impactMapLeaflet/.heatmap-wrap's flex rules
-     above/below). ---- */
   .card-head-actions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
-  /* Nested flex column so .heatmap-scale/.heatmap-wrap keep their flex
-     sizing (flex:none / flex:0 1 180px) now that they're wrapped in this
-     div instead of being direct children of .card. flex:0 1 auto + this
-     wrapper: don't grow into the map's space, but do shrink (down to the
-     min-heights already set on the children) when the card is tight. */
-  #provinceTableSection { display: flex; flex-direction: column; flex: 0 1 auto; min-height: 0; }
-  #mapCard.is-table-collapsed #provinceTableSection { display: none; }
-
-  /* ---- Ranked table (Top office sites) ---- */
+  #provinceTableSection { display: none; flex-direction: column; margin-top: 12px; }
+  #provinceTableSection.is-open { display: flex; }
   .table-scroll { flex: 1; min-height: 0; max-height: 220px; overflow-y: auto; }
   table.rank-table { width: 100%; border-collapse: collapse; font-size: 12px; }
   table.rank-table th { position: sticky; top: 0; background: var(--surface-1); text-align: left; font-size: 10px; text-transform: uppercase; color: var(--text-muted); font-weight: 600; padding: 6px; border-bottom: 1px solid var(--gridline); }
@@ -265,12 +238,101 @@
   table.rank-table tbody tr:nth-child(even) td { background: var(--gridline); }
   table.rank-table td.total-bar { position: relative; font-weight: 600; }
 
-  /* ---- Status legend row (shared) ---- */
+  .heatmap-scale { flex: none; display: flex; align-items: center; gap: 6px; margin-top: 12px; font-size: 10px; color: var(--text-muted); }
+  .heatmap-scale .swatch { width: 10px; height: 10px; border-radius: 50%; }
+  .heatmap-wrap { max-height: 260px; overflow: auto; margin-top: 4px; }
+  table.heatmap { border-collapse: separate; border-spacing: 3px; font-size: 12px; width: 100%; }
+  table.heatmap th { font-weight: 600; color: var(--text-secondary); font-size: 11px; padding: 5px 8px; text-align: center; position: sticky; top: 0; background: var(--surface-1); z-index: 1; }
+  table.heatmap th.row-head { text-align: left; }
+  table.heatmap td.row-head { text-align: left; padding: 7px 8px; color: var(--text-primary); font-weight: 500; white-space: nowrap; }
+  table.heatmap td.cell { text-align: center; padding: 11px 5px; border-radius: 9px; font-variant-numeric: tabular-nums; font-weight: 700; min-width: 54px; }
+  table.heatmap.hide-labels td.cell { font-size: 0; }
+  table.heatmap td.total-cell { text-align: center; font-weight: 700; color: var(--text-primary); }
+
+  /* ---- Right-side stat cards (snapshot, not fake time-series) ---- */
+  .stat-cards-col { display: flex; flex-direction: column; gap: 12px; }
+  .stat-card { padding: 14px 16px; }
+  .stat-card-top { display: flex; justify-content: space-between; align-items: flex-start; }
+  .stat-card-label { font-size: 10.5px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; color: var(--text-muted); }
+  .stat-card-value { font-size: 1.35rem; font-weight: 700; margin-top: 6px; }
+  .stat-card-value .of-total { font-size: 11px; font-weight: 600; color: var(--text-muted); margin-left: 2px; }
+  .stat-card-bar { height: 6px; border-radius: 3px; background: var(--gridline); overflow: hidden; margin-top: 10px; }
+  .stat-card-bar span { display: block; height: 100%; border-radius: 3px; }
+  .stat-card-foot { font-size: 10px; color: var(--text-muted); margin-top: 8px; }
+
+  /* ---- Case Response Journey ---- */
+  .journey-section { margin-top: 22px; }
+  .journey-head { display: flex; justify-content: space-between; align-items: flex-end; gap: 16px; flex-wrap: wrap; margin-bottom: 14px; }
+  .journey-head h2 { margin: 0; font-size: 1rem; font-weight: 700; }
+  .journey-head .card-sub { margin: 4px 0 0; font-size: 12px; color: var(--text-muted); }
+  .journey-controls { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .pill-select {
+    font-size: 11.5px; color: var(--text-secondary); border: 1px solid var(--border); border-radius: 999px;
+    padding: 6px 12px; background: var(--surface-1);
+  }
+  .filters-chip { font-size: 11.5px; font-weight: 600; color: var(--text-secondary); border: 1px solid var(--border); border-radius: 999px; padding: 6px 14px; background: var(--surface-1); display: inline-flex; align-items: center; gap: 6px; }
+
+  .journey-stepper { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; margin-bottom: 4px; }
+  @media (max-width: 980px) { .journey-stepper { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  .journey-stage-head { display: flex; align-items: center; gap: 10px; padding: 12px 6px; border-top: 3px solid var(--border); }
+  .journey-stage-head .ring {
+    flex: none; width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
+    font-size: 11px; font-weight: 700; border: 3px solid var(--gridline);
+  }
+  .journey-stage-head .ring.good { border-color: var(--status-good); color: var(--status-good-text); }
+  .journey-stage-head .ring.warn { border-color: var(--status-warning); color: var(--status-warning-text); }
+  .journey-stage-head .ring.bad  { border-color: var(--status-critical); color: var(--status-critical-text); }
+  .journey-stage-title { font-size: 12.5px; font-weight: 700; display: flex; align-items: center; gap: 6px; }
+  .journey-stage-title .stage-icon { font-size: 12px; }
+  .journey-stage-count { font-size: 10.5px; color: var(--text-muted); margin-top: 2px; }
+
+  .journey-lane { position: relative; margin-bottom: 22px; }
+  .lane-track { display: flex; gap: 10px; overflow-x: auto; padding-bottom: 6px; scroll-behavior: smooth; }
+  .lane-scroll-btn {
+    flex: none; width: 26px; height: 26px; border-radius: 50%; border: 1px solid var(--border);
+    background: var(--surface-1); color: var(--text-secondary); cursor: pointer; font-size: 11px;
+  }
+  .lane-scroll-btn:hover { background: var(--gridline); }
+  .lane-controls { display: flex; justify-content: flex-end; gap: 6px; margin-bottom: 6px; }
+
+  .journey-card {
+    flex: 0 0 240px; background: var(--surface-1); border: 1px solid var(--border); border-radius: 10px;
+    padding: 12px 14px; font-size: 11.5px;
+  }
+  .journey-card-top { display: flex; justify-content: space-between; align-items: baseline; gap: 6px; }
+  .journey-card-id { font-weight: 700; font-size: 12px; }
+  .journey-card-meta { color: var(--text-muted); margin-top: 2px; }
+  .journey-card-pill { display: inline-block; margin-top: 8px; font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 999px; }
+  .journey-card-next { margin-top: 8px; padding-top: 8px; border-top: 1px dashed var(--gridline); color: var(--text-secondary); line-height: 1.4; }
+  .journey-card-next strong { color: var(--text-primary); font-size: 9.5px; text-transform: uppercase; letter-spacing: .04em; display: block; margin-bottom: 2px; }
+  .journey-empty { font-size: 12px; color: var(--text-muted); padding: 10px 2px; }
+
+  /* ---- Secondary breakdown grid (existing detail cards, relocated) ---- */
+  .secondary-section { margin-top: 30px; }
+  .secondary-section > h2 { font-size: 0.8rem; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; color: var(--text-muted); margin: 0 0 12px; }
+  .board { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; }
+  .board .col { display: flex; flex-direction: column; gap: 16px; min-height: 0; }
+  @media (max-width: 1400px) { .board { grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); } }
+  .card-fill { flex: 1 1 0; min-height: 320px; }
+
+  .rank-legend { list-style: none; margin: 0; padding: 0; }
+  .rank-legend li { display: flex; align-items: center; gap: 8px; padding: 7px 0; font-size: 13px; border-bottom: 1px solid var(--gridline); }
+  .rank-legend li:last-child { border-bottom: none; }
+  .rank-legend .swatch { width: 9px; height: 9px; border-radius: 3px; flex: none; border: 1px solid rgba(0,0,0,0.15); }
+  .rank-legend .name { flex: 1; color: var(--text-primary); }
+  .rank-legend .pct { color: var(--text-secondary); font-variant-numeric: tabular-nums; width: 46px; text-align: right; }
+
+  .rank-bar-row { display: grid; grid-template-columns: 16px 1fr 32px; align-items: center; gap: 8px; margin-bottom: 8px; font-size: 12px; }
+  .rank-bar-row .rank-num { color: var(--text-muted); font-weight: 600; text-align: center; font-size: 11px; }
+  .rank-bar-row .rank-name { color: var(--text-primary); margin-bottom: 3px; display:flex; justify-content: space-between; gap: 6px; }
+  .rank-bar-track { height: 8px; border-radius: 3px; background: var(--gridline); overflow: hidden; border: 1px solid rgba(0,0,0,0.06); }
+  .rank-bar-fill { height: 100%; border-radius: 3px; box-shadow: inset 0 0 0 1px rgba(0,0,0,0.1); }
+  .rank-bar-row .rank-count { text-align: right; color: var(--text-secondary); font-variant-numeric: tabular-nums; }
+
   .legend-row { flex: none; display: flex; gap: 14px; font-size: 12px; color: var(--text-secondary); margin-bottom: 10px; flex-wrap: wrap; }
   .legend-row .item { display: flex; align-items: center; gap: 5px; }
   .legend-row .swatch { width: 9px; height: 9px; border-radius: 2px; }
 
-  /* ---- Status-stacked bars ---- */
   #bars-account { flex: none; max-height: 180px; overflow-y: auto; }
   #bars-lob { flex: 1; min-height: 0; overflow-y: auto; padding-right: 4px; }
   .bar-row { display: grid; grid-template-columns: 120px 1fr 26px; align-items: center; gap: 8px; margin-bottom: 8px; font-size: 12px; }
@@ -279,24 +341,12 @@
   .bar-seg { height: 100%; }
   .bar-total { text-align: right; color: var(--text-secondary); font-variant-numeric: tabular-nums; }
 
-  /* ---- Heatmap (compact strip under the map, capped so the map stays dominant) ----
-     flex-grow:0 so it never competes with the map for space, but flex-shrink
-     stays enabled (unlike flex:none) with a small min-height floor so a
-     short card shrinks+scrolls this table instead of clipping it out of
-     view entirely via the parent .card's overflow:hidden. */
-  .heatmap-wrap { flex: 0 1 180px; min-height: 46px; overflow-x: auto; overflow-y: auto; }
-  table.heatmap { border-collapse: separate; border-spacing: 3px; font-size: 12px; width: 100%; }
-  table.heatmap th { font-weight: 600; color: var(--text-secondary); font-size: 11px; padding: 5px 8px; text-align: center; position: sticky; top: 0; background: var(--surface-1); z-index: 1; }
-  table.heatmap th.row-head { text-align: left; }
-  table.heatmap td.row-head { text-align: left; padding: 7px 8px; color: var(--text-primary); font-weight: 500; white-space: nowrap; }
-  table.heatmap td.cell { text-align: center; padding: 11px 5px; border-radius: 9px; font-variant-numeric: tabular-nums; font-weight: 700; min-width: 54px; }
-  table.heatmap.hide-labels td.cell { font-size: 0; }
-  table.heatmap td.total-cell { text-align: center; font-weight: 700; color: var(--text-primary); }
-  .heatmap-scale { flex: none; display: flex; align-items: center; gap: 6px; margin-top: 12px; font-size: 10px; color: var(--text-muted); }
-  .heatmap-scale .swatch { width: 10px; height: 10px; border-radius: 50%; }
+  .exec-reco-label { display: block; margin: 0 0 10px 0; font-size: 0.68rem; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; color: var(--text-muted); }
+  .exec-reco-item { position: relative; padding: 0 0 12px 12px; border-left: 3px solid var(--brand-mid); font-size: 12.5px; line-height: 1.45; color: var(--text-secondary); margin-bottom: 2px; }
+  .exec-reco-item:last-child { padding-bottom: 0; }
+  .exec-reco-item strong { color: var(--text-primary); }
 
-  /* ---- Case feed ---- */
-  .case-list { flex: 1; min-height: 0; list-style: none; margin: 0; padding: 0; overflow-y: auto; }
+  .case-list { list-style: none; margin: 0; padding: 0; max-height: 520px; overflow-y: auto; }
   .case-item { display: flex; gap: 10px; align-items: flex-start; padding: 10px 2px 10px 10px; border-bottom: 1px solid var(--gridline); border-left: 4px solid transparent; border-radius: 0 6px 6px 0; }
   .case-item:last-child { border-bottom: none; }
   .case-badge { width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 12px; flex: none; }
@@ -309,149 +359,213 @@
   .case-fields .f-label { color: var(--text-muted); font-size: 9px; text-transform: uppercase; letter-spacing: .03em; }
   .case-fields .f-value { color: var(--text-primary); }
 
-  .footer-note { flex: none; font-size: 10px; color: var(--text-muted); text-align: center; margin-top: 16px; }
+  .footer-note { font-size: 10px; color: var(--text-muted); text-align: center; margin-top: 22px; }
 </style>
 </head>
 <body>
-<div class="app-shell">
+<div class="shell">
 
-  <div class="toolbar">
-    <div>
-      <h1>Executive BCP Dashboard</h1>
-      <div class="subtitle" id="dataStatus">Loading from Power BI model <code>Fact_BCP</code>&hellip;</div>
+  <aside class="sidebar">
+    <div class="brand">BCP <small>Dashboard</small></div>
+
+    <ul class="side-nav" id="sideNav">
+      <li><a href="#" data-status="All" id="navDashboard"><span class="nav-icon">&#9638;</span><span class="nav-label">Dashboard</span><span class="nav-count" id="nav-count-total">0</span></a></li>
+      <li><a href="#" data-status="Active" id="navActive"><span class="nav-icon">!</span><span class="nav-label">Active Cases</span><span class="nav-count" id="nav-count-active">0</span></a></li>
+      <li><a href="#officeSitesCard"><span class="nav-icon">&#8962;</span><span class="nav-label">Office Sites</span><span class="nav-count" id="nav-count-offices">0</span></a></li>
+      <li><a href="#mapCard"><span class="nav-icon">&#9737;</span><span class="nav-label">Provinces</span><span class="nav-count" id="nav-count-provinces">0</span></a></li>
+      <li><a href="#" data-status="Resolved" id="navResolved"><span class="nav-icon">&#10003;</span><span class="nav-label">Resolved</span><span class="nav-count" id="nav-count-resolved">0</span></a></li>
+    </ul>
+
+    <div class="sidebar-alert" id="sidebarAlert">
+      <button class="dismiss" id="sidebarAlertDismiss" title="Dismiss" type="button">&times;</button>
+      <div class="alert-icon">&#128161;</div>
+      <div class="alert-title" id="sidebarAlertTitle">All cases currently stable</div>
+      <div class="alert-body" id="sidebarAlertBody">No active cases require an emergency response right now.</div>
+      <a class="learn-more" href="#journeyCritical">LEARN MORE</a>
     </div>
-    <div class="filters">
-      <button class="refresh-btn" id="refreshBtn" title="Re-fetch from the local data bridge">&#8635; Refresh</button>
-      <select id="f-account" data-label="Account"><option value="All">Account: All</option></select>
-      <select id="f-lob" data-label="Line of Business"><option value="All">Line of Business: All</option></select>
-      <select id="f-province" data-label="Province"><option value="All">Province: All</option></select>
-      <select id="f-status" data-label="Status"><option value="All">Status: All</option></select>
-    </div>
-  </div>
 
-  <div class="card exec-summary-card" id="execSummaryCard">
-    <div class="exec-summary-head">
-      <div>
-        <h2>Executive Summary</h2>
-        <div class="card-sub">Auto-generated from the current data snapshot &middot; updates with filters and live refresh</div>
-      </div>
-      <button class="exec-toggle-btn" id="execToggleBtn" type="button" aria-expanded="false" aria-controls="execSummaryBody">&#9660; Expand</button>
-    </div>
-    <div id="execSummaryBody"></div>
-  </div>
-
-  <div class="board">
-
-    <!-- Column 1: Overview / Status / BCP Type -->
-    <div class="col col-welcome">
-      <div class="card welcome-card">
-        <h2>Overview</h2>
-        <div class="card-sub">Business continuity impact snapshot</div>
-        <div class="welcome-stats">
-          <div class="stat stat-total"><span class="stat-label">Employees Impacted</span><span class="stat-value" id="kpi-total">0</span></div>
-          <div class="stat stat-active"><span class="stat-label">Active Cases</span><span class="stat-value" id="kpi-active">0</span></div>
-          <div class="stat stat-help"><span class="stat-label">Need Help</span><span class="stat-value" id="kpi-help">0</span></div>
-        </div>
-      </div>
-
-      <div class="card">
-        <div class="card-head">
-          <h2>Status</h2>
-          <span class="badge-note">no timestamp data &mdash; snapshot only</span>
-        </div>
-        <div class="card-sub">Active vs. Monitoring vs. Resolved, current snapshot</div>
-        <div class="status-mix-track" id="statusMixTrack"></div>
-        <div class="status-mix-legend" id="statusMixLegend"></div>
-      </div>
-
-      <div class="card card-fill">
-        <h2>BCP Type</h2>
-        <div class="card-sub">Share of employees by nature of impact</div>
-        <div class="card-scroll">
-          <ul class="rank-legend" id="impact-legend"></ul>
-          <h3>Most Common BCP Issue</h3>
-          <div id="issue-ranked"></div>
+    <div class="sidebar-footer">
+      <ul class="side-settings">
+        <li>&#9881; Settings</li>
+        <li>Hub Integrations</li>
+        <li>Help &amp; Support</li>
+      </ul>
+      <div class="profile-pill">
+        <div class="profile-avatar">BC</div>
+        <div>
+          <div class="profile-name">BCP Response Team</div>
+          <div class="profile-role">Business Continuity</div>
         </div>
       </div>
     </div>
+  </aside>
 
-    <!-- Column 2: Impact by Account / Impact by Line of Business -->
-    <div class="col col-account">
-      <div class="card">
-        <h2>Impact by Account</h2>
-        <div class="legend-row" id="legend-account"></div>
-        <div id="bars-account"></div>
+  <main class="main">
+    <div class="main-inner">
+
+      <div class="topbar">
+        <div class="tabs" id="statusTabs">
+          <button class="tab" data-status="All">All Cases <span id="tab-count-All">(0)</span></button>
+          <button class="tab" data-status="Active">Active <span id="tab-count-Active">(0)</span></button>
+          <button class="tab" data-status="Monitoring">Monitoring <span id="tab-count-Monitoring">(0)</span></button>
+          <button class="tab" data-status="Resolved">Resolved <span id="tab-count-Resolved">(0)</span></button>
+        </div>
+        <div class="topbar-actions">
+          <div class="search-wrap">
+            <span class="search-icon">&#128269;</span>
+            <input type="text" id="searchBox" placeholder="Search by name, office, province&hellip;">
+          </div>
+          <button class="icon-btn" id="refreshBtn" title="Re-fetch from the local data bridge" type="button">&#8635;</button>
+          <button class="icon-btn" title="Notifications" type="button">&#128276;<span class="badge-dot" id="bellBadge">0</span></button>
+        </div>
       </div>
 
-      <div class="card card-fill">
-        <h2>Impact by Line of Business</h2>
-        <div class="legend-row" id="legend-lob"></div>
-        <div id="bars-lob"></div>
+      <div class="greeting-row">
+        <div>
+          <h1 id="greetingTitle">Hi, Team</h1>
+          <div class="greeting-sub" id="greetingSub">Loading current caseload&hellip;</div>
+          <div class="data-status-line" id="dataStatus">Loading from Power BI model <code>Fact_BCP</code>&hellip;</div>
+        </div>
+        <div class="kpi-strip">
+          <div class="kpi-inline">
+            <div class="kpi-label">Total Cases</div>
+            <div class="kpi-value" id="kpi-total">0</div>
+          </div>
+          <div class="kpi-inline">
+            <div class="kpi-label">Need Help</div>
+            <div class="kpi-value" id="kpi-help">0</div>
+          </div>
+          <div class="kpi-inline">
+            <div class="kpi-label">Resolution Rate</div>
+            <div class="kpi-value" id="kpi-resolution"></div>
+          </div>
+          <div class="kpi-inline">
+            <div class="kpi-label">Active Load</div>
+            <div class="kpi-value" id="kpi-load"></div>
+          </div>
+        </div>
       </div>
-    </div>
 
-    <!-- Column 3: Heatmap (map + table combined) / Office Sites -->
-    <div class="col col-map">
-      <div class="card card-fill" id="mapCard">
-        <div class="card-head">
+      <div class="hero-grid">
+        <div class="card" id="mapCard">
+          <div class="card-head">
+            <div>
+              <h2>Heatmap</h2>
+              <div class="card-sub">Employees impacted by province &middot; map + status heatmap</div>
+            </div>
+            <div class="card-head-actions">
+              <button class="exec-toggle-btn" id="provinceTableToggleBtn" type="button" aria-expanded="false" aria-controls="provinceTableSection">&#9660; Province Table</button>
+              <select class="toggle-select" id="labelToggle">
+                <option value="yes">Show counts: Yes</option>
+                <option value="no">Show counts: No</option>
+              </select>
+            </div>
+          </div>
+          <div id="impactMapLeaflet"></div>
+          <div class="status-mix-legend" id="mapStatusLegend"></div>
+          <div id="provinceTableSection">
+            <div class="heatmap-scale">
+              <span>Less</span>
+              <span class="swatch" style="background:var(--seq-0)"></span>
+              <span class="swatch" style="background:var(--seq-1)"></span>
+              <span class="swatch" style="background:var(--seq-2)"></span>
+              <span class="swatch" style="background:var(--seq-3)"></span>
+              <span class="swatch" style="background:var(--seq-4)"></span>
+              <span>More</span>
+            </div>
+            <div class="heatmap-wrap"><table class="heatmap" id="heatmapTable"></table></div>
+          </div>
+        </div>
+
+        <div class="stat-cards-col" id="statCardsCol"></div>
+      </div>
+
+      <div class="journey-section">
+        <div class="journey-head">
           <div>
-            <h2>Heatmap</h2>
-            <div class="card-sub">Employees impacted by province &middot; map + status heatmap</div>
+            <h2>Case Response Journey</h2>
+            <div class="card-sub">Reported &rarr; Active &rarr; Monitoring &rarr; Resolved, inferred from status + help-requested fields</div>
           </div>
-          <div class="card-head-actions">
-            <button class="exec-toggle-btn" id="provinceTableToggleBtn" type="button" aria-expanded="false" aria-controls="provinceTableSection">&#9660; Province Table</button>
-            <select class="toggle-select" id="labelToggle">
-              <option value="yes">Show counts: Yes</option>
-              <option value="no">Show counts: No</option>
+          <div class="journey-controls">
+            <select class="pill-select" id="f-account" data-label="Account"><option value="All">Account: All</option></select>
+            <select class="pill-select" id="f-lob" data-label="Line of Business"><option value="All">Line of Business: All</option></select>
+            <select class="pill-select" id="f-province" data-label="Province"><option value="All">Province: All</option></select>
+            <select class="pill-select" id="sortToggle">
+              <option value="severity">Sort: Status</option>
+              <option value="name">Sort: Name</option>
             </select>
+            <span class="filters-chip">&#128206; Filters</span>
           </div>
         </div>
-        <div id="impactMapLeaflet"></div>
-        <div class="status-mix-legend" id="mapStatusLegend"></div>
-        <div id="provinceTableSection">
-          <div class="heatmap-scale">
-            <span>Less</span>
-            <span class="swatch" style="background:var(--seq-0)"></span>
-            <span class="swatch" style="background:var(--seq-1)"></span>
-            <span class="swatch" style="background:var(--seq-2)"></span>
-            <span class="swatch" style="background:var(--seq-3)"></span>
-            <span class="swatch" style="background:var(--seq-4)"></span>
-            <span>More</span>
+        <div class="journey-stepper" id="journeyStepper"></div>
+        <div id="journeyLanes"></div>
+      </div>
+
+      <div class="secondary-section">
+        <h2>Detailed Breakdown</h2>
+        <div class="board">
+
+          <div class="col">
+            <div class="card card-fill">
+              <h2>BCP Type</h2>
+              <div class="card-sub">Share of employees by nature of impact</div>
+              <div class="card-scroll">
+                <ul class="rank-legend" id="impact-legend"></ul>
+                <h3>Most Common BCP Issue</h3>
+                <div id="issue-ranked"></div>
+              </div>
+            </div>
           </div>
-          <div class="heatmap-wrap"><table class="heatmap" id="heatmapTable"></table></div>
+
+          <div class="col">
+            <div class="card">
+              <h2>Impact by Account</h2>
+              <div class="legend-row" id="legend-account"></div>
+              <div id="bars-account"></div>
+            </div>
+            <div class="card card-fill">
+              <h2>Impact by Line of Business</h2>
+              <div class="legend-row" id="legend-lob"></div>
+              <div id="bars-lob"></div>
+            </div>
+          </div>
+
+          <div class="col">
+            <div class="card" id="officeSitesCard">
+              <h2>Office Sites</h2>
+              <div class="card-sub">Ranked by employees impacted</div>
+              <div class="table-scroll">
+                <table class="rank-table" id="officeTable">
+                  <thead><tr><th>#</th><th>Office Site</th><th>Total</th><th>Active</th></tr></thead>
+                  <tbody></tbody>
+                </table>
+              </div>
+            </div>
+            <div class="card card-fill">
+              <h2>Recommendations</h2>
+              <div class="card-sub">Auto-generated from the current data snapshot &middot; updates with filters and live refresh</div>
+              <span class="exec-reco-label">Strategic Recommendations</span>
+              <div id="recoList"></div>
+            </div>
+          </div>
+
+          <div class="col">
+            <div class="card card-fill">
+              <div class="card-head">
+                <h2>Case Feed</h2>
+              </div>
+              <div class="card-sub">Employee-level BCP records, most severe first</div>
+              <ul class="case-list" id="caseList"></ul>
+            </div>
+          </div>
+
         </div>
       </div>
 
-      <div class="card">
-        <h2>Office Sites</h2>
-        <div class="card-sub">Ranked by employees impacted</div>
-        <div class="table-scroll">
-          <table class="rank-table" id="officeTable">
-            <thead><tr><th>#</th><th>Office Site</th><th>Total</th><th>Active</th></tr></thead>
-            <tbody></tbody>
-          </table>
-        </div>
-      </div>
+      <div class="footer-note">Generated from Fact_BCP &mdash; live Power BI model, catalog 0dc22c54-08bb-444d-a496-536441e43000. Layout adapted from a supply-chain operations dashboard reference; the Case Response Journey below repurposes that reference's stage stepper using only status/help/remarks fields already present in Fact_BCP.</div>
+
     </div>
-
-    <!-- Column 4: Case Feed -->
-    <div class="col col-feed">
-      <div class="card card-fill">
-        <div class="card-head">
-          <h2>Case Feed</h2>
-          <select class="toggle-select" id="sortToggle">
-            <option value="severity">Sort: Status</option>
-            <option value="name">Sort: Name</option>
-          </select>
-        </div>
-        <div class="card-sub">Employee-level BCP records, most severe first</div>
-        <ul class="case-list" id="caseList"></ul>
-      </div>
-    </div>
-
-  </div>
-
-  <div class="footer-note">Generated from Fact_BCP &mdash; live Power BI model, catalog 0dc22c54-08bb-444d-a496-536441e43000. Layout modeled on the Tableau "Emergency Calls Dashboard" reference; response-time/SLA/dispatch and calendar-heatmap elements were omitted because Fact_BCP has no timestamp fields to compute them from.</div>
+  </main>
 
 </div>
 
@@ -488,9 +602,16 @@
   const SEQ = [v('--seq-0'), v('--seq-1'), v('--seq-2'), v('--seq-3'), v('--seq-4')];
 
   const activeFilters = { account: 'All', lob: 'All', province: 'All', status: 'All' };
-  const FILTER_SELECTS = [['f-account', 'account'], ['f-lob', 'lob'], ['f-province', 'province'], ['f-status', 'status']];
+  const FILTER_SELECTS = [['f-account', 'account'], ['f-lob', 'lob'], ['f-province', 'province']];
+  let searchQuery = '';
 
   function uniqueSorted(data, key) { return [...new Set(data.map(d => d[key]))].sort(); }
+
+  function matchesSearch(d) {
+    if (!searchQuery) return true;
+    const q = searchQuery.toLowerCase();
+    return [d.name, d.id, d.office, d.province, d.account, d.lob].some(f => String(f).toLowerCase().includes(q));
+  }
 
   // Rebuilds every filter dropdown's options from whatever RAW_DATA currently
   // holds — needed because live data can introduce/remove offices, provinces,
@@ -516,31 +637,13 @@
       document.getElementById(selectId).addEventListener('change', (e) => { activeFilters[key] = e.target.value; renderAll(); });
     });
     refreshFilterOptions();
+
+    document.getElementById('searchBox').addEventListener('input', (e) => { searchQuery = e.target.value.trim(); renderAll(); });
   }
 
-  // ---- Executive Summary accordion: collapsed by default, remembers the
-  // viewer's last choice (per-browser) so it doesn't fight leaders every visit.
-  const EXEC_COLLAPSE_KEY = 'bcpExecSummaryCollapsed';
-
-  function initExecSummaryToggle() {
-    const card = document.getElementById('execSummaryCard');
-    const btn = document.getElementById('execToggleBtn');
-
-    function setCollapsed(collapsed) {
-      card.classList.toggle('is-collapsed', collapsed);
-      btn.setAttribute('aria-expanded', String(!collapsed));
-      btn.innerHTML = collapsed ? '&#9660; Expand' : '&#9650; Collapse';
-    }
-
-    let stored = null;
-    try { stored = localStorage.getItem(EXEC_COLLAPSE_KEY); } catch (e) { /* storage unavailable — fall back to default */ }
-    setCollapsed(stored === null ? true : stored === '1');
-
-    btn.addEventListener('click', () => {
-      const collapsed = !card.classList.contains('is-collapsed');
-      setCollapsed(collapsed);
-      try { localStorage.setItem(EXEC_COLLAPSE_KEY, collapsed ? '1' : '0'); } catch (e) { /* ignore — nothing to persist to */ }
-    });
+  function setStatusFilter(status) {
+    activeFilters.status = status;
+    renderAll();
   }
 
   // ---- Province table accordion (under the map): collapsed by default so
@@ -549,11 +652,11 @@
   const PROVINCE_TABLE_COLLAPSE_KEY = 'bcpProvinceTableCollapsed';
 
   function initProvinceTableToggle() {
-    const card = document.getElementById('mapCard');
+    const section = document.getElementById('provinceTableSection');
     const btn = document.getElementById('provinceTableToggleBtn');
 
     function setCollapsed(collapsed) {
-      card.classList.toggle('is-table-collapsed', collapsed);
+      section.classList.toggle('is-open', !collapsed);
       btn.setAttribute('aria-expanded', String(!collapsed));
       btn.innerHTML = collapsed ? '&#9660; Province Table' : '&#9650; Hide Table';
       setTimeout(() => leafletMap && leafletMap.invalidateSize(), 220);
@@ -564,9 +667,24 @@
     setCollapsed(stored === null ? true : stored === '1');
 
     btn.addEventListener('click', () => {
-      const collapsed = !card.classList.contains('is-table-collapsed');
+      const collapsed = section.classList.contains('is-open');
       setCollapsed(collapsed);
       try { localStorage.setItem(PROVINCE_TABLE_COLLAPSE_KEY, collapsed ? '1' : '0'); } catch (e) { /* ignore — nothing to persist to */ }
+    });
+  }
+
+  // ---- Sidebar alert dismiss (session-only, mirrors the province-table
+  // localStorage pattern used elsewhere in this file) ----
+  const SIDEBAR_ALERT_DISMISS_KEY = 'bcpSidebarAlertDismissed';
+  function initSidebarAlertDismiss() {
+    const card = document.getElementById('sidebarAlert');
+    const btn = document.getElementById('sidebarAlertDismiss');
+    let stored = null;
+    try { stored = localStorage.getItem(SIDEBAR_ALERT_DISMISS_KEY); } catch (e) { /* ignore */ }
+    if (stored === '1') card.style.display = 'none';
+    btn.addEventListener('click', () => {
+      card.style.display = 'none';
+      try { localStorage.setItem(SIDEBAR_ALERT_DISMISS_KEY, '1'); } catch (e) { /* ignore — nothing to persist to */ }
     });
   }
 
@@ -575,8 +693,22 @@
       (activeFilters.account === 'All' || d.account === activeFilters.account) &&
       (activeFilters.lob === 'All' || d.lob === activeFilters.lob) &&
       (activeFilters.province === 'All' || d.province === activeFilters.province) &&
-      (activeFilters.status === 'All' || d.status === activeFilters.status)
+      (activeFilters.status === 'All' || d.status === activeFilters.status) &&
+      matchesSearch(d)
     );
+  }
+
+  // Same as getFilteredData but ignoring the status filter — used for the
+  // status tab / sidebar nav counts, so a tab always shows how many cases
+  // would appear if you clicked it from wherever the other filters sit.
+  function countForStatus(status) {
+    return RAW_DATA.filter(d =>
+      (activeFilters.account === 'All' || d.account === activeFilters.account) &&
+      (activeFilters.lob === 'All' || d.lob === activeFilters.lob) &&
+      (activeFilters.province === 'All' || d.province === activeFilters.province) &&
+      matchesSearch(d) &&
+      (status === 'All' || d.status === status)
+    ).length;
   }
 
   function groupByStatus(data, key) {
@@ -613,7 +745,8 @@
   }
 
   async function loadMapGeoData() {
-    leafletMap = L.map('impactMapLeaflet', { scrollWheelZoom: false, attributionControl: true }).setView([12.6, 122.5], 5.3);
+    leafletMap = L.map('impactMapLeaflet', { scrollWheelZoom: false, attributionControl: true, zoomControl: false }).setView([12.6, 122.5], 5.3);
+    L.control.zoom({ position: 'topright' }).addTo(leafletMap);
     L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
       attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
       subdomains: 'abcd', maxZoom: 12
@@ -690,7 +823,8 @@
 
   let sortMode = 'severity';
 
-  // ---- Executive Summary (reads dashboardData / RAW_DATA, recomputed on every render) ----
+  // ---- Executive summary math (topRisk / recommendations) — read by the
+  // sidebar alert card, the Recommendations card, and the greeting subtitle ----
   const ISSUE_ACTION = {
     'Power Outage': 'Send backup generators',
     'Flooded': 'Deploy pumps and sandbags',
@@ -704,6 +838,7 @@
     if (!data.length) return null;
     const total = data.length;
     const active = data.filter(d => d.status === 'Active').length;
+    const resolved = data.filter(d => d.status === 'Resolved').length;
     const helpCount = data.filter(d => d.help === 'Yes').length;
 
     // Most critical Line of Business: ranked by active-case count, ties broken by total impacted
@@ -721,7 +856,7 @@
     const activeRows = data.filter(d => d.status === 'Active');
     const topIssue = countBy(activeRows.length ? activeRows : data, 'issue')[0];
 
-    return { total, active, helpCount, criticalLob, topRisk, topIssue };
+    return { total, active, resolved, helpCount, criticalLob, topRisk, topIssue };
   }
 
   function buildStrategicRecommendations(s) {
@@ -745,41 +880,178 @@
     return recs;
   }
 
-  function renderExecutiveSummary(data) {
-    const el = document.getElementById('execSummaryBody');
-    const s = computeExecutiveSummary(data);
-    if (!s) { empty(el, 'No cases match the current filters.'); return; }
-
-    const recommendations = buildStrategicRecommendations(s);
-
-    el.innerHTML = `
-      <div class="exec-top-row">
-        <div class="exec-stats-row">
-          <span class="exec-stat"><strong>${s.total}</strong> total employee${s.total === 1 ? '' : 's'} impacted</span>
-          <span class="exec-stat"><strong>${s.active}</strong> active issue${s.active === 1 ? '' : 's'}</span>
-          <span class="exec-stat"><strong>${s.criticalLob.name}</strong> most critical LOB (${s.criticalLob.Active}/${s.criticalLob.total} active)</span>
-        </div>
-        <div class="exec-risk-callout">
-          <span class="risk-tag">Top Risk</span>
-          <span><strong>${s.topRisk.row.name}</strong> (${s.topRisk.kind}) &mdash; <strong>${s.topRisk.row.Active}</strong> active${s.topIssue ? `, driven mainly by ${s.topIssue.name}` : ''}</span>
-        </div>
-      </div>
-      <span class="exec-reco-label">Strategic Recommendations</span>
-      <div class="exec-reco-row">
-        ${recommendations.map(r => `<div class="exec-reco-item">${r}</div>`).join('')}
-      </div>`;
+  function renderSidebarAlert(s) {
+    const titleEl = document.getElementById('sidebarAlertTitle');
+    const bodyEl = document.getElementById('sidebarAlertBody');
+    if (!s || !s.topRisk.row || s.topRisk.row.Active === 0) {
+      titleEl.textContent = 'All cases currently stable';
+      bodyEl.innerHTML = 'No active cases require an emergency response right now &mdash; maintain routine monitoring.';
+      return;
+    }
+    titleEl.textContent = `Escalate response for ${s.topRisk.row.name}`;
+    bodyEl.innerHTML = buildStrategicRecommendations(s)[0];
   }
+
+  function renderRecommendations(s) {
+    const el = document.getElementById('recoList');
+    if (!s) { empty(el, 'No cases match the current filters.'); return; }
+    el.innerHTML = `<div class="exec-reco-row">${buildStrategicRecommendations(s).map(r => `<div class="exec-reco-item">${r}</div>`).join('')}</div>`;
+  }
+
+  function pillClass(pct, goodMin, warnMin) { return pct >= goodMin ? 'good' : pct >= warnMin ? 'warn' : 'bad'; }
+
+  function renderGreetingAndKpis(s, data) {
+    const total = data.length;
+    document.getElementById('greetingSub').textContent = s
+      ? `There are ${s.helpCount} case${s.helpCount === 1 ? '' : 's'} needing help across ${uniqueSorted(data, 'province').length} province${uniqueSorted(data, 'province').length === 1 ? '' : 's'}.`
+      : 'No cases match the current filters.';
+
+    document.getElementById('kpi-total').textContent = total;
+    document.getElementById('kpi-help').textContent = s ? `${s.helpCount}/${total}` : '0/0';
+
+    const resolutionPct = s && total ? Math.round((s.resolved / total) * 100) : 0;
+    const loadRatio = s && total ? (s.active / total) : 0;
+
+    document.getElementById('kpi-resolution').innerHTML =
+      `${resolutionPct}% <span class="kpi-pill ${pillClass(resolutionPct, 60, 35)}">${resolutionPct >= 60 ? 'Good' : resolutionPct >= 35 ? 'Average' : 'Poor'}</span>`;
+    const loadLabel = loadRatio <= 0.3 ? 'Low' : loadRatio <= 0.6 ? 'Medium' : 'High';
+    const loadClass = loadRatio <= 0.3 ? 'good' : loadRatio <= 0.6 ? 'warn' : 'bad';
+    document.getElementById('kpi-load').innerHTML = `${loadRatio.toFixed(2)} <span class="kpi-pill ${loadClass}">${loadLabel}</span>`;
+  }
+
+  function renderStatCards(data) {
+    const total = data.length;
+    const active = data.filter(d => d.status === 'Active').length;
+    const resolved = data.filter(d => d.status === 'Resolved').length;
+    const help = data.filter(d => d.help === 'Yes').length;
+    const provinces = uniqueSorted(data, 'province').length;
+    const totalProvinces = uniqueSorted(RAW_DATA, 'province').length;
+    const offices = uniqueSorted(data, 'office').length;
+    const totalOffices = uniqueSorted(RAW_DATA, 'office').length;
+    const s = computeExecutiveSummary(data);
+
+    const cards = [
+      { label: 'Active Share', value: total ? `${Math.round((active / total) * 100)}%` : '0%', pct: total ? (active / total) * 100 : 0, color: STATUS_COLOR.Active, foot: `${active} of ${total} cases currently active` },
+      { label: 'Resolved Rate', value: total ? `${Math.round((resolved / total) * 100)}%` : '0%', pct: total ? (resolved / total) * 100 : 0, color: STATUS_COLOR.Resolved, foot: `${resolved} of ${total} cases resolved` },
+      { label: 'Help Coverage', value: total ? `${Math.round((help / total) * 100)}%` : '0%', pct: total ? (help / total) * 100 : 0, color: STATUS_COLOR.Monitoring, foot: `${help} of ${total} cases requested help` },
+      { label: 'Provinces Affected', value: `${provinces}<span class="of-total"> / ${totalProvinces}</span>`, pct: totalProvinces ? (provinces / totalProvinces) * 100 : 0, color: v('--rank-2'), foot: 'Provinces in current view vs. all provinces on record' },
+      { label: 'Offices Affected', value: `${offices}<span class="of-total"> / ${totalOffices}</span>`, pct: totalOffices ? (offices / totalOffices) * 100 : 0, color: v('--rank-2'), foot: 'Office sites in current view vs. all sites on record' },
+      { label: 'Top Line of Business', value: s ? s.criticalLob.name : '&mdash;', pct: s && s.criticalLob.total ? (s.criticalLob.Active / s.criticalLob.total) * 100 : 0, color: STATUS_COLOR.Active, foot: s ? `${s.criticalLob.Active} of ${s.criticalLob.total} active in this LOB` : '' }
+    ];
+
+    document.getElementById('statCardsCol').innerHTML = cards.map(c => `
+      <div class="card stat-card">
+        <div class="stat-card-top">
+          <div class="stat-card-label">${c.label}</div>
+        </div>
+        <div class="stat-card-value">${c.value}</div>
+        <div class="stat-card-bar"><span style="width:${Math.min(100, Math.max(0, c.pct))}%;background:${c.color}"></span></div>
+        <div class="stat-card-foot">${c.foot} &middot; snapshot</div>
+      </div>`).join('');
+  }
+
+  // ---- Case Response Journey: repurposes the reference's supply-chain
+  // stepper for BCP cases. Stages are derived only from real fields
+  // (status + help) — "Reported" is the full caseload (entry point), the
+  // other three are the exact STATUS_ORDER partitions. Each ring % is the
+  // share of that stage's cases that do NOT need external help (help='No'),
+  // i.e. a self-sufficiency/health indicator, computed the same way for
+  // every stage so it stays honest rather than implying fake SLA data.
+  function computeJourneyStages(data) {
+    const stageDefs = [
+      { key: 'reported',   label: 'Reported',   icon: '&#9873;', rows: data },
+      { key: 'active',     label: 'Active',      icon: '!',       rows: data.filter(d => d.status === 'Active') },
+      { key: 'monitoring', label: 'Monitoring',  icon: '&#9680;', rows: data.filter(d => d.status === 'Monitoring') },
+      { key: 'resolved',   label: 'Resolved',    icon: '&#10003;', rows: data.filter(d => d.status === 'Resolved') }
+    ];
+    return stageDefs.map(s => {
+      const healthPct = s.rows.length ? Math.round((s.rows.filter(d => d.help === 'No').length / s.rows.length) * 100) : 0;
+      return { ...s, healthPct };
+    });
+  }
+
+  function renderJourney(data) {
+    const stages = computeJourneyStages(data);
+
+    document.getElementById('journeyStepper').innerHTML = stages.map(s => `
+      <div class="journey-stage-head">
+        <div class="ring ${pillClass(s.healthPct, 70, 40)}">${s.healthPct}%</div>
+        <div>
+          <div class="journey-stage-title"><span class="stage-icon">${s.icon}</span>${s.label}</div>
+          <div class="journey-stage-count">${s.rows.length} case${s.rows.length === 1 ? '' : 's'}</div>
+        </div>
+      </div>`).join('');
+
+    document.getElementById('journeyLanes').innerHTML = stages.map(s => {
+      const cards = s.rows.length ? s.rows.map(d => `
+        <div class="journey-card">
+          <div class="journey-card-top">
+            <span class="journey-card-id">${d.id}</span>
+            <span class="journey-card-pill" style="background:${STATUS_COLOR[d.status]}22;color:${STATUS_TEXT[d.status]}">${d.status}</span>
+          </div>
+          <div class="journey-card-meta">${d.name} &middot; ${d.office}, ${d.province}</div>
+          <div class="journey-card-next"><strong>Next</strong>${ISSUE_ACTION[d.issue] || 'Monitor situation'} &mdash; ${d.remarks}</div>
+        </div>`).join('') : '<div class="journey-empty">No cases in this stage.</div>';
+
+      return `
+        <div class="journey-lane" id="${s.key === 'active' ? 'journeyCritical' : ''}">
+          <div class="lane-controls">
+            <button class="lane-scroll-btn" data-dir="prev" type="button">&#8249;</button>
+            <button class="lane-scroll-btn" data-dir="next" type="button">&#8250;</button>
+          </div>
+          <div class="lane-track">${cards}</div>
+        </div>`;
+    }).join('');
+  }
+
+  document.addEventListener('click', (e) => {
+    const btn = e.target.closest('.lane-scroll-btn');
+    if (!btn) return;
+    const track = btn.closest('.journey-lane').querySelector('.lane-track');
+    track.scrollBy({ left: btn.dataset.dir === 'prev' ? -260 : 260, behavior: 'smooth' });
+  });
+
+  function renderTopNavAndTabs() {
+    STATUS_ORDER.concat('All').forEach(s => {
+      const n = countForStatus(s);
+      const tabCountEl = document.getElementById(`tab-count-${s}`);
+      if (tabCountEl) tabCountEl.textContent = `(${n})`;
+    });
+    document.querySelectorAll('.tab').forEach(tab => {
+      tab.classList.toggle('active', tab.dataset.status === activeFilters.status);
+    });
+
+    document.getElementById('nav-count-total').textContent = RAW_DATA.length;
+    document.getElementById('nav-count-active').textContent = RAW_DATA.filter(d => d.status === 'Active').length;
+    document.getElementById('nav-count-resolved').textContent = RAW_DATA.filter(d => d.status === 'Resolved').length;
+    document.getElementById('nav-count-offices').textContent = uniqueSorted(RAW_DATA, 'office').length;
+    document.getElementById('nav-count-provinces').textContent = uniqueSorted(RAW_DATA, 'province').length;
+    document.getElementById('bellBadge').textContent = RAW_DATA.filter(d => d.help === 'Yes').length;
+
+    document.querySelectorAll('#sideNav a[data-status]').forEach(a => {
+      a.classList.toggle('active', a.dataset.status === activeFilters.status);
+    });
+  }
+
+  document.addEventListener('click', (e) => {
+    const tab = e.target.closest('.tab');
+    if (tab) { setStatusFilter(tab.dataset.status); return; }
+    const navLink = e.target.closest('#sideNav a[data-status]');
+    if (navLink) { e.preventDefault(); setStatusFilter(navLink.dataset.status); }
+  });
 
   function renderAll() {
     const data = getFilteredData();
+    const s = computeExecutiveSummary(data);
 
-    renderExecutiveSummary(data);
+    renderTopNavAndTabs();
+    renderGreetingAndKpis(s, data);
+    renderSidebarAlert(s);
+    renderRecommendations(s);
+    renderStatCards(data);
+    renderJourney(data);
 
-    document.getElementById('kpi-total').innerText = data.length;
-    document.getElementById('kpi-active').innerText = data.filter(d => d.status === 'Active').length;
-    document.getElementById('kpi-help').innerText = data.filter(d => d.help === 'Yes').length;
-
-    // Impact Type ranked legend
+    // BCP Type ranked legend
     const impactEl = document.getElementById('impact-legend');
     if (!data.length) { empty(impactEl, 'No cases match the current filters.'); }
     else {
@@ -807,31 +1079,14 @@
         </div>`).join('');
     }
 
-    // Status mix
-    const mixTrack = document.getElementById('statusMixTrack');
-    const mixLegend = document.getElementById('statusMixLegend');
-    if (!data.length) { empty(mixTrack, 'No cases match the current filters.'); mixLegend.innerHTML = ''; }
-    else {
-      const total = data.length;
-      mixTrack.innerHTML = STATUS_ORDER.map(s => {
-        const n = data.filter(d => d.status === s).length;
-        const pct = (n / total) * 100;
-        return pct > 0 ? `<div style="width:${pct}%;background:${STATUS_COLOR[s]}" title="${s}: ${n}"></div>` : '';
-      }).join('');
-      mixLegend.innerHTML = STATUS_ORDER.map(s => {
-        const n = data.filter(d => d.status === s).length;
-        return `<span class="item"><span class="swatch" style="background:${STATUS_COLOR[s]}"></span>${s} (${n})</span>`;
-      }).join('');
-    }
-
     // Impact Map (real Leaflet choropleth + bubbles) — shares provinceRows with the Heatmap below it
     const provinceRows = groupByStatus(data, 'province');
     renderMapLayer(provinceRows);
     document.getElementById('mapStatusLegend').innerHTML =
       '<span class="legend-caption">Status:</span>' +
-      STATUS_ORDER.map(s => `<span class="item"><span class="swatch dot" style="background:${STATUS_COLOR[s]}"></span>${s}</span>`).join('');
+      STATUS_ORDER.map(st => `<span class="item"><span class="swatch dot" style="background:${STATUS_COLOR[st]}"></span>${st}</span>`).join('');
 
-    // Top office sites table
+    // Office sites table
     const officeBody = document.querySelector('#officeTable tbody');
     const officeRows = groupByStatus(data, 'office').slice(0, 6);
     if (!officeRows.length) { officeBody.innerHTML = `<tr><td colspan="4" style="color:var(--text-muted);font-size:12px;">No cases match the current filters.</td></tr>`; }
@@ -848,15 +1103,15 @@
     const heatmapTable = document.getElementById('heatmapTable');
     if (!provinceRows.length) { heatmapTable.innerHTML = ''; empty(heatmapTable.parentElement, 'No cases match the current filters.'); }
     else {
-      const maxCell = Math.max(...provinceRows.flatMap(r => STATUS_ORDER.map(s => r[s])), 1);
+      const maxCell = Math.max(...provinceRows.flatMap(r => STATUS_ORDER.map(st => r[st])), 1);
       const seqColor = (count) => count === 0 ? null : SEQ[Math.max(0, Math.min(SEQ.length - 1, Math.round((count / maxCell) * (SEQ.length - 1))))];
       const textColorFor = (count) => Math.round((count / maxCell) * (SEQ.length - 1)) >= 3 ? '#ffffff' : 'var(--text-primary)';
-      const thead = '<tr><th class="row-head">Province</th>' + STATUS_ORDER.map(s => `<th>${s}</th>`).join('') + '<th>Total</th></tr>';
+      const thead = '<tr><th class="row-head">Province</th>' + STATUS_ORDER.map(st => `<th>${st}</th>`).join('') + '<th>Total</th></tr>';
       const tbody = provinceRows.map(r => {
-        const cells = STATUS_ORDER.map(s => {
-          const bg = seqColor(r[s]);
-          const style = bg ? `background:${bg};color:${textColorFor(r[s])}` : `background:transparent;color:var(--text-muted);border:1px dashed var(--gridline)`;
-          return `<td class="cell" style="${style}">${r[s] || ''}</td>`;
+        const cells = STATUS_ORDER.map(st => {
+          const bg = seqColor(r[st]);
+          const style = bg ? `background:${bg};color:${textColorFor(r[st])}` : `background:transparent;color:var(--text-muted);border:1px dashed var(--gridline)`;
+          return `<td class="cell" style="${style}">${r[st] || ''}</td>`;
         }).join('');
         return `<tr><td class="row-head">${r.name}</td>${cells}<td class="total-cell">${r.total}</td></tr>`;
       }).join('');
@@ -865,8 +1120,8 @@
 
     // Status legends + stacked bars
     function renderLegend(containerId) {
-      document.getElementById(containerId).innerHTML = STATUS_ORDER.map(s =>
-        `<span class="item"><span class="swatch" style="background:${STATUS_COLOR[s]}"></span>${s}</span>`
+      document.getElementById(containerId).innerHTML = STATUS_ORDER.map(st =>
+        `<span class="item"><span class="swatch" style="background:${STATUS_COLOR[st]}"></span>${st}</span>`
       ).join('');
     }
     function renderBars(containerId, rows) {
@@ -874,9 +1129,9 @@
       if (!rows.length) { empty(el, 'No cases match the current filters.'); return; }
       const max = Math.max(...rows.map(r => r.total), 1);
       el.innerHTML = rows.map(r => {
-        const segs = STATUS_ORDER.map(s => {
-          const pct = max ? (r[s] / max) * 100 : 0;
-          return r[s] > 0 ? `<div class="bar-seg" style="width:${pct}%;background:${STATUS_COLOR[s]}" title="${s}: ${r[s]}"></div>` : '';
+        const segs = STATUS_ORDER.map(st => {
+          const pct = max ? (r[st] / max) * 100 : 0;
+          return r[st] > 0 ? `<div class="bar-seg" style="width:${pct}%;background:${STATUS_COLOR[st]}" title="${st}: ${r[st]}"></div>` : '';
         }).join('');
         return `<div class="bar-row"><div class="label" title="${r.name}">${r.name}</div><div class="bar-track">${segs}</div><div class="bar-total">${r.total}</div></div>`;
       }).join('');
@@ -916,7 +1171,7 @@
   // ---- Live data bridge (bcp_bridge.ps1) ----
   function setDataStatus(mode, text) {
     const el = document.getElementById('dataStatus');
-    el.className = mode ? `is-${mode}` : '';
+    el.className = 'data-status-line' + (mode ? ` is-${mode}` : '');
     el.innerHTML = text;
   }
 
@@ -945,7 +1200,7 @@
 
   async function loadLiveData(isManualRefresh) {
     const btn = document.getElementById('refreshBtn');
-    if (isManualRefresh) { btn.disabled = true; btn.innerText = '⟳ Refreshing…'; }
+    if (isManualRefresh) { btn.disabled = true; }
     if (IS_LOCAL_FILE) {
       try {
         RAW_DATA = await tryFetchJson(BRIDGE_URL);
@@ -970,13 +1225,13 @@
       // bcp_data.json next to it) — keep whatever RAW_DATA already holds.
       setDataStatus('cached', `&#9679; Cached snapshot embedded in this file &mdash; no live bridge or published data found`);
     } finally {
-      if (isManualRefresh) { btn.disabled = false; btn.innerText = '⟳ Refresh'; }
+      if (isManualRefresh) { btn.disabled = false; }
     }
   }
 
   initFilters();
-  initExecSummaryToggle();
   initProvinceTableToggle();
+  initSidebarAlertDismiss();
   document.getElementById('sortToggle').addEventListener('change', (e) => { sortMode = e.target.value; renderAll(); });
   document.getElementById('refreshBtn').addEventListener('click', () => loadLiveData(true));
 
