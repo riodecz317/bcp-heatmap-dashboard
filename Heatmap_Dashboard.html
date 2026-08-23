@@ -96,6 +96,15 @@
   #dataStatus.is-cached { color: var(--status-warning-text); }
   #dataStatus.is-error  { color: var(--status-critical-text); }
 
+  /* ---- Executive Summary card (spans full width, top of dashboard) ---- */
+  .exec-summary-card { flex: none; background: #FFFFFF; color: #0F172A; }
+  .exec-summary-card h2 { font-size: 1rem; font-weight: 700; text-transform: none; letter-spacing: 0; color: #0F172A; }
+  .exec-summary-card h3 { color: #0F172A; margin: 14px 0 6px 0; }
+  .exec-summary-card .card-sub { color: #64748B; }
+  .exec-bullets { margin: 6px 0 0 0; padding-left: 20px; font-size: 13px; line-height: 1.65; color: #1E293B; }
+  .exec-bullets li { margin-bottom: 4px; }
+  .exec-bullets li strong { color: #0F172A; }
+
   /* ---- Welcome card (col 1 top): compact KPI summary ---- */
   .welcome-card { flex: none; }
   .welcome-stats { display: flex; flex-direction: column; gap: 10px; margin-top: 4px; }
@@ -248,6 +257,12 @@
       <select id="f-province" data-label="Province"><option value="All">Province: All</option></select>
       <select id="f-status" data-label="Status"><option value="All">Status: All</option></select>
     </div>
+  </div>
+
+  <div class="card exec-summary-card" id="execSummaryCard">
+    <h2>Executive Summary</h2>
+    <div class="card-sub">Auto-generated from the current data snapshot &middot; updates with filters and live refresh</div>
+    <div id="execSummaryBody"></div>
   </div>
 
   <div class="board">
@@ -527,8 +542,84 @@
 
   let sortMode = 'severity';
 
+  // ---- Executive Summary (reads dashboardData / RAW_DATA, recomputed on every render) ----
+  const ISSUE_ACTION = {
+    'Power Outage': 'Send backup generators',
+    'Flooded': 'Deploy pumps and sandbags',
+    'Internet Outage': 'Provision backup ISP / mobile data lines',
+    'Building Integrity': 'Dispatch a structural engineer for inspection',
+    'Earthquake': 'Dispatch a structural engineer for inspection',
+    'Typhoon': 'Activate the evacuation and flood-response protocol'
+  };
+
+  function computeExecutiveSummary(data) {
+    if (!data.length) return null;
+    const total = data.length;
+    const active = data.filter(d => d.status === 'Active').length;
+    const helpCount = data.filter(d => d.help === 'Yes').length;
+
+    // Most critical Line of Business: ranked by active-case count, ties broken by total impacted
+    const lobRows = groupByStatus(data, 'lob');
+    const criticalLob = lobRows.slice().sort((a, b) => b.Active - a.Active || b.total - a.total)[0];
+
+    // Top risk: whichever of account / province has the highest count of Active cases
+    const topProvince = groupByStatus(data, 'province').slice().sort((a, b) => b.Active - a.Active)[0];
+    const topAccount = groupByStatus(data, 'account').slice().sort((a, b) => b.Active - a.Active)[0];
+    const topRisk = (topAccount && (!topProvince || topAccount.Active > topProvince.Active))
+      ? { kind: 'Account', row: topAccount }
+      : { kind: 'Province', row: topProvince };
+
+    // Dominant issue type behind the active caseload (falls back to all data if nothing is active)
+    const activeRows = data.filter(d => d.status === 'Active');
+    const topIssue = countBy(activeRows.length ? activeRows : data, 'issue')[0];
+
+    return { total, active, helpCount, criticalLob, topRisk, topIssue };
+  }
+
+  function buildStrategicRecommendations(s) {
+    const recs = [];
+
+    if (s.topRisk.row && s.topRisk.row.Active > 0) {
+      const action = ISSUE_ACTION[s.topIssue?.name] || 'Deploy a rapid-response team';
+      recs.push(`${action} to <strong>${s.topRisk.row.name}</strong> &mdash; it accounts for <strong>${s.topRisk.row.Active}</strong> of the ${s.active} active case${s.active === 1 ? '' : 's'}.`);
+    } else {
+      recs.push('No active cases currently require an emergency response &mdash; maintain routine monitoring.');
+    }
+
+    if (s.helpCount > 0) {
+      recs.push(`Prioritize outstanding assistance requests &mdash; <strong>${s.helpCount}</strong> employee${s.helpCount === 1 ? '' : 's'} in this view ${s.helpCount === 1 ? 'has' : 'have'} requested help.`);
+    } else {
+      recs.push('No outstanding help requests in this view &mdash; maintain current response posture.');
+    }
+
+    recs.push(`Increase BCP monitoring cadence for the <strong>${s.criticalLob.name}</strong> line of business, which has the highest concentration of active issues (${s.criticalLob.Active} of ${s.criticalLob.total}).`);
+
+    return recs;
+  }
+
+  function renderExecutiveSummary(data) {
+    const el = document.getElementById('execSummaryBody');
+    const s = computeExecutiveSummary(data);
+    if (!s) { empty(el, 'No cases match the current filters.'); return; }
+
+    const recommendations = buildStrategicRecommendations(s);
+
+    el.innerHTML = `
+      <ul class="exec-bullets">
+        <li><strong>${s.total}</strong> total employee${s.total === 1 ? '' : 's'} impacted, with <strong>${s.active}</strong> active issue${s.active === 1 ? '' : 's'} currently open.</li>
+        <li>Most critical line of business: <strong>${s.criticalLob.name}</strong> (${s.criticalLob.Active} active case${s.criticalLob.Active === 1 ? '' : 's'} of ${s.criticalLob.total} total).</li>
+        <li>Top risk: <strong>${s.topRisk.row.name}</strong> (${s.topRisk.kind}) has the highest number of active cases &mdash; <strong>${s.topRisk.row.Active}</strong>${s.topIssue ? `, driven mainly by ${s.topIssue.name}` : ''}.</li>
+      </ul>
+      <h3>Strategic Recommendations</h3>
+      <ul class="exec-bullets">
+        ${recommendations.map(r => `<li>${r}</li>`).join('')}
+      </ul>`;
+  }
+
   function renderAll() {
     const data = getFilteredData();
+
+    renderExecutiveSummary(data);
 
     document.getElementById('kpi-total').innerText = data.length;
     document.getElementById('kpi-active').innerText = data.filter(d => d.status === 'Active').length;
