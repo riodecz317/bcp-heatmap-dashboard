@@ -294,22 +294,21 @@
   .kpi-caption-secondary { font-size: clamp(7.5px, 0.56vw, 9px); color: var(--text-muted); margin-top: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .kpi-caption-secondary strong { color: var(--text-secondary); font-weight: 600; }
   .kpi-bar-caption { font-size: clamp(7.5px, 0.56vw, 9px); color: var(--text-muted); text-transform: uppercase; letter-spacing: .03em; font-weight: 700; margin-top: 5px; }
-  /* Stacked (not wrapped-horizontal) so 3 items with counts never crowd
-     into an uneven 2+1 wrap inside a narrow KPI card. */
-  .kpi-mini-legend { font-size: clamp(9.5px, 0.72vw, 11px); font-weight: 600; color: #1E293B; display: flex; flex-direction: column; align-items: center; gap: 3px; }
-  .kpi-mini-legend span { display: flex; align-items: center; }
-  .kpi-mini-legend .dot { display: inline-block; width: 6px; height: 6px; border-radius: 50%; margin-right: 5px; flex: none; }
-
-  /* Status donut: SVG ring flex-centered in the leftover vertical space
-     between the card label and the bottom legend, with the case total
-     absolutely centered over it. Slightly more room between the value
-     and its caption, and a lower value-size ceiling, so "15" and
-     "Total Cases" don't crowd each other inside the ring's hole. */
-  .kpi-donut-wrap { flex: 1 1 auto; min-height: 68px; display: flex; align-items: center; justify-content: center; position: relative; }
-  .kpi-donut { width: 62%; max-width: 92px; aspect-ratio: 1 / 1; }
-  .kpi-donut-center { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; pointer-events: none; }
-  .kpi-donut-value { font-size: clamp(0.9rem, 1.4vw, 1.1rem); font-weight: 800; color: #1E293B; line-height: 1; }
-  .kpi-donut-sub { font-size: clamp(6.5px, 0.5vw, 7.5px); color: var(--text-muted); opacity: .75; margin-top: 4px; text-transform: uppercase; letter-spacing: .03em; }
+  /* Status bars: each row is a full-width track with an absolutely
+     positioned colored fill sized to the status's real share of the
+     total (the actual "chart" data) — the label/HC/ratio text sits in a
+     separate layer spanning the FULL row width regardless of the fill's
+     length, so short bars (e.g. Monitoring at 20%) never force their own
+     text to overlap; text reads fine on both the fill and the plain
+     track since the dark status-text colors have good contrast on both. */
+  .status-bars { flex: 1 1 auto; display: flex; flex-direction: column; justify-content: center; gap: 8px; margin-top: 4px; }
+  .status-bar-row { position: relative; height: 26px; border-radius: 6px; overflow: hidden; background: var(--gridline); }
+  .status-bar-fill { position: absolute; inset: 0; border-radius: 6px; }
+  .status-bar-content {
+    position: relative; z-index: 1; height: 100%;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0 10px; font-size: clamp(9px, 0.68vw, 10.5px); font-weight: 700;
+  }
 
   /* ---- Band 4: main 3-column grid ---- */
   .main-grid { flex: 1 1 auto; min-height: 0; display: grid; grid-template-columns: 3fr 4fr 3fr; gap: var(--gap); }
@@ -802,31 +801,6 @@
 
   function pillClass(pct, goodMin, warnMin) { return pct >= goodMin ? 'good' : pct >= warnMin ? 'warn' : 'bad'; }
 
-  // Inline SVG donut (no charting library needed for one small ring):
-  // three concentric-arc <circle> strokes over a track circle, each
-  // segment shortened slightly so the rounded caps (stroke-linecap:round)
-  // read as distinct pill-shaped arcs instead of one solid ring.
-  function buildStatusDonut(data, total) {
-    const r = 38, cx = 50, cy = 50, sw = 10;
-    const circumference = 2 * Math.PI * r;
-    const gap = circumference * 0.02;
-    let offset = 0;
-    const arcs = STATUS_ORDER.map(st => {
-      const n = data.filter(d => d.status === st).length;
-      const len = total ? (n / total) * circumference : 0;
-      const drawLen = Math.max(0, len - gap);
-      const arc = len > 0
-        ? `<circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="${STATUS_COLOR[st]}" stroke-width="${sw}" stroke-linecap="round" stroke-dasharray="${drawLen} ${circumference - drawLen}" stroke-dashoffset="${-offset}" />`
-        : '';
-      offset += len;
-      return arc;
-    }).join('');
-    return `<svg class="kpi-donut" viewBox="0 0 100 100">
-      <circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="var(--gridline)" stroke-width="${sw}" />
-      <g transform="rotate(-90 ${cx} ${cy})">${arcs}</g>
-    </svg>`;
-  }
-
   function renderGenericKpiCard(c) {
     return `
       <div class="card kpi-card">
@@ -851,24 +825,29 @@
     const help = s ? s.helpCount : 0;
     const resolutionPct = total ? Math.round((resolved / total) * 100) : 0;
 
-    const statusDonut = buildStatusDonut(data, total);
-    const statusLegend = STATUS_ORDER.map(st => {
+    // Horizontal stacked bars: fill width = each status's real share of
+    // the total (the actual chart data); label+HC+ratio% overlay the
+    // full-width row rather than being confined to the fill itself, so
+    // a short bar (e.g. Monitoring at 20%) never has to cram its own
+    // text into a narrow colored strip.
+    const statusBars = STATUS_ORDER.map(st => {
       const n = data.filter(d => d.status === st).length;
-      return `<span><span class="dot" style="background:${STATUS_COLOR[st]}"></span><span style="color:${STATUS_TEXT[st]}">${st} ${n}</span></span>`;
+      const pct = total ? Math.round((n / total) * 100) : 0;
+      return `
+        <div class="status-bar-row">
+          <div class="status-bar-fill" style="width:${pct}%;background:${STATUS_COLOR[st]}"></div>
+          <div class="status-bar-content" style="color:${STATUS_TEXT[st]}">
+            <span>${st}</span>
+            <span>${n} HC &middot; ${pct}%</span>
+          </div>
+        </div>`;
     }).join('');
     const statusCardHtml = `
-      <div class="card kpi-card kpi-card-donut">
+      <div class="card kpi-card">
         <div class="kpi-card-label">Status</div>
-        <div class="kpi-donut-wrap">
-          ${statusDonut}
-          <div class="kpi-donut-center">
-            <div class="kpi-donut-value">${total}</div>
-            <div class="kpi-donut-sub">Total Cases</div>
-          </div>
-        </div>
-        <div class="kpi-bottom-group">
-          <div class="kpi-mini-legend">${statusLegend}</div>
-        </div>
+        <div class="kpi-card-value">${total}</div>
+        <div class="kpi-card-foot">Total Cases</div>
+        <div class="status-bars">${statusBars}</div>
       </div>`;
 
     const impactRows = total ? countBy(data, 'impact') : [];
