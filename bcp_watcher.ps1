@@ -34,15 +34,23 @@ function Test-BridgeListening {
 $pbiRunning = [bool](Get-Process PBIDesktop -ErrorAction SilentlyContinue)
 
 # --- Publish task (GitHub Pages side) ---
+# Also nudged every watcher tick (not just on the off->on transition) so the
+# published snapshot lags the live data by at most ~2 minutes (the watcher's
+# own interval) instead of up to the publish task's own 15-minute schedule --
+# bcp_publish.ps1 does a cheap content diff and no-ops instantly when nothing
+# changed, so triggering it this often costs almost nothing.
 $task = Get-ScheduledTask -TaskName $publishTaskName -ErrorAction SilentlyContinue
 if ($task) {
   if ($pbiRunning -and $task.State -eq 'Disabled') {
     Enable-ScheduledTask -TaskName $publishTaskName | Out-Null
-    Start-ScheduledTask -TaskName $publishTaskName
-    Write-Log "Power BI Desktop came online -- enabled and triggered $publishTaskName."
+    Write-Log "Power BI Desktop came online -- enabled $publishTaskName."
   } elseif (-not $pbiRunning -and $task.State -ne 'Disabled') {
     Disable-ScheduledTask -TaskName $publishTaskName | Out-Null
     Write-Log "Power BI Desktop is no longer running -- disabled $publishTaskName."
+  }
+
+  if ($pbiRunning -and (Get-ScheduledTask -TaskName $publishTaskName).State -eq 'Ready') {
+    Start-ScheduledTask -TaskName $publishTaskName
   }
 }
 
