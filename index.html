@@ -216,18 +216,21 @@
   /* ---- Executive Summary (inside the banner, collapsible) ----
      .main-banner.card has padding:0 so the header band above can bleed
      to the card edges; these two re-add the card's normal inset. ---- */
-  .exec-summary-head { flex: none; display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; padding: 10px clamp(10px, 1vw, 14px) 0; border-top: 1px solid var(--gridline); margin-top: 10px; }
+  .exec-summary-head { flex: none; display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; padding: 10px 24px 0; border-top: 1px solid var(--gridline); margin-top: 10px; margin-bottom: 8px; }
   .exec-summary-head h2 { margin: 0; }
-  #execSummaryBody { padding: 0 clamp(10px, 1vw, 14px) clamp(8px, 1vh, 12px); }
+  #execSummaryBody { padding: 16px 24px; }
   .exec-toggle-btn {
-    flex: none; font-size: clamp(10px, 0.7vw, 11.5px); font-weight: 600; color: var(--text-secondary);
-    border: 1px solid var(--border); border-radius: var(--radius-control); padding: 6px 12px;
-    background: var(--surface-1); cursor: pointer; white-space: nowrap;
+    flex: none; display: inline-flex; align-items: center; gap: 6px;
+    font-size: clamp(10px, 0.7vw, 11.5px); font-weight: 600; color: #1E293B;
+    border: 1px solid var(--border); border-radius: 50px; padding: 6px 14px;
+    background: #F3F4F6; cursor: pointer; white-space: nowrap;
+    margin-top: 16px; margin-right: 16px;
     transition: background .15s ease, border-color .15s ease;
   }
-  .exec-toggle-btn:hover { background: var(--gridline); border-color: var(--text-muted); }
+  .exec-toggle-btn:hover { background: #E9EAEE; border-color: var(--text-muted); }
+  .exec-toggle-btn .chevron-icon { transition: transform .15s ease; }
+  .exec-toggle-btn[aria-expanded="true"] .chevron-icon { transform: rotate(180deg); }
   #mainBanner.is-collapsed #execSummaryBody { display: none; }
-  #mainBanner:not(.is-collapsed) .exec-summary-head { margin-bottom: 8px; }
 
   .exec-top-row { display: flex; align-items: center; justify-content: space-between; gap: 14px 24px; flex-wrap: wrap; padding: 8px 0; border-bottom: 1px solid var(--gridline); }
   .exec-stats-row { display: flex; gap: 20px; flex-wrap: wrap; }
@@ -236,15 +239,15 @@
   .exec-risk-callout {
     display: flex; align-items: center; gap: 8px;
     background: var(--accent-soft); color: var(--accent-strong);
-    border-radius: var(--radius-pill); padding: 5px 14px 5px 6px;
+    border-radius: var(--radius-pill); padding: 5px 14px 5px 6px; margin-right: 16px;
     font-size: clamp(10px, 0.72vw, 12px); font-weight: 600; line-height: 1.4;
   }
   .exec-risk-callout .risk-tag { flex: none; font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; background: var(--accent-orange); color: #FFFFFF; border-radius: var(--radius-pill); padding: 3px 8px; }
   .exec-risk-callout strong { color: var(--accent-strong); }
 
   .exec-reco-label { display: block; margin: 10px 0 6px; font-size: 0.68rem; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; color: var(--text-muted); }
-  .exec-reco-row { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px 18px; }
-  .exec-reco-item { position: relative; padding-left: 12px; border-left: 3px solid var(--accent); font-size: clamp(10.5px, 0.75vw, 12.5px); line-height: 1.45; color: var(--text-secondary); }
+  .exec-reco-row { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
+  .exec-reco-item { position: relative; padding-left: 12px; border-left: 3px solid var(--accent); font-size: 13px; line-height: 1.45; color: #374151; }
   .exec-reco-item strong { color: var(--text-primary); }
 
   /* ---- Band 3: KPI row (6 compact cards) ----
@@ -319,14 +322,18 @@
   .status-mix-legend .legend-caption { font-weight: 600; color: var(--text-muted); margin-right: 2px; }
 
   /* Right column: heatmap + case feed */
-  table.heatmap { border-collapse: separate; border-spacing: 2px; font-size: clamp(9.5px, 0.7vw, 11px); width: 100%; background: var(--surface-1); }
-  table.heatmap th { font-weight: 700; color: var(--text-primary); font-size: clamp(8.5px, 0.62vw, 10px); padding: 3px 5px; text-align: center; position: sticky; top: 0; background: var(--surface-1); z-index: 1; }
+  /* Clean modern table: no per-cell block fills, just a thin row
+     separator — the "Active" column carries its own pill highlight
+     (applied inline per cell below) since it's the one column meant
+     to draw the eye. */
+  table.heatmap { border-collapse: collapse; font-size: clamp(9.5px, 0.7vw, 11px); width: 100%; background: var(--surface-1); }
+  table.heatmap th { font-weight: 700; color: #1E293B; font-size: clamp(8.5px, 0.62vw, 10px); padding: 10px 16px; text-align: right; position: sticky; top: 0; background: var(--surface-1); z-index: 1; border-bottom: 1px solid #E5E7EB; }
   table.heatmap th.row-head { text-align: left; }
-  table.heatmap td.row-head { text-align: left; padding: 4px 5px; color: var(--text-primary); font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 90px; }
-  table.heatmap td.cell { text-align: center; padding: 6px 3px; border-radius: 6px; font-variant-numeric: tabular-nums; font-weight: 700; min-width: 34px; border: 1px solid #F3F4F6; }
+  table.heatmap td.row-head { text-align: left; padding: 12px 16px; color: #374151; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 90px; border-bottom: 1px solid #E5E7EB; }
+  table.heatmap td.cell { text-align: right; padding: 12px 16px; font-variant-numeric: tabular-nums; font-weight: 600; border-bottom: 1px solid #E5E7EB; }
   table.heatmap.hide-labels td.cell { font-size: 0; }
-  table.heatmap td.total-cell { text-align: center; font-weight: 700; color: var(--text-primary); }
-  .heatmap-scale { flex: none; display: flex; align-items: center; gap: 5px; margin-top: 5px; font-size: clamp(8px, 0.6vw, 9.5px); color: var(--text-muted); }
+  table.heatmap td.total-cell { text-align: right; padding: 12px 16px; font-weight: 700; color: #374151; border-bottom: 1px solid #E5E7EB; }
+  .heatmap-scale { flex: none; display: flex; align-items: center; gap: 6px; margin-top: 8px; font-size: clamp(8px, 0.6vw, 9.5px); color: var(--text-muted); }
   .heatmap-scale .swatch { width: 8px; height: 8px; border-radius: 50%; }
 
   .case-list { flex: 1 1 0; min-height: 0; list-style: none; margin: 0; padding: 0; overflow-y: auto; }
@@ -388,7 +395,7 @@
         <h2>Executive Summary</h2>
         <div class="card-sub" style="margin:0;">Auto-generated from the current data snapshot &middot; updates with filters and live refresh</div>
       </div>
-      <button class="exec-toggle-btn" id="execToggleBtn" type="button" aria-expanded="false" aria-controls="execSummaryBody">&#9660; Expand</button>
+      <button class="exec-toggle-btn" id="execToggleBtn" type="button" aria-expanded="false" aria-controls="execSummaryBody">Expand</button>
     </div>
     <div id="execSummaryBody"></div>
   </div>
@@ -432,13 +439,8 @@
         </div>
         <div class="card-body"><table class="heatmap" id="heatmapTable"></table></div>
         <div class="heatmap-scale">
-          <span>Less</span>
-          <span class="swatch" style="background:var(--seq-0)"></span>
-          <span class="swatch" style="background:var(--seq-1)"></span>
-          <span class="swatch" style="background:var(--seq-2)"></span>
-          <span class="swatch" style="background:var(--seq-3)"></span>
-          <span class="swatch" style="background:var(--seq-4)"></span>
-          <span>More</span>
+          <span class="swatch" style="background:#FCE9E9"></span>
+          <span>Active cases are highlighted</span>
         </div>
       </div>
       <div class="card">
@@ -733,6 +735,8 @@
   // (per-browser) so it doesn't fight leaders every visit.
   const EXEC_COLLAPSE_KEY = 'bcpExecSummaryCollapsed';
 
+  const CHEVRON_SVG = '<svg class="chevron-icon" width="10" height="10" viewBox="0 0 10 10" fill="none" aria-hidden="true"><path d="M2 3.5L5 6.5L8 3.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+
   function initExecSummaryToggle() {
     const banner = document.getElementById('mainBanner');
     const btn = document.getElementById('execToggleBtn');
@@ -740,7 +744,7 @@
     function setCollapsed(collapsed) {
       banner.classList.toggle('is-collapsed', collapsed);
       btn.setAttribute('aria-expanded', String(!collapsed));
-      btn.innerHTML = collapsed ? '&#9660; Expand' : '&#9650; Collapse';
+      btn.innerHTML = CHEVRON_SVG + (collapsed ? 'Expand' : 'Collapse');
       setTimeout(() => leafletMap && leafletMap.invalidateSize(), 220);
     }
 
@@ -849,18 +853,19 @@
     const heatmapTable = document.getElementById('heatmapTable');
     if (!provinceRows.length) { heatmapTable.innerHTML = '<tr><td style="padding:8px;color:var(--text-muted);font-size:11px;">No cases match the current filters.</td></tr>'; }
     else {
-      const maxCell = Math.max(...provinceRows.flatMap(r => STATUS_ORDER.map(st => r[st])), 1);
-      const seqColor = (count) => count === 0 ? null : SEQ[Math.max(0, Math.min(SEQ.length - 1, Math.round((count / maxCell) * (SEQ.length - 1))))];
-      // Text stays dark regardless of the cell's magnitude tier (the pale
-      // pink scale never gets dark enough to need white) — Active is
-      // singled out in bold dark red so it reads as the priority column.
-      const textColorFor = (st) => st === 'Active' ? '#C93636' : '#111827';
+      // Flat, non-graduated fills: only the Active column gets the pink
+      // highlight (a fixed tint, not a magnitude scale) with bold dark-red
+      // text; Monitoring/Resolved stay plain with dark-gray text; zero
+      // cells stay empty/dashed as before.
       const thead = '<tr><th class="row-head">Province</th>' + STATUS_ORDER.map(st => `<th>${st}</th>`).join('') + '<th>Total</th></tr>';
       const tbody = provinceRows.map(r => {
         const cells = STATUS_ORDER.map(st => {
-          const bg = seqColor(r[st]);
-          const style = bg ? `background:${bg};color:${textColorFor(st)}` : `background:transparent;color:var(--text-muted);border:1px dashed var(--gridline)`;
-          return `<td class="cell" style="${style}">${r[st] || ''}</td>`;
+          const val = r[st];
+          if (!val) return `<td class="cell" style="color:var(--text-muted);border:1px dashed var(--gridline)"></td>`;
+          const style = st === 'Active'
+            ? `background:#FCE9E9;color:#C93636;font-weight:800;border-radius:6px;`
+            : `background:transparent;color:#374151;`;
+          return `<td class="cell" style="${style}">${val}</td>`;
         }).join('');
         return `<tr><td class="row-head">${r.name}</td>${cells}<td class="total-cell">${r.total}</td></tr>`;
       }).join('');
