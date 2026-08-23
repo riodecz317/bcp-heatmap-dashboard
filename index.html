@@ -166,10 +166,10 @@
     box-shadow: var(--shadow-card);
     display: flex; flex-direction: column;
     min-height: 0; overflow: hidden;
-    padding: clamp(8px, 1vh, 12px) clamp(10px, 1vw, 14px);
+    padding: 16px;
   }
   .card h2 {
-    flex: none; margin: 0 0 3px; font-size: clamp(10px, 0.75vw, 12px);
+    flex: none; margin: 0 0 8px; font-size: clamp(10px, 0.75vw, 12px);
     font-weight: 700; text-transform: uppercase; letter-spacing: .04em; color: var(--text-primary);
   }
   .card .card-sub { flex: none; font-size: clamp(9px, 0.65vw, 10.5px); color: var(--text-muted); margin: 0 0 6px; }
@@ -361,12 +361,13 @@
      Total gets a narrower fr-share than the pill columns so it sits
      snug against Resolved instead of floating off toward the edge. */
   .province-row {
-    display: grid; grid-template-columns: minmax(110px, 2fr) repeat(3, minmax(56px, 1fr)) minmax(40px, 0.6fr);
-    align-items: center; gap: 6px;
+    display: grid; grid-template-columns: minmax(110px, 2fr) repeat(3, minmax(56px, 1fr)) minmax(40px, 0.5fr);
+    align-items: center; justify-items: center; gap: 6px;
     background: #F8F9FC; border-radius: 8px; padding: 12px 16px;
   }
+  .province-row .col-name { justify-self: start; }
   .province-row-head {
-    background: var(--surface-1); padding: 4px 16px; position: sticky; top: 0; z-index: 1;
+    background: var(--surface-1); padding: 4px 16px; margin-bottom: 4px; position: sticky; top: 0; z-index: 1;
     font-weight: 700; color: #1E293B; font-size: clamp(9.5px, 0.68vw, 11px);
   }
   .province-row-head .col-stat, .province-row-head .col-total { text-align: center; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
