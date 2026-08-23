@@ -285,8 +285,17 @@
   .kpi-caption-secondary { font-size: clamp(7.5px, 0.56vw, 9px); color: var(--text-muted); margin-top: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .kpi-caption-secondary strong { color: var(--text-secondary); font-weight: 600; }
   .kpi-bar-caption { font-size: clamp(7.5px, 0.56vw, 9px); color: var(--text-muted); text-transform: uppercase; letter-spacing: .03em; font-weight: 700; margin-top: 5px; }
-  .kpi-mini-legend { font-size: clamp(8.5px, 0.65vw, 10px); font-weight: 600; color: #374151; display: flex; gap: 6px; flex-wrap: wrap; }
+  .kpi-mini-legend { font-size: clamp(8.5px, 0.65vw, 10px); font-weight: 600; color: #374151; display: flex; justify-content: center; gap: 6px; flex-wrap: wrap; }
   .kpi-mini-legend .dot { display: inline-block; width: 6px; height: 6px; border-radius: 50%; margin-right: 2px; vertical-align: middle; }
+
+  /* Status donut: SVG ring flex-centered in the leftover vertical space
+     between the card label and the bottom legend, with the case total
+     absolutely centered over it. */
+  .kpi-donut-wrap { flex: 1 1 auto; min-height: 64px; display: flex; align-items: center; justify-content: center; position: relative; }
+  .kpi-donut { width: 60%; max-width: 84px; aspect-ratio: 1 / 1; }
+  .kpi-donut-center { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; pointer-events: none; }
+  .kpi-donut-value { font-size: clamp(0.95rem, 1.6vw, 1.3rem); font-weight: 800; color: var(--text-primary); line-height: 1; }
+  .kpi-donut-sub { font-size: clamp(6.5px, 0.5vw, 7.5px); color: var(--text-muted); opacity: .75; margin-top: 2px; text-transform: uppercase; letter-spacing: .03em; }
 
   /* ---- Band 4: main 3-column grid ---- */
   .main-grid { flex: 1 1 auto; min-height: 0; display: grid; grid-template-columns: 3fr 4fr 3fr; gap: var(--gap); }
@@ -777,6 +786,44 @@
 
   function pillClass(pct, goodMin, warnMin) { return pct >= goodMin ? 'good' : pct >= warnMin ? 'warn' : 'bad'; }
 
+  // Inline SVG donut (no charting library needed for one small ring):
+  // three concentric-arc <circle> strokes over a track circle, each
+  // segment shortened slightly so the rounded caps (stroke-linecap:round)
+  // read as distinct pill-shaped arcs instead of one solid ring.
+  function buildStatusDonut(data, total) {
+    const r = 38, cx = 50, cy = 50, sw = 12;
+    const circumference = 2 * Math.PI * r;
+    const gap = circumference * 0.02;
+    let offset = 0;
+    const arcs = STATUS_ORDER.map(st => {
+      const n = data.filter(d => d.status === st).length;
+      const len = total ? (n / total) * circumference : 0;
+      const drawLen = Math.max(0, len - gap);
+      const arc = len > 0
+        ? `<circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="${STATUS_COLOR[st]}" stroke-width="${sw}" stroke-linecap="round" stroke-dasharray="${drawLen} ${circumference - drawLen}" stroke-dashoffset="${-offset}" />`
+        : '';
+      offset += len;
+      return arc;
+    }).join('');
+    return `<svg class="kpi-donut" viewBox="0 0 100 100">
+      <circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="var(--gridline)" stroke-width="${sw}" />
+      <g transform="rotate(-90 ${cx} ${cy})">${arcs}</g>
+    </svg>`;
+  }
+
+  function renderGenericKpiCard(c) {
+    return `
+      <div class="card kpi-card">
+        <div class="kpi-card-label">${c.label}</div>
+        ${c.value !== '' ? `<div class="kpi-card-value">${c.value}${c.pill || ''}</div>` : ''}
+        <div class="kpi-bottom-group">
+          ${c.captionHtml || (c.foot ? `<div class="kpi-card-foot">${c.foot}</div>` : '')}
+          ${c.barCaption ? `<div class="kpi-bar-caption">${c.barCaption}</div>` : ''}
+          ${c.spark ? `<div class="kpi-spark">${c.spark}</div>` : ''}
+        </div>
+      </div>`;
+  }
+
   // ---- KPI row: 6 compact cards (Employees, Active, Need Help, Status,
   // BCP Type, Resolution Rate) — every figure is read straight off the same
   // computeExecutiveSummary()/countBy() outputs used elsewhere in the file,
@@ -788,15 +835,25 @@
     const help = s ? s.helpCount : 0;
     const resolutionPct = total ? Math.round((resolved / total) * 100) : 0;
 
-    const statusSpark = STATUS_ORDER.map(st => {
-      const n = data.filter(d => d.status === st).length;
-      const pct = total ? (n / total) * 100 : 0;
-      return pct > 0 ? `<span style="width:${pct}%;background:${STATUS_COLOR[st]}" title="${st}: ${n}"></span>` : '';
-    }).join('');
+    const statusDonut = buildStatusDonut(data, total);
     const statusLegend = STATUS_ORDER.map(st => {
       const n = data.filter(d => d.status === st).length;
       return `<span><span class="dot" style="background:${STATUS_COLOR[st]}"></span>${st} ${n}</span>`;
     }).join('');
+    const statusCardHtml = `
+      <div class="card kpi-card kpi-card-donut">
+        <div class="kpi-card-label">Status</div>
+        <div class="kpi-donut-wrap">
+          ${statusDonut}
+          <div class="kpi-donut-center">
+            <div class="kpi-donut-value">${total}</div>
+            <div class="kpi-donut-sub">Total Cases</div>
+          </div>
+        </div>
+        <div class="kpi-bottom-group">
+          <div class="kpi-mini-legend">${statusLegend}</div>
+        </div>
+      </div>`;
 
     const impactRows = total ? countBy(data, 'impact') : [];
     const topImpact = impactRows[0];
@@ -814,26 +871,18 @@
       ? `<div class="kpi-caption-primary">Top issue in this view: <strong>${topIssueName}</strong></div>`
       : `<div class="kpi-caption-primary">No data</div>`;
 
-    const cards = [
+    const before = [
       { label: 'Employees Impacted', value: `${total}`, foot: 'Current filtered view' },
       { label: 'Active Cases', value: `${active}`, foot: total ? `${Math.round((active / total) * 100)}% of total` : '&mdash;' },
-      { label: 'Need Help', value: `${help}<span class="unit">/${total}</span>`, foot: total ? `${Math.round((help / total) * 100)}% requested help` : '&mdash;' },
-      { label: 'Status', value: '', spark: statusSpark, legend: statusLegend },
+      { label: 'Need Help', value: `${help}<span class="unit">/${total}</span>`, foot: total ? `${Math.round((help / total) * 100)}% requested help` : '&mdash;' }
+    ];
+    const after = [
       { label: 'BCP Type', value: topImpact ? `${((topImpact.count / total) * 100).toFixed(0)}%` : '&mdash;', captionHtml: bcpTypeCaption, barCaption: 'Distribution of Impact Types', spark: impactSpark },
       { label: 'Resolution Rate', value: `${resolutionPct}%`, pill: total ? `<span class="kpi-pill ${pillClass(resolutionPct, 60, 35)}">${resolutionPct >= 60 ? 'Good' : resolutionPct >= 35 ? 'Average' : 'Poor'}</span>` : '', foot: `${resolved} of ${total} resolved` }
     ];
 
-    document.getElementById('kpiRow').innerHTML = cards.map(c => `
-      <div class="card kpi-card">
-        <div class="kpi-card-label">${c.label}</div>
-        ${c.value !== '' ? `<div class="kpi-card-value">${c.value}${c.pill || ''}</div>` : ''}
-        <div class="kpi-bottom-group">
-          ${c.legend ? `<div class="kpi-mini-legend">${c.legend}</div>` : ''}
-          ${c.captionHtml || (c.foot ? `<div class="kpi-card-foot">${c.foot}</div>` : '')}
-          ${c.barCaption ? `<div class="kpi-bar-caption">${c.barCaption}</div>` : ''}
-          ${c.spark ? `<div class="kpi-spark">${c.spark}</div>` : ''}
-        </div>
-      </div>`).join('');
+    document.getElementById('kpiRow').innerHTML =
+      before.map(renderGenericKpiCard).join('') + statusCardHtml + after.map(renderGenericKpiCard).join('');
   }
 
   // ---- Footer: Office Sites as a horizontal chip strip (same ranked data
