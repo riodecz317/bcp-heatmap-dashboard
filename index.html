@@ -43,6 +43,7 @@
     --radius-card:    12px;
     --radius-control: 8px;
     --radius-pill:    999px;
+    --gray-500: #6B7280;
 
     /* Single-screen band heights: clamp() so the layout stays sane from a
        1366x768 laptop up to a 1920x1080 monitor without ever needing the
@@ -268,15 +269,24 @@
   .heatmap-scale .swatch { width: 8px; height: 8px; border-radius: 50%; }
 
   .case-list { flex: 1 1 0; min-height: 0; list-style: none; margin: 0; padding: 0; overflow-y: auto; }
-  .case-item { display: flex; gap: 8px; align-items: flex-start; padding: 7px 2px 7px 8px; border-bottom: 1px solid var(--gridline); border-left: 3px solid transparent; border-radius: 0 5px 5px 0; transition: background .1s ease; }
+  .case-item { display: flex; gap: 8px; align-items: flex-start; padding: 6px 2px 6px 8px; border-bottom: 1px solid var(--gridline); border-left: 3px solid transparent; border-radius: 0 5px 5px 0; transition: background .1s ease; }
   .case-item:last-child { border-bottom: none; }
   .case-item:hover { background: var(--row-hover); }
-  .case-badge { width: 22px; height: 22px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 10px; flex: none; }
+  .case-badge { width: 20px; height: 20px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 9.5px; flex: none; margin-top: 1px; }
   .case-body { flex: 1; min-width: 0; }
   .case-title-row { display: flex; justify-content: space-between; gap: 6px; align-items: baseline; }
   .case-name { font-weight: 600; font-size: clamp(9.5px, 0.7vw, 11px); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .case-status-pill { flex: none; font-size: clamp(8.5px, 0.6vw, 10px); font-weight: 600; padding: 2px 7px; border-radius: var(--radius-pill); white-space: nowrap; }
-  .case-meta { font-size: clamp(8.5px, 0.6vw, 10px); color: var(--text-secondary); margin-top: 1px; }
+  .case-account-lob { font-size: clamp(10px, 0.6vw, 12px); color: var(--gray-500); margin-top: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .case-meta { font-size: clamp(8.5px, 0.6vw, 10px); color: var(--text-secondary); margin-top: 2px; }
+  .case-help-line { font-size: clamp(8.5px, 0.6vw, 10px); margin-top: 2px; }
+  .case-help-line.is-yes { color: var(--status-critical-text); font-weight: 700; }
+  .case-help-line.is-no { color: var(--text-muted); }
+  .case-escalation {
+    font-size: clamp(8px, 0.58vw, 9.5px); font-weight: 600; color: var(--text-secondary);
+    margin-top: 4px; padding-top: 4px; border-top: 1px dashed var(--gridline);
+  }
+  .case-escalation strong { color: var(--text-primary); }
 
   /* ---- Band 5: footer office-sites strip ---- */
   .footer-strip.card { flex: 0 0 var(--h-footer); flex-direction: row; align-items: center; gap: 8px; overflow-x: auto; overflow-y: hidden; padding: 0 clamp(10px, 1vw, 14px); }
@@ -809,14 +819,17 @@
     if (!rows.length) { empty(caseListEl, 'No cases match the current filters.'); }
     else {
       caseListEl.innerHTML = rows.map(d => `
-        <li class="case-item" style="border-left-color:${STATUS_COLOR[d.status]}" title="Needed help: ${d.help} &#10;Remarks: ${d.remarks}">
+        <li class="case-item" style="border-left-color:${STATUS_COLOR[d.status]}" title="Remarks: ${d.remarks}">
           <div class="case-badge" style="background:${STATUS_COLOR[d.status]}">${STATUS_ICON[d.status]}</div>
           <div class="case-body">
             <div class="case-title-row">
               <span class="case-name">${d.name} &middot; ${d.id}</span>
               <span class="case-status-pill" style="background:${STATUS_COLOR[d.status]}22;color:${STATUS_TEXT[d.status]}">${d.status}</span>
             </div>
-            <div class="case-meta">${d.office}, ${d.province} &middot; ${d.impact} (${d.issue}) &middot; Help: ${d.help}</div>
+            <div class="case-account-lob">Account: ${d.account} | LOB: ${d.lob}</div>
+            <div class="case-meta">${d.office}, ${d.province} &middot; ${d.impact} (${d.issue})</div>
+            <div class="case-help-line ${d.help === 'Yes' ? 'is-yes' : 'is-no'}">Needed Help: ${d.help}</div>
+            <div class="case-escalation">Escalation LOB: <strong>${d.lob}</strong></div>
           </div>
         </li>`).join('');
     }
