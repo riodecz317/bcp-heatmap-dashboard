@@ -707,7 +707,7 @@
 
     // Heatmap
     const heatmapTable = document.getElementById('heatmapTable');
-    if (!provinceRows.length) { heatmapTable.innerHTML = ''; empty(heatmapTable.parentElement, 'No cases match the current filters.'); }
+    if (!provinceRows.length) { heatmapTable.innerHTML = '<tr><td style="padding:8px;color:var(--text-muted);font-size:11px;">No cases match the current filters.</td></tr>'; }
     else {
       const maxCell = Math.max(...provinceRows.flatMap(r => STATUS_ORDER.map(st => r[st])), 1);
       const seqColor = (count) => count === 0 ? null : SEQ[Math.max(0, Math.min(SEQ.length - 1, Math.round((count / maxCell) * (SEQ.length - 1))))];
