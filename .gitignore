@@ -6,5 +6,6 @@
 # Windows folder metadata
 desktop.ini
 
-# bcp_publish.ps1's operational log (local troubleshooting only, not project data)
+# Operational logs (local troubleshooting only, not project data)
 bcp_publish.log
+bcp_watcher.log
