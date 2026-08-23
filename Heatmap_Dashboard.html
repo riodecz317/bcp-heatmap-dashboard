@@ -43,11 +43,16 @@
     --accent:         var(--brand-mid);
     --accent-strong:  var(--brand-dark);
     --accent-soft:    var(--brand-light);
+    --gradient-walenteer: linear-gradient(90deg, #FF7E5F, #FEB47B);
 
     /* Ranking bar (BCP Type distribution — impact TYPE, not status):
        1st = deep orange, 2nd = navy, rest fade to neutral slate. */
     --rank-1: #FF5C00; --rank-2: #21263F; --rank-3: #94A3B8; --rank-4: #CBD5E1;
-    --seq-0: #FFF3EC; --seq-1: #FFD9BE; --seq-2: #FFB37D; --seq-3: #FF8A3D; --seq-4: #FF5C00;
+    /* Impact by Provinces (heatmap) intensity scale: kept deliberately
+       pale across every tier — readability comes from the bold dark text
+       on top (see textColorFor in renderAll), not from a dark cell fill,
+       which was the "white text on a dark block" bug in the prior pass. */
+    --seq-0: #FDF8F8; --seq-1: #FAF0F0; --seq-2: #F7E2E2; --seq-3: #F5D5D5; --seq-4: #F2C4C4;
 
     /* Track background for progress/distribution bars — light gray
        diagonal hatching per the reference's Duckticket/Seevent bars.
@@ -61,7 +66,7 @@
     --radius-pill:    999px;
     --gray-500: #6B7280;
     --shadow-outer: 0 16px 40px rgba(0,0,0,0.05);
-    --shadow-card:  0 10px 30px rgba(0,0,0,0.04);
+    --shadow-card:  0 10px 30px rgba(0,0,0,0.05);
 
     /* Single-screen band heights: clamp() so the layout stays sane from a
        1366x768 laptop up to a 1920x1080 monitor without ever needing the
@@ -70,9 +75,9 @@
        the Executive Summary inside it needs to grow; the main grid below
        (flex:1, min-height:0) is what absorbs that growth. */
     --h-footer: clamp(38px, 5.5vh, 58px);
-    --gap:      clamp(8px, 0.9vh, 14px);
+    --gap:      clamp(16px, 1.6vh, 24px);
     --pad-x:    clamp(12px, 1.4vw, 20px);
-    --shell-margin: clamp(20px, 3vw, 48px);
+    --shell-margin: 24px;
   }
   @media (prefers-color-scheme: dark) {
     :root:where(:not([data-theme="light"])) {
@@ -171,14 +176,22 @@
      content; expanding the summary grows this card and the main grid
      below (flex:1, min-height:0) shrinks to absorb it, so .shell still
      never exceeds 100vh. ---- */
-  .main-banner.card { flex: 0 0 auto; }
-  .banner-top-row { flex: none; display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; flex-wrap: wrap; margin-bottom: 10px; }
+  .main-banner.card { flex: 0 0 auto; padding: 0; }
+  /* Walenteer-style header band: the orange gradient is scoped to the
+     title/filters row only (bleeds to the card's own edges via the
+     zeroed card padding above) — the Executive Summary text below stays
+     on plain white so its stats/recommendations remain fully legible. */
+  .banner-top-row {
+    flex: none; display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; flex-wrap: wrap;
+    background: var(--gradient-walenteer);
+    border-radius: var(--radius-card) var(--radius-card) 0 0;
+    padding: clamp(14px, 1.6vh, 20px) clamp(14px, 1.4vw, 20px);
+    margin: 0;
+  }
   .brand-block { flex: none; min-width: 0; }
-  .brand-block h1 { margin: 0; font-size: clamp(24px, 2vw, 32px); font-weight: 700; white-space: nowrap; }
-  .data-status-line { font-size: clamp(10px, 0.7vw, 12px); color: var(--text-muted); margin-top: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .data-status-line.is-live   { color: var(--status-good-text); }
-  .data-status-line.is-cached { color: var(--status-warning-text); }
-  .data-status-line.is-error  { color: var(--status-critical-text); }
+  .brand-block h1 { margin: 0; font-size: clamp(24px, 2vw, 32px); font-weight: 700; white-space: nowrap; color: #FFFFFF; }
+  .data-status-line { font-size: clamp(10px, 0.7vw, 12px); color: rgba(255,255,255,0.85); margin-top: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .data-status-line.is-live, .data-status-line.is-cached, .data-status-line.is-error { color: rgba(255,255,255,0.85); }
 
   .filters-cluster { flex: 0 1 auto; display: flex; align-items: center; gap: 8px; justify-content: flex-end; flex-wrap: wrap; margin-left: auto; }
   .filters-cluster select {
@@ -188,21 +201,24 @@
     flex: none; transition: border-color .15s ease;
   }
   .filters-cluster select:hover { border-color: var(--text-muted); }
-  /* Primary CTA: the dashboard's one action button, styled solid Accent 1
-     (deep orange) per "primary buttons use Accent 1"; every other control
-     stays a plain white secondary button (surface-1 + thin border + navy text). */
+  /* Primary CTA: Refresh + Sort Status are the two named action buttons,
+     both styled with the Walenteer orange gradient + white text; every
+     other control stays a plain white secondary button. */
   .refresh-btn {
     flex: none; font-size: clamp(10px, 0.72vw, 12px); font-weight: 600; color: #FFFFFF;
     border: none; border-radius: var(--radius-control);
-    padding: clamp(5px, 0.7vh, 7px) 14px; background: var(--accent-orange); cursor: pointer;
-    transition: background .15s ease, transform .15s ease; white-space: nowrap;
+    padding: clamp(5px, 0.7vh, 7px) 14px; background: var(--gradient-walenteer); cursor: pointer;
+    transition: opacity .15s ease, transform .15s ease; white-space: nowrap;
   }
-  .refresh-btn:hover { background: var(--brand-dark); transform: translateY(-1px); }
+  .refresh-btn:hover { opacity: .92; transform: translateY(-1px); }
   .refresh-btn:disabled { opacity: .6; cursor: default; transform: none; }
 
-  /* ---- Executive Summary (inside the banner, collapsible) ---- */
-  .exec-summary-head { flex: none; display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; padding-top: 10px; border-top: 1px solid var(--gridline); }
+  /* ---- Executive Summary (inside the banner, collapsible) ----
+     .main-banner.card has padding:0 so the header band above can bleed
+     to the card edges; these two re-add the card's normal inset. ---- */
+  .exec-summary-head { flex: none; display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; padding: 10px clamp(10px, 1vw, 14px) 0; border-top: 1px solid var(--gridline); margin-top: 10px; }
   .exec-summary-head h2 { margin: 0; }
+  #execSummaryBody { padding: 0 clamp(10px, 1vw, 14px) clamp(8px, 1vh, 12px); }
   .exec-toggle-btn {
     flex: none; font-size: clamp(10px, 0.7vw, 11.5px); font-weight: 600; color: var(--text-secondary);
     border: 1px solid var(--border); border-radius: var(--radius-control); padding: 6px 12px;
@@ -268,6 +284,9 @@
   .main-grid { flex: 1 1 auto; min-height: 0; display: grid; grid-template-columns: 3fr 4fr 3fr; gap: var(--gap); }
   .main-col { display: flex; flex-direction: column; gap: var(--gap); min-height: 0; }
   .main-col .card { flex: 1 1 0; min-height: 0; }
+  /* Leftmost column stands in for the reference's left panel — a clean
+     white block with a soft orange accent bar across the top of each card. */
+  .main-col:first-child .card { border-top: 3px solid var(--accent-orange); }
 
   /* Left column: compact bar charts */
   .legend-row { flex: none; display: flex; gap: 10px; font-size: clamp(9px, 0.68vw, 10.5px); color: var(--text-secondary); margin-bottom: 4px; flex-wrap: wrap; }
@@ -300,11 +319,11 @@
   .status-mix-legend .legend-caption { font-weight: 600; color: var(--text-muted); margin-right: 2px; }
 
   /* Right column: heatmap + case feed */
-  table.heatmap { border-collapse: separate; border-spacing: 2px; font-size: clamp(9.5px, 0.7vw, 11px); width: 100%; }
-  table.heatmap th { font-weight: 600; color: var(--text-secondary); font-size: clamp(8.5px, 0.62vw, 10px); padding: 3px 5px; text-align: center; position: sticky; top: 0; background: var(--surface-1); z-index: 1; }
+  table.heatmap { border-collapse: separate; border-spacing: 2px; font-size: clamp(9.5px, 0.7vw, 11px); width: 100%; background: var(--surface-1); }
+  table.heatmap th { font-weight: 700; color: var(--text-primary); font-size: clamp(8.5px, 0.62vw, 10px); padding: 3px 5px; text-align: center; position: sticky; top: 0; background: var(--surface-1); z-index: 1; }
   table.heatmap th.row-head { text-align: left; }
   table.heatmap td.row-head { text-align: left; padding: 4px 5px; color: var(--text-primary); font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 90px; }
-  table.heatmap td.cell { text-align: center; padding: 6px 3px; border-radius: 6px; font-variant-numeric: tabular-nums; font-weight: 700; min-width: 34px; }
+  table.heatmap td.cell { text-align: center; padding: 6px 3px; border-radius: 6px; font-variant-numeric: tabular-nums; font-weight: 700; min-width: 34px; border: 1px solid #F3F4F6; }
   table.heatmap.hide-labels td.cell { font-size: 0; }
   table.heatmap td.total-cell { text-align: center; font-weight: 700; color: var(--text-primary); }
   .heatmap-scale { flex: none; display: flex; align-items: center; gap: 5px; margin-top: 5px; font-size: clamp(8px, 0.6vw, 9.5px); color: var(--text-muted); }
@@ -338,11 +357,10 @@
   .office-chip .stat { color: var(--text-muted); }
   .office-chip .stat strong { color: var(--status-critical-text); font-weight: 700; }
 
-  /* "Sort Status" dropdown: navy fill with an orange outline, called out
-     by name in the reference as its own distinct control. */
+  /* "Sort Status" is one of the two named action buttons, styled with
+     the Walenteer gradient like Refresh. */
   #sortToggle {
-    background: var(--accent-navy); color: #FFFFFF;
-    border: 1px solid var(--accent-orange);
+    background: var(--gradient-walenteer); color: #FFFFFF; border: none;
   }
 </style>
 </head>
@@ -412,6 +430,7 @@
             <option value="no">Counts: No</option>
           </select>
         </div>
+        <div class="card-body"><table class="heatmap" id="heatmapTable"></table></div>
         <div class="heatmap-scale">
           <span>Less</span>
           <span class="swatch" style="background:var(--seq-0)"></span>
@@ -421,7 +440,6 @@
           <span class="swatch" style="background:var(--seq-4)"></span>
           <span>More</span>
         </div>
-        <div class="card-body"><table class="heatmap" id="heatmapTable"></table></div>
       </div>
       <div class="card">
         <div class="card-head">
@@ -833,12 +851,15 @@
     else {
       const maxCell = Math.max(...provinceRows.flatMap(r => STATUS_ORDER.map(st => r[st])), 1);
       const seqColor = (count) => count === 0 ? null : SEQ[Math.max(0, Math.min(SEQ.length - 1, Math.round((count / maxCell) * (SEQ.length - 1))))];
-      const textColorFor = (count) => Math.round((count / maxCell) * (SEQ.length - 1)) >= 3 ? '#ffffff' : 'var(--text-primary)';
+      // Text stays dark regardless of the cell's magnitude tier (the pale
+      // pink scale never gets dark enough to need white) — Active is
+      // singled out in bold dark red so it reads as the priority column.
+      const textColorFor = (st) => st === 'Active' ? '#C93636' : '#111827';
       const thead = '<tr><th class="row-head">Province</th>' + STATUS_ORDER.map(st => `<th>${st}</th>`).join('') + '<th>Total</th></tr>';
       const tbody = provinceRows.map(r => {
         const cells = STATUS_ORDER.map(st => {
           const bg = seqColor(r[st]);
-          const style = bg ? `background:${bg};color:${textColorFor(r[st])}` : `background:transparent;color:var(--text-muted);border:1px dashed var(--gridline)`;
+          const style = bg ? `background:${bg};color:${textColorFor(st)}` : `background:transparent;color:var(--text-muted);border:1px dashed var(--gridline)`;
           return `<td class="cell" style="${style}">${r[st] || ''}</td>`;
         }).join('');
         return `<tr><td class="row-head">${r.name}</td>${cells}<td class="total-cell">${r.total}</td></tr>`;
