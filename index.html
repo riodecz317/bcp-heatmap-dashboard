@@ -23,22 +23,22 @@
     --gridline:       #F9FAFB;
     --border:         #ECEDF1;
     --row-hover:      #F3F4F6;
-    --focus-ring:     #FF5C00;
+    --focus-ring:     #F97316;
 
-    /* "MoonRow" reserves deep orange for Active states explicitly, so
-       Monitoring shifts to a distinguishable gold (not orange) to avoid
-       two statuses reading as the same color — Resolved stays green. */
+    /* Master status palette — the single source of truth for every
+       Active/Monitoring/Resolved element on the page (KPI donut, case
+       pills, map dots, province table, account/LOB bars, Top Risk pill). */
     --status-good:     #22C55E;
-    --status-warning:  #F2B705;
-    --status-critical: #FF5C00;
-    --status-good-text:     #15803D;
-    --status-warning-text:  #92730B;
-    --status-critical-text: #C2410C;
+    --status-warning:  #EAB308;
+    --status-critical: #F97316;
+    --status-good-text:     #166534;
+    --status-warning-text:  #854D0E;
+    --status-critical-text: #9A3412;
 
-    --accent-orange: #FF5C00;
+    --accent-orange: #F97316;
     --accent-navy:   #21263F;
-    --brand-dark:  #C2410C;
-    --brand-mid:   #FF5C00;
+    --brand-dark:  #9A3412;
+    --brand-mid:   #F97316;
     --brand-light: #FFE8DC;
     --accent:         var(--brand-mid);
     --accent-strong:  var(--brand-dark);
@@ -241,14 +241,17 @@
   .exec-stats-row { display: flex; gap: 20px; flex-wrap: wrap; }
   .exec-stat { display: flex; align-items: baseline; gap: 6px; font-size: clamp(10.5px, 0.78vw, 12.5px); color: var(--text-secondary); white-space: nowrap; }
   .exec-stat strong { font-size: 1.15em; color: var(--text-primary); }
+  /* Top Risk pill: solid Active-orange background per the master status
+     palette, with the Active text color on top (both read straight off
+     --status-critical / --status-critical-text, not a separate accent). */
   .exec-risk-callout {
     display: flex; align-items: center; gap: 8px;
-    background: var(--accent-soft); color: var(--accent-strong);
+    background: var(--status-critical); color: var(--status-critical-text);
     border-radius: var(--radius-pill); padding: 5px 14px 5px 6px; margin-right: 16px;
     font-size: clamp(10px, 0.72vw, 12px); font-weight: 600; line-height: 1.4;
   }
-  .exec-risk-callout .risk-tag { flex: none; font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; background: var(--accent-orange); color: #FFFFFF; border-radius: var(--radius-pill); padding: 3px 8px; }
-  .exec-risk-callout strong { color: var(--accent-strong); }
+  .exec-risk-callout .risk-tag { flex: none; font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; background: var(--status-critical-text); color: #FFFFFF; border-radius: var(--radius-pill); padding: 3px 8px; }
+  .exec-risk-callout strong { color: var(--status-critical-text); }
 
   .exec-reco-label { display: block; margin: 10px 0 6px; font-size: 0.68rem; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; color: var(--text-muted); }
   .exec-reco-row { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
@@ -922,11 +925,6 @@
     const heatmapTable = document.getElementById('heatmapTable');
     if (!provinceRows.length) { heatmapTable.innerHTML = '<div style="padding:8px;color:var(--text-muted);font-size:11px;">No cases match the current filters.</div>'; }
     else {
-      const PILL_STYLE = {
-        Active:     { bg: '#FCE9E9', text: '#C93636' },
-        Monitoring: { bg: '#FFF4D6', text: '#B45309' },
-        Resolved:   { bg: '#E6F4EA', text: '#1B7F3B' }
-      };
       const head = `
         <div class="province-row province-row-head">
           <span class="col-name">Province</span>
@@ -939,8 +937,7 @@
         const cells = STATUS_ORDER.map(st => {
           const val = r[st];
           if (!val) return '<span class="col-stat"></span>';
-          const p = PILL_STYLE[st];
-          return `<span class="col-stat"><span class="status-pill" style="background:${p.bg};color:${p.text}">${val}</span></span>`;
+          return `<span class="col-stat"><span class="status-pill" style="background:${STATUS_COLOR[st]};color:${STATUS_TEXT[st]}">${val}</span></span>`;
         }).join('');
         return `
         <div class="province-row">
@@ -988,7 +985,7 @@
           <div class="case-body">
             <div class="case-title-row">
               <span class="case-name">${d.name} &middot; ${d.id}</span>
-              <span class="case-status-pill" style="background:${STATUS_COLOR[d.status]}22;color:${STATUS_TEXT[d.status]}">${d.status}</span>
+              <span class="case-status-pill" style="background:${STATUS_COLOR[d.status]};color:${STATUS_TEXT[d.status]}">${d.status}</span>
             </div>
             <div class="case-account-lob">Account: ${d.account} | LOB: ${d.lob}</div>
             <div class="case-meta">${d.office}, ${d.province} &middot; ${d.impact} (${d.issue})</div>
