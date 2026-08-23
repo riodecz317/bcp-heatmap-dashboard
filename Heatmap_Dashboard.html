@@ -294,17 +294,22 @@
   .kpi-caption-secondary { font-size: clamp(7.5px, 0.56vw, 9px); color: var(--text-muted); margin-top: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .kpi-caption-secondary strong { color: var(--text-secondary); font-weight: 600; }
   .kpi-bar-caption { font-size: clamp(7.5px, 0.56vw, 9px); color: var(--text-muted); text-transform: uppercase; letter-spacing: .03em; font-weight: 700; margin-top: 5px; }
-  .kpi-mini-legend { font-size: clamp(9.5px, 0.72vw, 11px); font-weight: 600; color: #1E293B; display: flex; justify-content: center; gap: 6px; flex-wrap: wrap; }
-  .kpi-mini-legend .dot { display: inline-block; width: 6px; height: 6px; border-radius: 50%; margin-right: 2px; vertical-align: middle; }
+  /* Stacked (not wrapped-horizontal) so 3 items with counts never crowd
+     into an uneven 2+1 wrap inside a narrow KPI card. */
+  .kpi-mini-legend { font-size: clamp(9.5px, 0.72vw, 11px); font-weight: 600; color: #1E293B; display: flex; flex-direction: column; align-items: center; gap: 3px; }
+  .kpi-mini-legend span { display: flex; align-items: center; }
+  .kpi-mini-legend .dot { display: inline-block; width: 6px; height: 6px; border-radius: 50%; margin-right: 5px; flex: none; }
 
   /* Status donut: SVG ring flex-centered in the leftover vertical space
      between the card label and the bottom legend, with the case total
-     absolutely centered over it. */
-  .kpi-donut-wrap { flex: 1 1 auto; min-height: 64px; display: flex; align-items: center; justify-content: center; position: relative; }
-  .kpi-donut { width: 60%; max-width: 84px; aspect-ratio: 1 / 1; }
+     absolutely centered over it. Slightly more room between the value
+     and its caption, and a lower value-size ceiling, so "15" and
+     "Total Cases" don't crowd each other inside the ring's hole. */
+  .kpi-donut-wrap { flex: 1 1 auto; min-height: 68px; display: flex; align-items: center; justify-content: center; position: relative; }
+  .kpi-donut { width: 62%; max-width: 92px; aspect-ratio: 1 / 1; }
   .kpi-donut-center { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; pointer-events: none; }
-  .kpi-donut-value { font-size: clamp(0.95rem, 1.6vw, 1.3rem); font-weight: 800; color: #1E293B; line-height: 1; }
-  .kpi-donut-sub { font-size: clamp(6.5px, 0.5vw, 7.5px); color: var(--text-muted); opacity: .75; margin-top: 2px; text-transform: uppercase; letter-spacing: .03em; }
+  .kpi-donut-value { font-size: clamp(0.9rem, 1.4vw, 1.1rem); font-weight: 800; color: #1E293B; line-height: 1; }
+  .kpi-donut-sub { font-size: clamp(6.5px, 0.5vw, 7.5px); color: var(--text-muted); opacity: .75; margin-top: 4px; text-transform: uppercase; letter-spacing: .03em; }
 
   /* ---- Band 4: main 3-column grid ---- */
   .main-grid { flex: 1 1 auto; min-height: 0; display: grid; grid-template-columns: 3fr 4fr 3fr; gap: var(--gap); }
@@ -802,7 +807,7 @@
   // segment shortened slightly so the rounded caps (stroke-linecap:round)
   // read as distinct pill-shaped arcs instead of one solid ring.
   function buildStatusDonut(data, total) {
-    const r = 38, cx = 50, cy = 50, sw = 12;
+    const r = 38, cx = 50, cy = 50, sw = 10;
     const circumference = 2 * Math.PI * r;
     const gap = circumference * 0.02;
     let offset = 0;
