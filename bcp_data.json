@@ -105,10 +105,10 @@
         "province":  "Metro Manila",
         "region":  "National Capital Region",
         "island":  "Luzon",
-        "status":  "Active",
+        "status":  "Resolved",
         "impact":  "Flooded",
         "issue":  "Typhoon",
-        "help":  "Yes",
+        "help":  "No",
         "remarks":  "Pumps and sandbags needed"
     },
     {
