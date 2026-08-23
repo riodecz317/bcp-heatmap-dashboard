@@ -7,6 +7,9 @@
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
 <style>
+  /* ============================================================
+     DESIGN TOKENS
+     ============================================================ */
   :root {
     color-scheme: light;
     --page:           #F3F4F6;
@@ -16,6 +19,8 @@
     --text-muted:     #64748B;
     --gridline:       #F1F5F9;
     --border:         #E2E8F0;
+    --row-hover:      #EEF2F7;
+    --focus-ring:     #EF4444;
 
     --status-good:     #10B981;
     --status-warning:  #F59E0B;
@@ -27,18 +32,27 @@
     --brand-dark:  #B91C1C;
     --brand-mid:   #EF4444;
     --brand-light: #FEE2E2;
+    --accent:         var(--brand-mid);
+    --accent-strong:  var(--brand-dark);
+    --accent-soft:    var(--brand-light);
 
     --rank-1: #B91C1C; --rank-2: #EF4444; --rank-3: #F3897F; --rank-4: #F0AFA8;
     --seq-0: #FEF2F2; --seq-1: #FECACA; --seq-2: #F3897F; --seq-3: #EF4444; --seq-4: #B91C1C;
 
-    /* ---- Design tokens: primary/accent, radius, typography (theme-independent) ---- */
-    --accent:         var(--brand-mid);
-    --accent-strong:  var(--brand-dark);
-    --accent-soft:    var(--brand-light);
     --font-sans: "Segoe UI", system-ui, -apple-system, sans-serif;
     --radius-card:    12px;
     --radius-control: 8px;
     --radius-pill:    999px;
+
+    /* Single-screen band heights: clamp() so the layout stays sane from a
+       1366x768 laptop up to a 1920x1080 monitor without ever needing the
+       page itself to scroll — only vh-driven, never content-driven. */
+    --h-header: clamp(48px, 6.5vh, 68px);
+    --h-exec:   clamp(42px, 8vh, 78px);
+    --h-kpi:    clamp(92px, 17vh, 150px);
+    --h-footer: clamp(38px, 5.5vh, 58px);
+    --gap:      clamp(8px, 0.9vh, 14px);
+    --pad-x:    clamp(12px, 1.4vw, 20px);
   }
   @media (prefers-color-scheme: dark) {
     :root:where(:not([data-theme="light"])) {
@@ -50,6 +64,8 @@
       --text-muted:     #94A3B8;
       --gridline:       #2A3B52;
       --border:         rgba(255,255,255,0.10);
+      --row-hover:      #24344A;
+      --focus-ring:     #F87171;
       --status-critical: #F87171;
       --status-good-text:     #34D399;
       --status-warning-text:  #FBBF24;
@@ -67,6 +83,8 @@
     --text-muted:     #94A3B8;
     --gridline:       #2A3B52;
     --border:         rgba(255,255,255,0.10);
+    --row-hover:      #24344A;
+    --focus-ring:     #F87171;
     --status-critical: #F87171;
     --status-good-text:     #34D399;
     --status-warning-text:  #FBBF24;
@@ -76,147 +94,127 @@
   }
 
   * { box-sizing: border-box; }
-  html, body { margin: 0; height: 100%; }
+  html, body { margin: 0; height: 100%; overflow: hidden; }
   body {
     font-family: var(--font-sans);
     background: var(--page);
     color: var(--text-primary);
+    -webkit-font-smoothing: antialiased;
   }
+  ::-webkit-scrollbar { width: 7px; height: 7px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: var(--radius-pill); }
+  * { scrollbar-width: thin; scrollbar-color: var(--border) transparent; }
+  button, select, input { font-family: inherit; }
+  a:focus-visible, button:focus-visible, select:focus-visible, input:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 1px; }
 
-  /* ==================================================================
-     SHELL: fixed-height sidebar + independently scrolling main column
-     ================================================================== */
-  .shell { display: flex; height: 100vh; min-height: 0; }
-
-  /* ---- Sidebar ---- */
-  .sidebar {
-    flex: 0 0 232px; height: 100vh; overflow-y: auto;
-    background: var(--surface-1); border-right: 1px solid var(--border);
-    display: flex; flex-direction: column; padding: 22px 18px;
+  /* ============================================================
+     SHELL: five fixed/flexible bands, zero page scroll
+     ============================================================ */
+  .shell {
+    height: 100vh; overflow: hidden;
+    display: flex; flex-direction: column;
+    padding: var(--gap) var(--pad-x);
+    gap: var(--gap);
   }
-  .brand { font-size: 1.05rem; font-weight: 800; letter-spacing: -.01em; margin-bottom: 26px; display: flex; align-items: baseline; gap: 6px; }
-  .brand small { font-size: 0.6rem; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: .08em; }
-
-  .side-nav { list-style: none; margin: 0 0 22px 0; padding: 0; display: flex; flex-direction: column; gap: 2px; }
-  .side-nav a {
-    display: flex; align-items: center; gap: 10px; text-decoration: none;
-    color: var(--text-secondary); font-size: 13px; font-weight: 600;
-    padding: 9px 10px; border-radius: var(--radius-control); cursor: pointer;
-  }
-  .side-nav a:hover { background: var(--gridline); }
-  .side-nav a.active { background: var(--accent-soft); color: var(--accent-strong); }
-  .side-nav a .nav-icon { flex: none; font-size: 14px; width: 16px; text-align: center; }
-  .side-nav a .nav-label { flex: 1; }
-  .side-nav a .nav-count { flex: none; font-size: 10.5px; font-weight: 700; color: var(--text-muted); background: var(--gridline); border-radius: var(--radius-pill); padding: 2px 7px; font-variant-numeric: tabular-nums; }
-  .side-nav a.active .nav-count { background: #FFFFFF; color: var(--accent-strong); }
-
-  .sidebar-alert {
-    position: relative; background: var(--gridline); border: 1px solid var(--border);
-    border-radius: var(--radius-card); padding: 14px 14px 12px; margin-bottom: 16px; flex: none;
-  }
-  .sidebar-alert .dismiss { position: absolute; top: 8px; right: 8px; border: none; background: transparent; color: var(--text-muted); font-size: 13px; cursor: pointer; line-height: 1; padding: 3px; }
-  .sidebar-alert .alert-icon { font-size: 18px; margin-bottom: 6px; }
-  .sidebar-alert .alert-title { font-size: 12.5px; font-weight: 700; color: var(--text-primary); margin-bottom: 5px; line-height: 1.35; }
-  .sidebar-alert .alert-body { font-size: 11.5px; color: var(--text-secondary); line-height: 1.5; margin-bottom: 10px; }
-  .sidebar-alert .alert-body strong { color: var(--text-primary); }
-  .sidebar-alert .learn-more {
-    display: inline-block; font-size: 10.5px; font-weight: 700; letter-spacing: .03em;
-    color: var(--accent-strong); text-decoration: none; border-bottom: 1.5px solid var(--accent-strong); padding-bottom: 1px;
-  }
-
-  .sidebar-footer { margin-top: auto; padding-top: 14px; }
-  .side-settings { list-style: none; margin: 0 0 14px 0; padding: 0; border-top: 1px solid var(--border); padding-top: 12px; }
-  .side-settings li { font-size: 11.5px; color: var(--text-muted); padding: 6px 4px; }
-  .profile-pill { display: flex; align-items: center; gap: 9px; padding: 8px; border-radius: 10px; border: 1px solid var(--border); }
-  .profile-avatar { flex: none; width: 28px; height: 28px; border-radius: 50%; background: var(--accent); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; }
-  .profile-name { flex: 1; font-size: 12px; font-weight: 600; }
-  .profile-role { font-size: 10px; color: var(--text-muted); }
-
-  /* ---- Main column ---- */
-  .main { flex: 1; min-width: 0; height: 100vh; overflow-y: auto; }
-  .main-inner { max-width: 1600px; margin: 0 auto; padding: 22px 28px 40px; }
-
-  /* ---- Top bar: status tabs + search + bell ---- */
-  .topbar { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
-  .tabs { display: flex; align-items: center; gap: 22px; flex-wrap: wrap; }
-  .tab {
-    background: none; border: none; cursor: pointer; padding: 4px 0 10px;
-    font-size: 12.5px; font-weight: 600; color: var(--text-muted);
-    border-bottom: 2px solid transparent; white-space: nowrap;
-  }
-  .tab.active { color: var(--text-primary); border-bottom-color: var(--accent); }
-  .topbar-actions { display: flex; align-items: center; gap: 10px; }
-  .search-wrap { position: relative; }
-  .search-wrap input {
-    font-size: 12.5px; color: var(--text-primary); background: var(--surface-1);
-    border: 1px solid var(--border); border-radius: 10px; padding: 8px 12px 8px 32px; width: 240px;
-  }
-  .search-wrap .search-icon { position: absolute; left: 11px; top: 50%; transform: translateY(-50%); font-size: 12px; color: var(--text-muted); }
-  .icon-btn {
-    flex: none; width: 32px; height: 32px; border-radius: var(--radius-control); border: 1px solid var(--border);
-    background: var(--surface-1); color: var(--text-secondary); cursor: pointer; font-size: 13px;
-    display: flex; align-items: center; justify-content: center; position: relative;
-  }
-  .icon-btn:hover { background: var(--gridline); }
-  .icon-btn:disabled { opacity: .6; cursor: default; }
-  .icon-btn .badge-dot { position: absolute; top: -3px; right: -3px; background: var(--status-critical); color: #fff; font-size: 8.5px; font-weight: 700; border-radius: var(--radius-pill); min-width: 14px; height: 14px; display: flex; align-items: center; justify-content: center; padding: 0 2px; }
-
-  /* ---- Greeting + inline KPI strip ---- */
-  .greeting-row { display: flex; align-items: flex-end; justify-content: space-between; gap: 20px 32px; flex-wrap: wrap; margin: 22px 0 20px; }
-  .greeting-row h1 { margin: 0; font-size: 1.5rem; font-weight: 700; }
-  .greeting-sub { font-size: 12.5px; color: var(--text-secondary); margin-top: 4px; }
-  .data-status-line { font-size: 10.5px; color: var(--text-muted); margin-top: 3px; }
-  .data-status-line.is-live   { color: var(--status-good-text); }
-  .data-status-line.is-cached { color: var(--status-warning-text); }
-  .data-status-line.is-error  { color: var(--status-critical-text); }
-
-  .kpi-strip { display: flex; gap: 28px 34px; flex-wrap: wrap; }
-  .kpi-inline { text-align: right; }
-  .kpi-inline .kpi-label { display: flex; align-items: center; justify-content: flex-end; gap: 4px; font-size: 10px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; color: var(--text-muted); }
-  .kpi-inline .kpi-value { font-size: 1.3rem; font-weight: 700; margin-top: 2px; display: flex; align-items: baseline; justify-content: flex-end; gap: 6px; }
-  .kpi-pill { font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: var(--radius-pill); }
-  .kpi-pill.good { background: #D1FAE5; color: var(--status-good-text); }
-  .kpi-pill.warn { background: #FEF3C7; color: var(--status-warning-text); }
-  .kpi-pill.bad  { background: #FEE2E2; color: var(--status-critical-text); }
-
-  /* ---- Hero content: map (left) + stat cards (right) ---- */
-  .hero-grid { display: grid; grid-template-columns: minmax(0, 1.7fr) minmax(280px, 1fr); gap: 18px; align-items: start; }
-  @media (max-width: 1180px) { .hero-grid { grid-template-columns: 1fr; } }
 
   .card {
     background: var(--surface-1);
     border: 1px solid var(--border);
     border-radius: var(--radius-card);
-    padding: 16px 18px;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-    display: flex;
-    flex-direction: column;
-    min-height: 0;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.04), 0 3px 8px rgba(0,0,0,0.03);
+    display: flex; flex-direction: column;
+    min-height: 0; overflow: hidden;
+    padding: clamp(8px, 1vh, 12px) clamp(10px, 1vw, 14px);
   }
   .card h2 {
-    flex: none; margin: 0 0 2px 0;
-    font-size: 0.875rem; font-weight: 600; text-transform: uppercase; letter-spacing: .04em;
-    color: var(--text-primary);
+    flex: none; margin: 0 0 3px; font-size: clamp(10px, 0.75vw, 12px);
+    font-weight: 700; text-transform: uppercase; letter-spacing: .04em; color: var(--text-primary);
   }
-  .card h3 { flex: none; margin: 16px 0 8px 0; font-size: 0.75rem; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; letter-spacing: .04em; }
-  .card .card-sub { flex: none; font-size: 12px; color: var(--text-muted); margin: 4px 0 12px 0; text-transform: none; letter-spacing: normal; font-weight: 400; }
-  .card-head { flex: none; display: flex; justify-content: space-between; align-items: baseline; gap: 10px; }
-  .card-scroll { flex: 1; min-height: 0; overflow-y: auto; }
-  .toggle-select { font-size: 11px; color: var(--text-secondary); border: 1px solid var(--border); border-radius: var(--radius-control); padding: 4px 8px; background: var(--surface-1); }
-  .badge-note { flex: none; font-size: 10px; color: var(--text-muted); background: var(--gridline); border-radius: var(--radius-pill); padding: 2px 8px; }
-  .exec-toggle-btn {
-    flex: none; font-size: 11px; font-weight: 600; color: var(--text-secondary);
-    border: 1px solid var(--border); border-radius: var(--radius-control); padding: 6px 12px;
-    background: var(--surface-1); cursor: pointer; white-space: nowrap;
-  }
-  .exec-toggle-btn:hover { background: var(--gridline); }
+  .card .card-sub { flex: none; font-size: clamp(9px, 0.65vw, 10.5px); color: var(--text-muted); margin: 0 0 6px; }
+  .card-head { flex: none; display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+  .card-body { flex: 1 1 0; min-height: 0; overflow-y: auto; }
+  .toggle-select { font-size: clamp(9px, 0.65vw, 10.5px); color: var(--text-secondary); border: 1px solid var(--border); border-radius: var(--radius-control); padding: 3px 6px; background: var(--surface-1); }
 
-  /* ---- Map panel ---- */
-  .map-back-arrow { flex: none; color: var(--text-muted); font-size: 14px; margin-right: 4px; }
-  #impactMapLeaflet {
-    height: 420px; border-radius: var(--radius-control); overflow: hidden;
-    background: #FFFFFF; border: none; flex: none;
+  /* ---- Band 1: Header ---- */
+  .header-bar { flex: 0 0 var(--h-header); display: flex; align-items: center; justify-content: space-between; gap: 14px; min-width: 0; }
+  .brand-block { flex: none; min-width: 0; }
+  .brand-block h1 { margin: 0; font-size: clamp(0.95rem, 1.3vw, 1.2rem); font-weight: 700; white-space: nowrap; }
+  .data-status-line { font-size: clamp(9px, 0.65vw, 10.5px); color: var(--text-muted); margin-top: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .data-status-line.is-live   { color: var(--status-good-text); }
+  .data-status-line.is-cached { color: var(--status-warning-text); }
+  .data-status-line.is-error  { color: var(--status-critical-text); }
+
+  .filters-cluster { flex: 1 1 auto; display: flex; align-items: center; gap: 8px; justify-content: flex-end; overflow-x: auto; min-width: 0; padding-bottom: 2px; }
+  .filters-cluster select {
+    font-size: clamp(10px, 0.72vw, 12px); color: var(--text-primary);
+    border: 1px solid var(--border); border-radius: var(--radius-control);
+    padding: clamp(5px, 0.7vh, 7px) 9px; background: var(--surface-1);
+    flex: none; transition: border-color .15s ease;
   }
+  .filters-cluster select:hover { border-color: var(--text-muted); }
+  .refresh-btn {
+    flex: none; font-size: clamp(10px, 0.72vw, 12px); font-weight: 600; color: var(--text-primary);
+    border: 1px solid var(--border); border-radius: var(--radius-control);
+    padding: clamp(5px, 0.7vh, 7px) 11px; background: var(--surface-1); cursor: pointer;
+    transition: background .15s ease, border-color .15s ease; white-space: nowrap;
+  }
+  .refresh-btn:hover { background: var(--gridline); border-color: var(--text-muted); }
+  .refresh-btn:disabled { opacity: .6; cursor: default; }
+
+  /* ---- Band 2: Executive Summary strip ---- */
+  .exec-strip.card { flex: 0 0 var(--h-exec); flex-direction: row; align-items: center; gap: clamp(10px, 1.4vw, 20px); }
+  .exec-stats-inline { flex: none; display: flex; gap: 14px; white-space: nowrap; }
+  .exec-stat-inline { font-size: clamp(10px, 0.78vw, 12.5px); color: var(--text-secondary); }
+  .exec-stat-inline strong { color: var(--text-primary); font-size: 1.05em; }
+  .exec-risk-inline {
+    flex: none; display: flex; align-items: center; gap: 6px; white-space: nowrap;
+    background: var(--accent-soft); color: var(--accent-strong);
+    border-radius: var(--radius-pill); padding: 4px 12px 4px 5px; font-size: clamp(9.5px, 0.75vw, 12px); font-weight: 600;
+  }
+  .exec-risk-inline .risk-tag { flex: none; font-size: 8px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; background: var(--accent-strong); color: #FFFFFF; border-radius: var(--radius-pill); padding: 2px 6px; }
+  .exec-reco-strip { flex: 1 1 0; min-width: 0; display: flex; gap: clamp(10px, 1.2vw, 18px); overflow: hidden; height: 100%; align-items: center; }
+  .exec-reco-chip {
+    flex: 1 1 0; min-width: 0; border-left: 3px solid var(--accent); padding-left: 8px;
+    font-size: clamp(9.5px, 0.72vw, 11.5px); line-height: 1.3; color: var(--text-secondary);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .exec-reco-chip strong { color: var(--text-primary); }
+
+  /* ---- Band 3: KPI row (6 compact cards) ---- */
+  .kpi-row { flex: 0 0 var(--h-kpi); display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: var(--gap); min-width: 0; }
+  .kpi-card { justify-content: space-between; }
+  .kpi-card-label { font-size: clamp(8.5px, 0.65vw, 10px); font-weight: 700; letter-spacing: .04em; text-transform: uppercase; color: var(--text-muted); }
+  .kpi-card-value { font-size: clamp(1.05rem, 1.9vw, 1.55rem); font-weight: 800; line-height: 1.15; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .kpi-card-value .unit { font-size: 0.55em; font-weight: 600; color: var(--text-muted); }
+  .kpi-pill { font-size: clamp(8px, 0.6vw, 9.5px); font-weight: 700; padding: 1px 6px; border-radius: var(--radius-pill); margin-left: 4px; }
+  .kpi-pill.good { background: #D1FAE5; color: var(--status-good-text); }
+  .kpi-pill.warn { background: #FEF3C7; color: var(--status-warning-text); }
+  .kpi-pill.bad  { background: #FEE2E2; color: var(--status-critical-text); }
+  .kpi-spark { height: 6px; border-radius: 3px; overflow: hidden; display: flex; margin-top: auto; background: var(--gridline); }
+  .kpi-spark span { display: block; height: 100%; }
+  .kpi-card-foot { font-size: clamp(8px, 0.6vw, 9.5px); color: var(--text-muted); margin-top: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .kpi-mini-legend { font-size: clamp(7.5px, 0.58vw, 9px); color: var(--text-muted); margin-top: 3px; display: flex; gap: 6px; flex-wrap: wrap; }
+  .kpi-mini-legend .dot { display: inline-block; width: 6px; height: 6px; border-radius: 50%; margin-right: 2px; vertical-align: middle; }
+
+  /* ---- Band 4: main 3-column grid ---- */
+  .main-grid { flex: 1 1 auto; min-height: 0; display: grid; grid-template-columns: 3fr 4fr 3fr; gap: var(--gap); }
+  .main-col { display: flex; flex-direction: column; gap: var(--gap); min-height: 0; }
+  .main-col .card { flex: 1 1 0; min-height: 0; }
+
+  /* Left column: compact bar charts */
+  .legend-row { flex: none; display: flex; gap: 10px; font-size: clamp(9px, 0.68vw, 10.5px); color: var(--text-secondary); margin-bottom: 4px; flex-wrap: wrap; }
+  .legend-row .item { display: flex; align-items: center; gap: 4px; }
+  .legend-row .swatch { width: 7px; height: 7px; border-radius: 2px; }
+  .bar-row { display: grid; grid-template-columns: 76px 1fr 22px; align-items: center; gap: 6px; margin-bottom: 5px; font-size: clamp(9.5px, 0.7vw, 11px); }
+  .bar-row .label { color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .bar-track { display: flex; height: 7px; border-radius: 3px; overflow: hidden; background: var(--gridline); }
+  .bar-seg { height: 100%; }
+  .bar-total { text-align: right; color: var(--text-secondary); font-variant-numeric: tabular-nums; }
+
+  /* Center column: map */
+  .map-card { padding: clamp(8px, 1vh, 12px); }
+  #impactMapLeaflet { flex: 1 1 0; min-height: 0; border-radius: calc(var(--radius-card) - 3px); overflow: hidden; background: #FFFFFF; box-shadow: inset 0 0 0 1px var(--border); }
   .leaflet-container { font-family: inherit; background: #FFFFFF; }
   .leaflet-control-attribution { display: none; }
   .leaflet-tooltip.province-tip { font-size: 11px; font-family: inherit; }
@@ -224,386 +222,140 @@
   .province-count-label { transform: translate(-50%, -50%); pointer-events: none; }
   .province-count-label span {
     display: inline-block; background: #1E293B; color: #FFFFFF;
-    font-size: 10px; font-weight: 700; line-height: 1;
-    padding: 2px 6px; border-radius: var(--radius-pill); white-space: nowrap;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.35);
-    font-variant-numeric: tabular-nums;
+    font-size: 9.5px; font-weight: 700; line-height: 1;
+    padding: 2px 5px; border-radius: var(--radius-pill); white-space: nowrap;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.35); font-variant-numeric: tabular-nums;
   }
-  .status-mix-legend { flex: none; display: flex; gap: 14px; margin-top: 10px; font-size: 12px; color: var(--text-secondary); flex-wrap: wrap; }
-  .status-mix-legend .item { display: flex; align-items: center; gap: 5px; }
-  .status-mix-legend .swatch { width: 9px; height: 9px; border-radius: 2px; }
+  .status-mix-legend { flex: none; display: flex; gap: 10px; margin-top: 6px; font-size: clamp(9px, 0.65vw, 10.5px); color: var(--text-secondary); flex-wrap: wrap; }
+  .status-mix-legend .item { display: flex; align-items: center; gap: 4px; }
+  .status-mix-legend .swatch { width: 7px; height: 7px; border-radius: 2px; }
   .status-mix-legend .swatch.dot { border-radius: 50%; }
   .status-mix-legend .legend-caption { font-weight: 600; color: var(--text-muted); margin-right: 2px; }
-  #mapStatusLegend { margin: 10px 0 4px; }
 
-  .card-head-actions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
-  #provinceTableSection { display: none; flex-direction: column; margin-top: 12px; }
-  #provinceTableSection.is-open { display: flex; }
-  .table-scroll { flex: 1; min-height: 0; max-height: 220px; overflow-y: auto; }
-  table.rank-table { width: 100%; border-collapse: collapse; font-size: 12px; }
-  table.rank-table th { position: sticky; top: 0; background: var(--surface-1); text-align: left; font-size: 10px; text-transform: uppercase; color: var(--text-muted); font-weight: 600; padding: 6px; border-bottom: 1px solid var(--gridline); }
-  table.rank-table td { padding: 8px 6px; border-bottom: 1px solid var(--gridline); }
-  table.rank-table tr:last-child td { border-bottom: none; }
-  table.rank-table tbody tr:nth-child(even) td { background: var(--gridline); }
-  table.rank-table td.total-bar { position: relative; font-weight: 600; }
-
-  .heatmap-scale { flex: none; display: flex; align-items: center; gap: 6px; margin-top: 12px; font-size: 10px; color: var(--text-muted); }
-  .heatmap-scale .swatch { width: 10px; height: 10px; border-radius: 50%; }
-  .heatmap-wrap { max-height: 260px; overflow: auto; margin-top: 4px; }
-  table.heatmap { border-collapse: separate; border-spacing: 3px; font-size: 12px; width: 100%; }
-  table.heatmap th { font-weight: 600; color: var(--text-secondary); font-size: 11px; padding: 5px 8px; text-align: center; position: sticky; top: 0; background: var(--surface-1); z-index: 1; }
+  /* Right column: heatmap + case feed */
+  table.heatmap { border-collapse: separate; border-spacing: 2px; font-size: clamp(9.5px, 0.7vw, 11px); width: 100%; }
+  table.heatmap th { font-weight: 600; color: var(--text-secondary); font-size: clamp(8.5px, 0.62vw, 10px); padding: 3px 5px; text-align: center; position: sticky; top: 0; background: var(--surface-1); z-index: 1; }
   table.heatmap th.row-head { text-align: left; }
-  table.heatmap td.row-head { text-align: left; padding: 7px 8px; color: var(--text-primary); font-weight: 500; white-space: nowrap; }
-  table.heatmap td.cell { text-align: center; padding: 11px 5px; border-radius: 9px; font-variant-numeric: tabular-nums; font-weight: 700; min-width: 54px; }
+  table.heatmap td.row-head { text-align: left; padding: 4px 5px; color: var(--text-primary); font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 90px; }
+  table.heatmap td.cell { text-align: center; padding: 6px 3px; border-radius: 6px; font-variant-numeric: tabular-nums; font-weight: 700; min-width: 34px; }
   table.heatmap.hide-labels td.cell { font-size: 0; }
   table.heatmap td.total-cell { text-align: center; font-weight: 700; color: var(--text-primary); }
+  .heatmap-scale { flex: none; display: flex; align-items: center; gap: 5px; margin-top: 5px; font-size: clamp(8px, 0.6vw, 9.5px); color: var(--text-muted); }
+  .heatmap-scale .swatch { width: 8px; height: 8px; border-radius: 50%; }
 
-  /* ---- Right-side stat cards (snapshot, not fake time-series) ---- */
-  .stat-cards-col { display: flex; flex-direction: column; gap: 12px; }
-  .stat-card { padding: 14px 16px; }
-  .stat-card-top { display: flex; justify-content: space-between; align-items: flex-start; }
-  .stat-card-label { font-size: 10.5px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; color: var(--text-muted); }
-  .stat-card-value { font-size: 1.35rem; font-weight: 700; margin-top: 6px; }
-  .stat-card-value .of-total { font-size: 11px; font-weight: 600; color: var(--text-muted); margin-left: 2px; }
-  .stat-card-bar { height: 6px; border-radius: 3px; background: var(--gridline); overflow: hidden; margin-top: 10px; }
-  .stat-card-bar span { display: block; height: 100%; border-radius: 3px; }
-  .stat-card-foot { font-size: 10px; color: var(--text-muted); margin-top: 8px; }
-
-  /* ---- Case Response Journey ---- */
-  .journey-section { margin-top: 22px; }
-  .journey-head { display: flex; justify-content: space-between; align-items: flex-end; gap: 16px; flex-wrap: wrap; margin-bottom: 14px; }
-  .journey-head h2 { margin: 0; font-size: 1rem; font-weight: 700; }
-  .journey-head .card-sub { margin: 4px 0 0; font-size: 12px; color: var(--text-muted); }
-  .journey-controls { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
-  .pill-select {
-    font-size: 11.5px; color: var(--text-secondary); border: 1px solid var(--border); border-radius: var(--radius-pill);
-    padding: 6px 12px; background: var(--surface-1);
-  }
-  .filters-chip { font-size: 11.5px; font-weight: 600; color: var(--text-secondary); border: 1px solid var(--border); border-radius: var(--radius-pill); padding: 6px 14px; background: var(--surface-1); display: inline-flex; align-items: center; gap: 6px; }
-
-  .journey-stepper { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; margin-bottom: 4px; }
-  @media (max-width: 980px) { .journey-stepper { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
-  .journey-stage-head { display: flex; align-items: center; gap: 10px; padding: 12px 6px; border-top: 3px solid var(--border); }
-  .journey-stage-head .ring {
-    flex: none; width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
-    font-size: 11px; font-weight: 700; border: 3px solid var(--gridline);
-  }
-  .journey-stage-head .ring.good { border-color: var(--status-good); color: var(--status-good-text); }
-  .journey-stage-head .ring.warn { border-color: var(--status-warning); color: var(--status-warning-text); }
-  .journey-stage-head .ring.bad  { border-color: var(--status-critical); color: var(--status-critical-text); }
-  .journey-stage-title { font-size: 12.5px; font-weight: 700; display: flex; align-items: center; gap: 6px; }
-  .journey-stage-title .stage-icon { font-size: 12px; }
-  .journey-stage-count { font-size: 10.5px; color: var(--text-muted); margin-top: 2px; }
-
-  .journey-lane { position: relative; margin-bottom: 22px; }
-  .lane-track { display: flex; gap: 10px; overflow-x: auto; padding-bottom: 6px; scroll-behavior: smooth; }
-  .lane-scroll-btn {
-    flex: none; width: 26px; height: 26px; border-radius: 50%; border: 1px solid var(--border);
-    background: var(--surface-1); color: var(--text-secondary); cursor: pointer; font-size: 11px;
-  }
-  .lane-scroll-btn:hover { background: var(--gridline); }
-  .lane-controls { display: flex; justify-content: flex-end; gap: 6px; margin-bottom: 6px; }
-
-  .journey-card {
-    flex: 0 0 240px; background: var(--surface-1); border: 1px solid var(--border); border-radius: 10px;
-    padding: 12px 14px; font-size: 11.5px;
-  }
-  .journey-card-top { display: flex; justify-content: space-between; align-items: baseline; gap: 6px; }
-  .journey-card-id { font-weight: 700; font-size: 12px; }
-  .journey-card-meta { color: var(--text-muted); margin-top: 2px; }
-  .journey-card-pill { display: inline-block; margin-top: 8px; font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: var(--radius-pill); }
-  .journey-card-next { margin-top: 8px; padding-top: 8px; border-top: 1px dashed var(--gridline); color: var(--text-secondary); line-height: 1.4; }
-  .journey-card-next strong { color: var(--text-primary); font-size: 9.5px; text-transform: uppercase; letter-spacing: .04em; display: block; margin-bottom: 2px; }
-  .journey-empty { font-size: 12px; color: var(--text-muted); padding: 10px 2px; }
-
-  /* ---- Secondary breakdown grid (existing detail cards, relocated) ---- */
-  .secondary-section { margin-top: 30px; }
-  .secondary-section > h2 { font-size: 0.8rem; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; color: var(--text-muted); margin: 0 0 12px; }
-  .board { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; }
-  .board .col { display: flex; flex-direction: column; gap: 16px; min-height: 0; }
-  @media (max-width: 1400px) { .board { grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); } }
-  .card-fill { flex: 1 1 0; min-height: 320px; }
-
-  .welcome-stats { display: flex; flex-direction: column; gap: 10px; margin-top: 4px; }
-  .welcome-stats .stat { display: flex; align-items: baseline; justify-content: space-between; border-top: 1px solid var(--gridline); padding-top: 8px; }
-  .welcome-stats .stat:first-child { border-top: none; padding-top: 0; }
-  .welcome-stats .stat-label { font-size: 0.75rem; color: var(--text-secondary); text-transform: uppercase; letter-spacing: .04em; font-weight: 600; }
-  .welcome-stats .stat-value { font-size: 1.5rem; font-weight: 700; }
-  .welcome-stats .stat-total  .stat-value { color: var(--text-primary); }
-  .welcome-stats .stat-active .stat-value { color: var(--status-critical); }
-  .welcome-stats .stat-help   .stat-value { color: var(--status-warning-text); }
-
-  .status-mix-track { flex: none; display: flex; height: 20px; border-radius: 5px; overflow: hidden; background: var(--gridline); }
-
-  .rank-legend { list-style: none; margin: 0; padding: 0; }
-  .rank-legend li { display: flex; align-items: center; gap: 8px; padding: 7px 0; font-size: 13px; border-bottom: 1px solid var(--gridline); }
-  .rank-legend li:last-child { border-bottom: none; }
-  .rank-legend .swatch { width: 9px; height: 9px; border-radius: 3px; flex: none; border: 1px solid rgba(0,0,0,0.15); }
-  .rank-legend .name { flex: 1; color: var(--text-primary); }
-  .rank-legend .pct { color: var(--text-secondary); font-variant-numeric: tabular-nums; width: 46px; text-align: right; }
-
-  .rank-bar-row { display: grid; grid-template-columns: 16px 1fr 32px; align-items: center; gap: 8px; margin-bottom: 8px; font-size: 12px; }
-  .rank-bar-row .rank-num { color: var(--text-muted); font-weight: 600; text-align: center; font-size: 11px; }
-  .rank-bar-row .rank-name { color: var(--text-primary); margin-bottom: 3px; display:flex; justify-content: space-between; gap: 6px; }
-  .rank-bar-track { height: 8px; border-radius: 3px; background: var(--gridline); overflow: hidden; border: 1px solid rgba(0,0,0,0.06); }
-  .rank-bar-fill { height: 100%; border-radius: 3px; box-shadow: inset 0 0 0 1px rgba(0,0,0,0.1); }
-  .rank-bar-row .rank-count { text-align: right; color: var(--text-secondary); font-variant-numeric: tabular-nums; }
-
-  .legend-row { flex: none; display: flex; gap: 14px; font-size: 12px; color: var(--text-secondary); margin-bottom: 10px; flex-wrap: wrap; }
-  .legend-row .item { display: flex; align-items: center; gap: 5px; }
-  .legend-row .swatch { width: 9px; height: 9px; border-radius: 2px; }
-
-  #bars-account { flex: none; max-height: 180px; overflow-y: auto; }
-  #bars-lob { flex: 1; min-height: 0; overflow-y: auto; padding-right: 4px; }
-  .bar-row { display: grid; grid-template-columns: 120px 1fr 26px; align-items: center; gap: 8px; margin-bottom: 8px; font-size: 12px; }
-  .bar-row .label { color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .bar-track { display: flex; height: 9px; border-radius: 3px; overflow: hidden; background: var(--gridline); }
-  .bar-seg { height: 100%; }
-  .bar-total { text-align: right; color: var(--text-secondary); font-variant-numeric: tabular-nums; }
-
-  .exec-reco-label { display: block; margin: 0 0 10px 0; font-size: 0.68rem; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; color: var(--text-muted); }
-  .exec-reco-item { position: relative; padding: 0 0 12px 12px; border-left: 3px solid var(--accent); font-size: 12.5px; line-height: 1.45; color: var(--text-secondary); margin-bottom: 2px; }
-  .exec-reco-item:last-child { padding-bottom: 0; }
-  .exec-reco-item strong { color: var(--text-primary); }
-
-  .case-list { list-style: none; margin: 0; padding: 0; max-height: 520px; overflow-y: auto; }
-  .case-item { display: flex; gap: 10px; align-items: flex-start; padding: 10px 2px 10px 10px; border-bottom: 1px solid var(--gridline); border-left: 4px solid transparent; border-radius: 0 6px 6px 0; }
+  .case-list { flex: 1 1 0; min-height: 0; list-style: none; margin: 0; padding: 0; overflow-y: auto; }
+  .case-item { display: flex; gap: 8px; align-items: flex-start; padding: 7px 2px 7px 8px; border-bottom: 1px solid var(--gridline); border-left: 3px solid transparent; border-radius: 0 5px 5px 0; transition: background .1s ease; }
   .case-item:last-child { border-bottom: none; }
-  .case-badge { width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 12px; flex: none; }
+  .case-item:hover { background: var(--row-hover); }
+  .case-badge { width: 22px; height: 22px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 10px; flex: none; }
   .case-body { flex: 1; min-width: 0; }
-  .case-title-row { display: flex; justify-content: space-between; gap: 8px; align-items: baseline; }
-  .case-name { font-weight: 600; font-size: 12px; }
-  .case-status-pill { font-size: 0.75rem; font-weight: 600; padding: 3px 9px; border-radius: var(--radius-pill); white-space: nowrap; }
-  .case-meta { font-size: 11px; color: var(--text-secondary); margin-top: 2px; }
-  .case-fields { display: grid; grid-template-columns: 1fr 1fr; gap: 3px 10px; margin-top: 6px; font-size: 11px; }
-  .case-fields .f-label { color: var(--text-muted); font-size: 9px; text-transform: uppercase; letter-spacing: .03em; }
-  .case-fields .f-value { color: var(--text-primary); }
+  .case-title-row { display: flex; justify-content: space-between; gap: 6px; align-items: baseline; }
+  .case-name { font-weight: 600; font-size: clamp(9.5px, 0.7vw, 11px); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .case-status-pill { flex: none; font-size: clamp(8.5px, 0.6vw, 10px); font-weight: 600; padding: 2px 7px; border-radius: var(--radius-pill); white-space: nowrap; }
+  .case-meta { font-size: clamp(8.5px, 0.6vw, 10px); color: var(--text-secondary); margin-top: 1px; }
 
-  .footer-note { font-size: 10px; color: var(--text-muted); text-align: center; margin-top: 22px; }
+  /* ---- Band 5: footer office-sites strip ---- */
+  .footer-strip.card { flex: 0 0 var(--h-footer); flex-direction: row; align-items: center; gap: 8px; overflow-x: auto; overflow-y: hidden; padding: 0 clamp(10px, 1vw, 14px); }
+  .footer-strip .foot-label { flex: none; font-size: clamp(8.5px, 0.62vw, 10px); font-weight: 700; text-transform: uppercase; letter-spacing: .04em; color: var(--text-muted); margin-right: 4px; }
+  .office-chip {
+    flex: none; display: flex; align-items: center; gap: 7px; white-space: nowrap;
+    font-size: clamp(9.5px, 0.72vw, 11.5px); padding: 5px 12px; border-radius: var(--radius-pill); background: var(--gridline);
+  }
+  .office-chip .rank { font-weight: 700; color: var(--text-muted); font-size: 0.82em; }
+  .office-chip .name { font-weight: 600; color: var(--text-primary); }
+  .office-chip .stat { color: var(--text-muted); }
+  .office-chip .stat strong { color: var(--status-critical-text); font-weight: 700; }
 </style>
 </head>
 <body>
 <div class="shell">
 
-  <aside class="sidebar">
-    <div class="brand">BCP <small>Dashboard</small></div>
+  <div class="header-bar">
+    <div class="brand-block">
+      <h1>Executive BCP Dashboard</h1>
+      <div class="data-status-line" id="dataStatus">Loading from Power BI model <code>Fact_BCP</code>&hellip;</div>
+    </div>
+    <div class="filters-cluster">
+      <button class="refresh-btn" id="refreshBtn" title="Re-fetch from the local data bridge" type="button">&#8635; Refresh</button>
+      <select id="f-account" data-label="Account"><option value="All">Account: All</option></select>
+      <select id="f-lob" data-label="Line of Business"><option value="All">Line of Business: All</option></select>
+      <select id="f-province" data-label="Province"><option value="All">Province: All</option></select>
+      <select id="f-status" data-label="Status"><option value="All">Status: All</option></select>
+    </div>
+  </div>
 
-    <ul class="side-nav" id="sideNav">
-      <li><a href="#" data-status="All" id="navDashboard"><span class="nav-icon">&#9638;</span><span class="nav-label">Dashboard</span><span class="nav-count" id="nav-count-total">0</span></a></li>
-      <li><a href="#" data-status="Active" id="navActive"><span class="nav-icon">!</span><span class="nav-label">Active Cases</span><span class="nav-count" id="nav-count-active">0</span></a></li>
-      <li><a href="#officeSitesCard"><span class="nav-icon">&#8962;</span><span class="nav-label">Office Sites</span><span class="nav-count" id="nav-count-offices">0</span></a></li>
-      <li><a href="#mapCard"><span class="nav-icon">&#9737;</span><span class="nav-label">Provinces</span><span class="nav-count" id="nav-count-provinces">0</span></a></li>
-      <li><a href="#" data-status="Resolved" id="navResolved"><span class="nav-icon">&#10003;</span><span class="nav-label">Resolved</span><span class="nav-count" id="nav-count-resolved">0</span></a></li>
-    </ul>
+  <div class="card exec-strip">
+    <div class="exec-stats-inline" id="execStatsInline"></div>
+    <div class="exec-risk-inline" id="execRiskInline"></div>
+    <div class="exec-reco-strip" id="execRecoStrip"></div>
+  </div>
 
-    <div class="sidebar-alert" id="sidebarAlert">
-      <button class="dismiss" id="sidebarAlertDismiss" title="Dismiss" type="button">&times;</button>
-      <div class="alert-icon">&#128161;</div>
-      <div class="alert-title" id="sidebarAlertTitle">All cases currently stable</div>
-      <div class="alert-body" id="sidebarAlertBody">No active cases require an emergency response right now.</div>
-      <a class="learn-more" href="#journeyCritical">LEARN MORE</a>
+  <div class="kpi-row" id="kpiRow"></div>
+
+  <div class="main-grid">
+
+    <div class="main-col">
+      <div class="card">
+        <h2>Impact by Account</h2>
+        <div class="legend-row" id="legend-account"></div>
+        <div class="card-body" id="bars-account"></div>
+      </div>
+      <div class="card">
+        <h2>Impact by Line of Business</h2>
+        <div class="legend-row" id="legend-lob"></div>
+        <div class="card-body" id="bars-lob"></div>
+      </div>
     </div>
 
-    <div class="sidebar-footer">
-      <ul class="side-settings">
-        <li>&#9881; Settings</li>
-        <li>Hub Integrations</li>
-        <li>Help &amp; Support</li>
-      </ul>
-      <div class="profile-pill">
-        <div class="profile-avatar">BC</div>
-        <div>
-          <div class="profile-name">BCP Response Team</div>
-          <div class="profile-role">Business Continuity</div>
+    <div class="main-col">
+      <div class="card map-card">
+        <div class="card-head">
+          <h2>Impact Map</h2>
+          <div class="card-sub" style="margin:0;">Employees impacted by province</div>
         </div>
+        <div id="impactMapLeaflet"></div>
+        <div class="status-mix-legend" id="mapStatusLegend"></div>
       </div>
     </div>
-  </aside>
 
-  <main class="main">
-    <div class="main-inner">
-
-      <div class="topbar">
-        <div class="tabs" id="statusTabs">
-          <button class="tab" data-status="All">All Cases <span id="tab-count-All">(0)</span></button>
-          <button class="tab" data-status="Active">Active <span id="tab-count-Active">(0)</span></button>
-          <button class="tab" data-status="Monitoring">Monitoring <span id="tab-count-Monitoring">(0)</span></button>
-          <button class="tab" data-status="Resolved">Resolved <span id="tab-count-Resolved">(0)</span></button>
+    <div class="main-col">
+      <div class="card">
+        <div class="card-head">
+          <h2>Heatmap</h2>
+          <select class="toggle-select" id="labelToggle">
+            <option value="yes">Counts: Yes</option>
+            <option value="no">Counts: No</option>
+          </select>
         </div>
-        <div class="topbar-actions">
-          <div class="search-wrap">
-            <span class="search-icon">&#128269;</span>
-            <input type="text" id="searchBox" placeholder="Search by name, office, province&hellip;">
-          </div>
-          <button class="icon-btn" id="refreshBtn" title="Re-fetch from the local data bridge" type="button">&#8635;</button>
-          <button class="icon-btn" title="Notifications" type="button">&#128276;<span class="badge-dot" id="bellBadge">0</span></button>
+        <div class="heatmap-scale">
+          <span>Less</span>
+          <span class="swatch" style="background:var(--seq-0)"></span>
+          <span class="swatch" style="background:var(--seq-1)"></span>
+          <span class="swatch" style="background:var(--seq-2)"></span>
+          <span class="swatch" style="background:var(--seq-3)"></span>
+          <span class="swatch" style="background:var(--seq-4)"></span>
+          <span>More</span>
         </div>
+        <div class="card-body"><table class="heatmap" id="heatmapTable"></table></div>
       </div>
-
-      <div class="greeting-row">
-        <div>
-          <h1 id="greetingTitle">Hi, Team</h1>
-          <div class="greeting-sub" id="greetingSub">Loading current caseload&hellip;</div>
-          <div class="data-status-line" id="dataStatus">Loading from Power BI model <code>Fact_BCP</code>&hellip;</div>
+      <div class="card">
+        <div class="card-head">
+          <h2>Case Feed</h2>
+          <select class="toggle-select" id="sortToggle">
+            <option value="severity">Sort: Status</option>
+            <option value="name">Sort: Name</option>
+          </select>
         </div>
-        <div class="kpi-strip">
-          <div class="kpi-inline">
-            <div class="kpi-label">Total Cases</div>
-            <div class="kpi-value" id="kpi-total">0</div>
-          </div>
-          <div class="kpi-inline">
-            <div class="kpi-label">Need Help</div>
-            <div class="kpi-value" id="kpi-help">0</div>
-          </div>
-          <div class="kpi-inline">
-            <div class="kpi-label">Resolution Rate</div>
-            <div class="kpi-value" id="kpi-resolution"></div>
-          </div>
-          <div class="kpi-inline">
-            <div class="kpi-label">Active Load</div>
-            <div class="kpi-value" id="kpi-load"></div>
-          </div>
-        </div>
+        <ul class="case-list" id="caseList"></ul>
       </div>
-
-      <div class="hero-grid">
-        <div class="card" id="mapCard">
-          <div class="card-head">
-            <div>
-              <h2>Heatmap</h2>
-              <div class="card-sub">Employees impacted by province &middot; map + status heatmap</div>
-            </div>
-            <div class="card-head-actions">
-              <button class="exec-toggle-btn" id="provinceTableToggleBtn" type="button" aria-expanded="false" aria-controls="provinceTableSection">&#9660; Province Table</button>
-              <select class="toggle-select" id="labelToggle">
-                <option value="yes">Show counts: Yes</option>
-                <option value="no">Show counts: No</option>
-              </select>
-            </div>
-          </div>
-          <div id="impactMapLeaflet"></div>
-          <div class="status-mix-legend" id="mapStatusLegend"></div>
-          <div id="provinceTableSection">
-            <div class="heatmap-scale">
-              <span>Less</span>
-              <span class="swatch" style="background:var(--seq-0)"></span>
-              <span class="swatch" style="background:var(--seq-1)"></span>
-              <span class="swatch" style="background:var(--seq-2)"></span>
-              <span class="swatch" style="background:var(--seq-3)"></span>
-              <span class="swatch" style="background:var(--seq-4)"></span>
-              <span>More</span>
-            </div>
-            <div class="heatmap-wrap"><table class="heatmap" id="heatmapTable"></table></div>
-          </div>
-        </div>
-
-        <div class="stat-cards-col" id="statCardsCol"></div>
-      </div>
-
-      <div class="journey-section">
-        <div class="journey-head">
-          <div>
-            <h2>Case Response Journey</h2>
-            <div class="card-sub">Reported &rarr; Active &rarr; Monitoring &rarr; Resolved, inferred from status + help-requested fields</div>
-          </div>
-          <div class="journey-controls">
-            <select class="pill-select" id="f-account" data-label="Account"><option value="All">Account: All</option></select>
-            <select class="pill-select" id="f-lob" data-label="Line of Business"><option value="All">Line of Business: All</option></select>
-            <select class="pill-select" id="f-province" data-label="Province"><option value="All">Province: All</option></select>
-            <select class="pill-select" id="sortToggle">
-              <option value="severity">Sort: Status</option>
-              <option value="name">Sort: Name</option>
-            </select>
-            <span class="filters-chip">&#128206; Filters</span>
-          </div>
-        </div>
-        <div class="journey-stepper" id="journeyStepper"></div>
-        <div id="journeyLanes"></div>
-      </div>
-
-      <div class="secondary-section">
-        <h2>Detailed Breakdown</h2>
-        <div class="board">
-
-          <div class="col">
-            <div class="card">
-              <h2>Overview</h2>
-              <div class="card-sub">Business continuity impact snapshot</div>
-              <div class="welcome-stats">
-                <div class="stat stat-total"><span class="stat-label">Employees Impacted</span><span class="stat-value" id="kpi-total-2">0</span></div>
-                <div class="stat stat-active"><span class="stat-label">Active Cases</span><span class="stat-value" id="kpi-active-2">0</span></div>
-                <div class="stat stat-help"><span class="stat-label">Need Help</span><span class="stat-value" id="kpi-help-2">0</span></div>
-              </div>
-            </div>
-            <div class="card">
-              <div class="card-head">
-                <h2>Status</h2>
-                <span class="badge-note">no timestamp data &mdash; snapshot only</span>
-              </div>
-              <div class="card-sub">Active vs. Monitoring vs. Resolved, current snapshot</div>
-              <div class="status-mix-track" id="statusMixTrack"></div>
-              <div class="status-mix-legend" id="statusMixLegend"></div>
-            </div>
-            <div class="card card-fill">
-              <h2>BCP Type</h2>
-              <div class="card-sub">Share of employees by nature of impact</div>
-              <div class="card-scroll">
-                <ul class="rank-legend" id="impact-legend"></ul>
-                <h3>Most Common BCP Issue</h3>
-                <div id="issue-ranked"></div>
-              </div>
-            </div>
-          </div>
-
-          <div class="col">
-            <div class="card">
-              <h2>Impact by Account</h2>
-              <div class="legend-row" id="legend-account"></div>
-              <div id="bars-account"></div>
-            </div>
-            <div class="card card-fill">
-              <h2>Impact by Line of Business</h2>
-              <div class="legend-row" id="legend-lob"></div>
-              <div id="bars-lob"></div>
-            </div>
-          </div>
-
-          <div class="col">
-            <div class="card" id="officeSitesCard">
-              <h2>Office Sites</h2>
-              <div class="card-sub">Ranked by employees impacted</div>
-              <div class="table-scroll">
-                <table class="rank-table" id="officeTable">
-                  <thead><tr><th>#</th><th>Office Site</th><th>Total</th><th>Active</th></tr></thead>
-                  <tbody></tbody>
-                </table>
-              </div>
-            </div>
-            <div class="card card-fill">
-              <h2>Recommendations</h2>
-              <div class="card-sub">Auto-generated from the current data snapshot &middot; updates with filters and live refresh</div>
-              <span class="exec-reco-label">Strategic Recommendations</span>
-              <div id="recoList"></div>
-            </div>
-          </div>
-
-          <div class="col">
-            <div class="card card-fill">
-              <div class="card-head">
-                <h2>Case Feed</h2>
-              </div>
-              <div class="card-sub">Employee-level BCP records, most severe first</div>
-              <ul class="case-list" id="caseList"></ul>
-            </div>
-          </div>
-
-        </div>
-      </div>
-
-      <div class="footer-note">Generated from Fact_BCP &mdash; live Power BI model, catalog 0dc22c54-08bb-444d-a496-536441e43000. Layout adapted from a supply-chain operations dashboard reference; the Case Response Journey below repurposes that reference's stage stepper using only status/help/remarks fields already present in Fact_BCP.</div>
-
     </div>
-  </main>
+
+  </div>
+
+  <div class="card footer-strip">
+    <span class="foot-label">Office Sites</span>
+    <div id="officeStrip" style="display:flex;gap:8px;align-items:center;"></div>
+  </div>
 
 </div>
 
@@ -640,16 +392,9 @@
   const SEQ = [v('--seq-0'), v('--seq-1'), v('--seq-2'), v('--seq-3'), v('--seq-4')];
 
   const activeFilters = { account: 'All', lob: 'All', province: 'All', status: 'All' };
-  const FILTER_SELECTS = [['f-account', 'account'], ['f-lob', 'lob'], ['f-province', 'province']];
-  let searchQuery = '';
+  const FILTER_SELECTS = [['f-account', 'account'], ['f-lob', 'lob'], ['f-province', 'province'], ['f-status', 'status']];
 
   function uniqueSorted(data, key) { return [...new Set(data.map(d => d[key]))].sort(); }
-
-  function matchesSearch(d) {
-    if (!searchQuery) return true;
-    const q = searchQuery.toLowerCase();
-    return [d.name, d.id, d.office, d.province, d.account, d.lob].some(f => String(f).toLowerCase().includes(q));
-  }
 
   // Rebuilds every filter dropdown's options from whatever RAW_DATA currently
   // holds — needed because live data can introduce/remove offices, provinces,
@@ -675,55 +420,6 @@
       document.getElementById(selectId).addEventListener('change', (e) => { activeFilters[key] = e.target.value; renderAll(); });
     });
     refreshFilterOptions();
-
-    document.getElementById('searchBox').addEventListener('input', (e) => { searchQuery = e.target.value.trim(); renderAll(); });
-  }
-
-  function setStatusFilter(status) {
-    activeFilters.status = status;
-    renderAll();
-  }
-
-  // ---- Province table accordion (under the map): collapsed by default so
-  // the map alone fills the card; expanding gives leaders the full
-  // province/status breakdown table on demand.
-  const PROVINCE_TABLE_COLLAPSE_KEY = 'bcpProvinceTableCollapsed';
-
-  function initProvinceTableToggle() {
-    const section = document.getElementById('provinceTableSection');
-    const btn = document.getElementById('provinceTableToggleBtn');
-
-    function setCollapsed(collapsed) {
-      section.classList.toggle('is-open', !collapsed);
-      btn.setAttribute('aria-expanded', String(!collapsed));
-      btn.innerHTML = collapsed ? '&#9660; Province Table' : '&#9650; Hide Table';
-      setTimeout(() => leafletMap && leafletMap.invalidateSize(), 220);
-    }
-
-    let stored = null;
-    try { stored = localStorage.getItem(PROVINCE_TABLE_COLLAPSE_KEY); } catch (e) { /* storage unavailable — fall back to default */ }
-    setCollapsed(stored === null ? true : stored === '1');
-
-    btn.addEventListener('click', () => {
-      const collapsed = section.classList.contains('is-open');
-      setCollapsed(collapsed);
-      try { localStorage.setItem(PROVINCE_TABLE_COLLAPSE_KEY, collapsed ? '1' : '0'); } catch (e) { /* ignore — nothing to persist to */ }
-    });
-  }
-
-  // ---- Sidebar alert dismiss (session-only, mirrors the province-table
-  // localStorage pattern used elsewhere in this file) ----
-  const SIDEBAR_ALERT_DISMISS_KEY = 'bcpSidebarAlertDismissed';
-  function initSidebarAlertDismiss() {
-    const card = document.getElementById('sidebarAlert');
-    const btn = document.getElementById('sidebarAlertDismiss');
-    let stored = null;
-    try { stored = localStorage.getItem(SIDEBAR_ALERT_DISMISS_KEY); } catch (e) { /* ignore */ }
-    if (stored === '1') card.style.display = 'none';
-    btn.addEventListener('click', () => {
-      card.style.display = 'none';
-      try { localStorage.setItem(SIDEBAR_ALERT_DISMISS_KEY, '1'); } catch (e) { /* ignore — nothing to persist to */ }
-    });
   }
 
   function getFilteredData() {
@@ -731,22 +427,8 @@
       (activeFilters.account === 'All' || d.account === activeFilters.account) &&
       (activeFilters.lob === 'All' || d.lob === activeFilters.lob) &&
       (activeFilters.province === 'All' || d.province === activeFilters.province) &&
-      (activeFilters.status === 'All' || d.status === activeFilters.status) &&
-      matchesSearch(d)
+      (activeFilters.status === 'All' || d.status === activeFilters.status)
     );
-  }
-
-  // Same as getFilteredData but ignoring the status filter — used for the
-  // status tab / sidebar nav counts, so a tab always shows how many cases
-  // would appear if you clicked it from wherever the other filters sit.
-  function countForStatus(status) {
-    return RAW_DATA.filter(d =>
-      (activeFilters.account === 'All' || d.account === activeFilters.account) &&
-      (activeFilters.lob === 'All' || d.lob === activeFilters.lob) &&
-      (activeFilters.province === 'All' || d.province === activeFilters.province) &&
-      matchesSearch(d) &&
-      (status === 'All' || d.status === status)
-    ).length;
   }
 
   function groupByStatus(data, key) {
@@ -764,7 +446,7 @@
     data.forEach(d => { counts[d[key]] = (counts[d[key]] || 0) + 1; });
     return Object.entries(counts).map(([name, count]) => ({ name, count })).sort((a, b) => b.count - a.count || a.name.localeCompare(b.name));
   }
-  function empty(el, msg) { el.innerHTML = `<div style="font-size:12px;color:var(--text-muted);padding:8px 0;">${msg}</div>`; }
+  function empty(el, msg) { el.innerHTML = `<div style="font-size:11px;color:var(--text-muted);padding:6px 0;">${msg}</div>`; }
 
   // ---- Impact Map: Leaflet + real Philippine province boundaries ----
   // Source: faeldon/philippines-json-maps (PSGC-based, lowres). Only the region
@@ -815,7 +497,7 @@
       renderMapLayer(lastProvinceRows);
     } catch (err) {
       const el = document.getElementById('impactMapLeaflet');
-      el.innerHTML = '<div style="padding:12px;font-size:12px;color:var(--text-muted);">Map data unavailable (no network access to load Philippine province boundaries).</div>';
+      el.innerHTML = '<div style="padding:10px;font-size:11px;color:var(--text-muted);">Map data unavailable (no network access to load Philippine province boundaries).</div>';
     }
     setTimeout(() => leafletMap && leafletMap.invalidateSize(), 200);
   }
@@ -861,8 +543,7 @@
 
   let sortMode = 'severity';
 
-  // ---- Executive summary math (topRisk / recommendations) — read by the
-  // sidebar alert card, the Recommendations card, and the greeting subtitle ----
+  // ---- Executive summary math (topRisk / recommendations) ----
   const ISSUE_ACTION = {
     'Power Outage': 'Send backup generators',
     'Flooded': 'Deploy pumps and sandbags',
@@ -918,247 +599,111 @@
     return recs;
   }
 
-  function renderSidebarAlert(s) {
-    const titleEl = document.getElementById('sidebarAlertTitle');
-    const bodyEl = document.getElementById('sidebarAlertBody');
-    if (!s || !s.topRisk.row || s.topRisk.row.Active === 0) {
-      titleEl.textContent = 'All cases currently stable';
-      bodyEl.innerHTML = 'No active cases require an emergency response right now &mdash; maintain routine monitoring.';
+  function stripTags(html) { return html.replace(/<[^>]*>/g, ''); }
+
+  function renderExecStrip(s, data) {
+    const statsEl = document.getElementById('execStatsInline');
+    const riskEl = document.getElementById('execRiskInline');
+    const recoEl = document.getElementById('execRecoStrip');
+
+    if (!s) {
+      statsEl.innerHTML = '<span class="exec-stat-inline">No cases match the current filters.</span>';
+      riskEl.innerHTML = '';
+      recoEl.innerHTML = '';
       return;
     }
-    titleEl.textContent = `Escalate response for ${s.topRisk.row.name}`;
-    bodyEl.innerHTML = buildStrategicRecommendations(s)[0];
-  }
 
-  function renderRecommendations(s) {
-    const el = document.getElementById('recoList');
-    if (!s) { empty(el, 'No cases match the current filters.'); return; }
-    el.innerHTML = `<div class="exec-reco-row">${buildStrategicRecommendations(s).map(r => `<div class="exec-reco-item">${r}</div>`).join('')}</div>`;
+    statsEl.innerHTML = `
+      <span class="exec-stat-inline"><strong>${s.total}</strong> impacted</span>
+      <span class="exec-stat-inline"><strong>${s.active}</strong> active</span>
+      <span class="exec-stat-inline"><strong>${s.criticalLob.name}</strong> most critical LOB</span>`;
+
+    riskEl.innerHTML = s.topRisk.row
+      ? `<span class="risk-tag">Top Risk</span><span><strong>${s.topRisk.row.name}</strong> &mdash; ${s.topRisk.row.Active} active</span>`
+      : '';
+
+    const recos = buildStrategicRecommendations(s);
+    recoEl.innerHTML = recos.map(r => `<span class="exec-reco-chip" title="${stripTags(r)}">${r}</span>`).join('');
   }
 
   function pillClass(pct, goodMin, warnMin) { return pct >= goodMin ? 'good' : pct >= warnMin ? 'warn' : 'bad'; }
 
-  function renderGreetingAndKpis(s, data) {
+  // ---- KPI row: 6 compact cards (Employees, Active, Need Help, Status,
+  // BCP Type, Resolution Rate) — every figure is read straight off the same
+  // computeExecutiveSummary()/countBy() outputs used elsewhere in the file,
+  // just rendered at KPI-card density instead of a full list/table. ----
+  function renderKpiRow(data, s) {
     const total = data.length;
-    document.getElementById('greetingSub').textContent = s
-      ? `There are ${s.helpCount} case${s.helpCount === 1 ? '' : 's'} needing help across ${uniqueSorted(data, 'province').length} province${uniqueSorted(data, 'province').length === 1 ? '' : 's'}.`
-      : 'No cases match the current filters.';
+    const active = s ? s.active : 0;
+    const resolved = s ? s.resolved : 0;
+    const help = s ? s.helpCount : 0;
+    const resolutionPct = total ? Math.round((resolved / total) * 100) : 0;
 
-    document.getElementById('kpi-total').textContent = total;
-    document.getElementById('kpi-help').textContent = s ? `${s.helpCount}/${total}` : '0/0';
+    const statusSpark = STATUS_ORDER.map(st => {
+      const n = data.filter(d => d.status === st).length;
+      const pct = total ? (n / total) * 100 : 0;
+      return pct > 0 ? `<span style="width:${pct}%;background:${STATUS_COLOR[st]}" title="${st}: ${n}"></span>` : '';
+    }).join('');
+    const statusLegend = STATUS_ORDER.map(st => {
+      const n = data.filter(d => d.status === st).length;
+      return `<span><span class="dot" style="background:${STATUS_COLOR[st]}"></span>${st} ${n}</span>`;
+    }).join('');
 
-    const resolutionPct = s && total ? Math.round((s.resolved / total) * 100) : 0;
-    const loadRatio = s && total ? (s.active / total) : 0;
-
-    document.getElementById('kpi-resolution').innerHTML =
-      `${resolutionPct}% <span class="kpi-pill ${pillClass(resolutionPct, 60, 35)}">${resolutionPct >= 60 ? 'Good' : resolutionPct >= 35 ? 'Average' : 'Poor'}</span>`;
-    const loadLabel = loadRatio <= 0.3 ? 'Low' : loadRatio <= 0.6 ? 'Medium' : 'High';
-    const loadClass = loadRatio <= 0.3 ? 'good' : loadRatio <= 0.6 ? 'warn' : 'bad';
-    document.getElementById('kpi-load').innerHTML = `${loadRatio.toFixed(2)} <span class="kpi-pill ${loadClass}">${loadLabel}</span>`;
-  }
-
-  function renderStatCards(data) {
-    const total = data.length;
-    const active = data.filter(d => d.status === 'Active').length;
-    const resolved = data.filter(d => d.status === 'Resolved').length;
-    const help = data.filter(d => d.help === 'Yes').length;
-    const provinces = uniqueSorted(data, 'province').length;
-    const totalProvinces = uniqueSorted(RAW_DATA, 'province').length;
-    const offices = uniqueSorted(data, 'office').length;
-    const totalOffices = uniqueSorted(RAW_DATA, 'office').length;
-    const s = computeExecutiveSummary(data);
+    const impactRows = total ? countBy(data, 'impact') : [];
+    const topImpact = impactRows[0];
+    const impactMax = impactRows.length ? impactRows[0].count : 1;
+    const impactSpark = impactRows.slice(0, 4).map((r, i) =>
+      `<span style="width:${(r.count / impactMax) * 100}%;background:${RANK_COLORS[i % RANK_COLORS.length]}" title="${r.name}: ${r.count}"></span>`
+    ).join('');
+    const topIssueName = s && s.topIssue ? s.topIssue.name : (total ? countBy(data, 'issue')[0]?.name : null);
 
     const cards = [
-      { label: 'Active Share', value: total ? `${Math.round((active / total) * 100)}%` : '0%', pct: total ? (active / total) * 100 : 0, color: STATUS_COLOR.Active, foot: `${active} of ${total} cases currently active` },
-      { label: 'Resolved Rate', value: total ? `${Math.round((resolved / total) * 100)}%` : '0%', pct: total ? (resolved / total) * 100 : 0, color: STATUS_COLOR.Resolved, foot: `${resolved} of ${total} cases resolved` },
-      { label: 'Help Coverage', value: total ? `${Math.round((help / total) * 100)}%` : '0%', pct: total ? (help / total) * 100 : 0, color: STATUS_COLOR.Monitoring, foot: `${help} of ${total} cases requested help` },
-      { label: 'Provinces Affected', value: `${provinces}<span class="of-total"> / ${totalProvinces}</span>`, pct: totalProvinces ? (provinces / totalProvinces) * 100 : 0, color: v('--rank-2'), foot: 'Provinces in current view vs. all provinces on record' },
-      { label: 'Offices Affected', value: `${offices}<span class="of-total"> / ${totalOffices}</span>`, pct: totalOffices ? (offices / totalOffices) * 100 : 0, color: v('--rank-2'), foot: 'Office sites in current view vs. all sites on record' },
-      { label: 'Top Line of Business', value: s ? s.criticalLob.name : '&mdash;', pct: s && s.criticalLob.total ? (s.criticalLob.Active / s.criticalLob.total) * 100 : 0, color: STATUS_COLOR.Active, foot: s ? `${s.criticalLob.Active} of ${s.criticalLob.total} active in this LOB` : '' }
+      { label: 'Employees Impacted', value: `${total}`, foot: 'Current filtered view' },
+      { label: 'Active Cases', value: `${active}`, foot: total ? `${Math.round((active / total) * 100)}% of total` : '&mdash;' },
+      { label: 'Need Help', value: `${help}<span class="unit">/${total}</span>`, foot: total ? `${Math.round((help / total) * 100)}% requested help` : '&mdash;' },
+      { label: 'Status', value: '', spark: statusSpark, legend: statusLegend },
+      { label: 'BCP Type', value: topImpact ? `${((topImpact.count / total) * 100).toFixed(0)}%` : '&mdash;', foot: topImpact ? `${topImpact.name}${topIssueName ? ` &middot; top issue: ${topIssueName}` : ''}` : 'No data', spark: impactSpark },
+      { label: 'Resolution Rate', value: `${resolutionPct}%`, pill: total ? `<span class="kpi-pill ${pillClass(resolutionPct, 60, 35)}">${resolutionPct >= 60 ? 'Good' : resolutionPct >= 35 ? 'Average' : 'Poor'}</span>` : '', foot: `${resolved} of ${total} resolved` }
     ];
 
-    document.getElementById('statCardsCol').innerHTML = cards.map(c => `
-      <div class="card stat-card">
-        <div class="stat-card-top">
-          <div class="stat-card-label">${c.label}</div>
-        </div>
-        <div class="stat-card-value">${c.value}</div>
-        <div class="stat-card-bar"><span style="width:${Math.min(100, Math.max(0, c.pct))}%;background:${c.color}"></span></div>
-        <div class="stat-card-foot">${c.foot} &middot; snapshot</div>
+    document.getElementById('kpiRow').innerHTML = cards.map(c => `
+      <div class="card kpi-card">
+        <div class="kpi-card-label">${c.label}</div>
+        <div class="kpi-card-value">${c.value}${c.pill || ''}</div>
+        ${c.legend ? `<div class="kpi-mini-legend">${c.legend}</div>` : ''}
+        ${c.spark ? `<div class="kpi-spark">${c.spark}</div>` : ''}
+        ${c.foot ? `<div class="kpi-card-foot">${c.foot}</div>` : ''}
       </div>`).join('');
   }
 
-  // ---- Case Response Journey: repurposes the reference's supply-chain
-  // stepper for BCP cases. Stages are derived only from real fields
-  // (status + help) — "Reported" is the full caseload (entry point), the
-  // other three are the exact STATUS_ORDER partitions. Each ring % is the
-  // share of that stage's cases that do NOT need external help (help='No'),
-  // i.e. a self-sufficiency/health indicator, computed the same way for
-  // every stage so it stays honest rather than implying fake SLA data.
-  function computeJourneyStages(data) {
-    const stageDefs = [
-      { key: 'reported',   label: 'Reported',   icon: '&#9873;', rows: data },
-      { key: 'active',     label: 'Active',      icon: '!',       rows: data.filter(d => d.status === 'Active') },
-      { key: 'monitoring', label: 'Monitoring',  icon: '&#9680;', rows: data.filter(d => d.status === 'Monitoring') },
-      { key: 'resolved',   label: 'Resolved',    icon: '&#10003;', rows: data.filter(d => d.status === 'Resolved') }
-    ];
-    return stageDefs.map(s => {
-      const healthPct = s.rows.length ? Math.round((s.rows.filter(d => d.help === 'No').length / s.rows.length) * 100) : 0;
-      return { ...s, healthPct };
-    });
+  // ---- Footer: Office Sites as a horizontal chip strip (same ranked data
+  // as the original vertical table, just laid out to fit a single thin band) ----
+  function renderOfficeStrip(data) {
+    const el = document.getElementById('officeStrip');
+    const rows = groupByStatus(data, 'office');
+    if (!rows.length) { empty(el, 'No cases match the current filters.'); return; }
+    el.innerHTML = rows.map((r, i) => `
+      <span class="office-chip">
+        <span class="rank">#${i + 1}</span>
+        <span class="name">${r.name}</span>
+        <span class="stat">${r.total} total &middot; <strong>${r.Active}</strong> active</span>
+      </span>`).join('');
   }
-
-  function renderJourney(data) {
-    const stages = computeJourneyStages(data);
-
-    document.getElementById('journeyStepper').innerHTML = stages.map(s => `
-      <div class="journey-stage-head">
-        <div class="ring ${pillClass(s.healthPct, 70, 40)}">${s.healthPct}%</div>
-        <div>
-          <div class="journey-stage-title"><span class="stage-icon">${s.icon}</span>${s.label}</div>
-          <div class="journey-stage-count">${s.rows.length} case${s.rows.length === 1 ? '' : 's'}</div>
-        </div>
-      </div>`).join('');
-
-    document.getElementById('journeyLanes').innerHTML = stages.map(s => {
-      const cards = s.rows.length ? s.rows.map(d => `
-        <div class="journey-card">
-          <div class="journey-card-top">
-            <span class="journey-card-id">${d.id}</span>
-            <span class="journey-card-pill" style="background:${STATUS_COLOR[d.status]}22;color:${STATUS_TEXT[d.status]}">${d.status}</span>
-          </div>
-          <div class="journey-card-meta">${d.name} &middot; ${d.office}, ${d.province}</div>
-          <div class="journey-card-next"><strong>Next</strong>${ISSUE_ACTION[d.issue] || 'Monitor situation'} &mdash; ${d.remarks}</div>
-        </div>`).join('') : '<div class="journey-empty">No cases in this stage.</div>';
-
-      return `
-        <div class="journey-lane" id="${s.key === 'active' ? 'journeyCritical' : ''}">
-          <div class="lane-controls">
-            <button class="lane-scroll-btn" data-dir="prev" type="button">&#8249;</button>
-            <button class="lane-scroll-btn" data-dir="next" type="button">&#8250;</button>
-          </div>
-          <div class="lane-track">${cards}</div>
-        </div>`;
-    }).join('');
-  }
-
-  document.addEventListener('click', (e) => {
-    const btn = e.target.closest('.lane-scroll-btn');
-    if (!btn) return;
-    const track = btn.closest('.journey-lane').querySelector('.lane-track');
-    track.scrollBy({ left: btn.dataset.dir === 'prev' ? -260 : 260, behavior: 'smooth' });
-  });
-
-  function renderTopNavAndTabs() {
-    STATUS_ORDER.concat('All').forEach(s => {
-      const n = countForStatus(s);
-      const tabCountEl = document.getElementById(`tab-count-${s}`);
-      if (tabCountEl) tabCountEl.textContent = `(${n})`;
-    });
-    document.querySelectorAll('.tab').forEach(tab => {
-      tab.classList.toggle('active', tab.dataset.status === activeFilters.status);
-    });
-
-    document.getElementById('nav-count-total').textContent = RAW_DATA.length;
-    document.getElementById('nav-count-active').textContent = RAW_DATA.filter(d => d.status === 'Active').length;
-    document.getElementById('nav-count-resolved').textContent = RAW_DATA.filter(d => d.status === 'Resolved').length;
-    document.getElementById('nav-count-offices').textContent = uniqueSorted(RAW_DATA, 'office').length;
-    document.getElementById('nav-count-provinces').textContent = uniqueSorted(RAW_DATA, 'province').length;
-    document.getElementById('bellBadge').textContent = RAW_DATA.filter(d => d.help === 'Yes').length;
-
-    document.querySelectorAll('#sideNav a[data-status]').forEach(a => {
-      a.classList.toggle('active', a.dataset.status === activeFilters.status);
-    });
-  }
-
-  document.addEventListener('click', (e) => {
-    const tab = e.target.closest('.tab');
-    if (tab) { setStatusFilter(tab.dataset.status); return; }
-    const navLink = e.target.closest('#sideNav a[data-status]');
-    if (navLink) { e.preventDefault(); setStatusFilter(navLink.dataset.status); }
-  });
 
   function renderAll() {
     const data = getFilteredData();
     const s = computeExecutiveSummary(data);
 
-    renderTopNavAndTabs();
-    renderGreetingAndKpis(s, data);
-    renderSidebarAlert(s);
-    renderRecommendations(s);
-    renderStatCards(data);
-    renderJourney(data);
+    renderExecStrip(s, data);
+    renderKpiRow(data, s);
+    renderOfficeStrip(data);
 
-    // Overview (Employees Impacted / Active Cases / Need Help) — same figures
-    // as the hero KPI strip, kept as its own card in the detailed breakdown
-    // for parity with the original dashboard's Overview card.
-    document.getElementById('kpi-total-2').textContent = data.length;
-    document.getElementById('kpi-active-2').textContent = data.filter(d => d.status === 'Active').length;
-    document.getElementById('kpi-help-2').textContent = data.filter(d => d.help === 'Yes').length;
-
-    // Status mix (stacked bar + legend)
-    const mixTrack = document.getElementById('statusMixTrack');
-    const mixLegend = document.getElementById('statusMixLegend');
-    if (!data.length) { empty(mixTrack, 'No cases match the current filters.'); mixLegend.innerHTML = ''; }
-    else {
-      mixTrack.innerHTML = STATUS_ORDER.map(st => {
-        const n = data.filter(d => d.status === st).length;
-        const pct = (n / data.length) * 100;
-        return pct > 0 ? `<div style="width:${pct}%;background:${STATUS_COLOR[st]}" title="${st}: ${n}"></div>` : '';
-      }).join('');
-      mixLegend.innerHTML = STATUS_ORDER.map(st => {
-        const n = data.filter(d => d.status === st).length;
-        return `<span class="item"><span class="swatch" style="background:${STATUS_COLOR[st]}"></span>${st} (${n})</span>`;
-      }).join('');
-    }
-
-    // BCP Type ranked legend
-    const impactEl = document.getElementById('impact-legend');
-    if (!data.length) { empty(impactEl, 'No cases match the current filters.'); }
-    else {
-      const impactRows = countBy(data, 'impact');
-      impactEl.innerHTML = impactRows.map((r, i) => {
-        const pct = ((r.count / data.length) * 100).toFixed(1);
-        return `<li><span class="swatch" style="background:${RANK_COLORS[i % RANK_COLORS.length]}"></span><span class="name">${r.name}</span><span class="pct">${pct}%</span></li>`;
-      }).join('');
-    }
-
-    // Most common BCP issue
-    const issueEl = document.getElementById('issue-ranked');
-    if (!data.length) { empty(issueEl, ''); }
-    else {
-      const issueRows = countBy(data, 'issue');
-      const issueMax = Math.max(...issueRows.map(r => r.count), 1);
-      issueEl.innerHTML = issueRows.map((r, i) => `
-        <div class="rank-bar-row">
-          <div class="rank-num">${i + 1}</div>
-          <div class="rank-body">
-            <div class="rank-name">${r.name}</div>
-            <div class="rank-bar-track"><div class="rank-bar-fill" style="width:${(r.count / issueMax) * 100}%;background:${RANK_COLORS[i % RANK_COLORS.length]}"></div></div>
-          </div>
-          <div class="rank-count">${r.count}</div>
-        </div>`).join('');
-    }
-
-    // Impact Map (real Leaflet choropleth + bubbles) — shares provinceRows with the Heatmap below it
+    // Impact Map (real Leaflet choropleth + bubbles) — shares provinceRows with the Heatmap
     const provinceRows = groupByStatus(data, 'province');
     renderMapLayer(provinceRows);
     document.getElementById('mapStatusLegend').innerHTML =
       '<span class="legend-caption">Status:</span>' +
       STATUS_ORDER.map(st => `<span class="item"><span class="swatch dot" style="background:${STATUS_COLOR[st]}"></span>${st}</span>`).join('');
-
-    // Office sites table
-    const officeBody = document.querySelector('#officeTable tbody');
-    const officeRows = groupByStatus(data, 'office').slice(0, 6);
-    if (!officeRows.length) { officeBody.innerHTML = `<tr><td colspan="4" style="color:var(--text-muted);font-size:12px;">No cases match the current filters.</td></tr>`; }
-    else {
-      const officeMax = Math.max(...officeRows.map(r => r.total), 1);
-      officeBody.innerHTML = officeRows.map((r, i) => {
-        const pct = (r.total / officeMax) * 100;
-        const barStyle = `background:linear-gradient(to right, rgba(239,68,68,0.18) ${pct}%, transparent ${pct}%)`;
-        return `<tr><td>${i + 1}</td><td>${r.name}</td><td class="total-bar" style="${barStyle}">${r.total}</td><td>${r.Active}</td></tr>`;
-      }).join('');
-    }
 
     // Heatmap
     const heatmapTable = document.getElementById('heatmapTable');
@@ -1179,7 +724,7 @@
       heatmapTable.innerHTML = thead + tbody;
     }
 
-    // Status legends + stacked bars
+    // Status legends + stacked bars (Impact by Account / Impact by Line of Business)
     function renderLegend(containerId) {
       document.getElementById(containerId).innerHTML = STATUS_ORDER.map(st =>
         `<span class="item"><span class="swatch" style="background:${STATUS_COLOR[st]}"></span>${st}</span>`
@@ -1208,20 +753,14 @@
     if (!rows.length) { empty(caseListEl, 'No cases match the current filters.'); }
     else {
       caseListEl.innerHTML = rows.map(d => `
-        <li class="case-item" style="border-left-color:${STATUS_COLOR[d.status]}">
+        <li class="case-item" style="border-left-color:${STATUS_COLOR[d.status]}" title="Needed help: ${d.help} &#10;Remarks: ${d.remarks}">
           <div class="case-badge" style="background:${STATUS_COLOR[d.status]}">${STATUS_ICON[d.status]}</div>
           <div class="case-body">
             <div class="case-title-row">
               <span class="case-name">${d.name} &middot; ${d.id}</span>
               <span class="case-status-pill" style="background:${STATUS_COLOR[d.status]}22;color:${STATUS_TEXT[d.status]}">${d.status}</span>
             </div>
-            <div class="case-meta">${d.account} &middot; ${d.lob}</div>
-            <div class="case-fields">
-              <div><div class="f-label">Office / Province</div><div class="f-value">${d.office}, ${d.province}</div></div>
-              <div><div class="f-label">Impact</div><div class="f-value">${d.impact} (${d.issue})</div></div>
-              <div><div class="f-label">Needed Help</div><div class="f-value">${d.help}</div></div>
-              <div><div class="f-label">Remarks</div><div class="f-value">${d.remarks}</div></div>
-            </div>
+            <div class="case-meta">${d.office}, ${d.province} &middot; ${d.impact} (${d.issue}) &middot; Help: ${d.help}</div>
           </div>
         </li>`).join('');
     }
@@ -1291,8 +830,6 @@
   }
 
   initFilters();
-  initProvinceTableToggle();
-  initSidebarAlertDismiss();
   document.getElementById('sortToggle').addEventListener('change', (e) => { sortMode = e.target.value; renderAll(); });
   document.getElementById('refreshBtn').addEventListener('click', () => loadLiveData(true));
 
