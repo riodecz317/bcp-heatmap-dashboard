@@ -725,9 +725,8 @@
     // separate line rather than folded into that bar (which would
     // misrepresent it as one of the bar's segments).
     const topIssueName = s && s.topIssue ? s.topIssue.name : (total ? countBy(data, 'issue')[0]?.name : null);
-    const bcpTypeCaption = topImpact
-      ? `<div class="kpi-caption-primary">Most common: <strong>${topImpact.name}</strong></div>` +
-        (topIssueName ? `<div class="kpi-caption-secondary">Top issue in this view: <strong>${topIssueName}</strong></div>` : '')
+    const bcpTypeCaption = topIssueName
+      ? `<div class="kpi-caption-primary">Top issue in this view: <strong>${topIssueName}</strong></div>`
       : `<div class="kpi-caption-primary">No data</div>`;
 
     const cards = [
