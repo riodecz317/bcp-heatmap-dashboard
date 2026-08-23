@@ -219,6 +219,11 @@
   .kpi-spark { height: 6px; border-radius: 3px; overflow: hidden; display: flex; background: var(--gridline); }
   .kpi-spark span { display: block; height: 100%; }
   .kpi-card-foot { font-size: clamp(8px, 0.6vw, 9.5px); color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .kpi-caption-primary { font-size: clamp(8.5px, 0.62vw, 10.5px); color: var(--text-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .kpi-caption-primary strong { color: var(--text-primary); }
+  .kpi-caption-secondary { font-size: clamp(7.5px, 0.56vw, 9px); color: var(--text-muted); margin-top: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .kpi-caption-secondary strong { color: var(--text-secondary); font-weight: 600; }
+  .kpi-bar-caption { font-size: clamp(7.5px, 0.56vw, 9px); color: var(--text-muted); text-transform: uppercase; letter-spacing: .03em; font-weight: 700; margin-top: 5px; }
   .kpi-mini-legend { font-size: clamp(7.5px, 0.58vw, 9px); color: var(--text-muted); display: flex; gap: 6px; flex-wrap: wrap; }
   .kpi-mini-legend .dot { display: inline-block; width: 6px; height: 6px; border-radius: 50%; margin-right: 2px; vertical-align: middle; }
 
@@ -714,14 +719,23 @@
     const impactSpark = impactRows.slice(0, 4).map((r, i) =>
       `<span style="width:${(r.count / impactMax) * 100}%;background:${RANK_COLORS[i % RANK_COLORS.length]}" title="${r.name}: ${r.count}"></span>`
     ).join('');
+    // "impact" (Building Integrity, Flooded, ...) and "issue" (Typhoon,
+    // Earthquake, ...) are two different fields — the bar below is a
+    // distribution of impact TYPES, so the top issue is reported as a
+    // separate line rather than folded into that bar (which would
+    // misrepresent it as one of the bar's segments).
     const topIssueName = s && s.topIssue ? s.topIssue.name : (total ? countBy(data, 'issue')[0]?.name : null);
+    const bcpTypeCaption = topImpact
+      ? `<div class="kpi-caption-primary">BCP Type: <strong>${topImpact.name}</strong></div>` +
+        (topIssueName ? `<div class="kpi-caption-secondary">Top issue in this view: <strong>${topIssueName}</strong></div>` : '')
+      : `<div class="kpi-caption-primary">No data</div>`;
 
     const cards = [
       { label: 'Employees Impacted', value: `${total}`, foot: 'Current filtered view' },
       { label: 'Active Cases', value: `${active}`, foot: total ? `${Math.round((active / total) * 100)}% of total` : '&mdash;' },
       { label: 'Need Help', value: `${help}<span class="unit">/${total}</span>`, foot: total ? `${Math.round((help / total) * 100)}% requested help` : '&mdash;' },
       { label: 'Status', value: '', spark: statusSpark, legend: statusLegend },
-      { label: 'BCP Type', value: topImpact ? `${((topImpact.count / total) * 100).toFixed(0)}%` : '&mdash;', foot: topImpact ? `${topImpact.name}${topIssueName ? ` &middot; top issue: ${topIssueName}` : ''}` : 'No data', spark: impactSpark },
+      { label: 'BCP Type', value: topImpact ? `${((topImpact.count / total) * 100).toFixed(0)}%` : '&mdash;', captionHtml: bcpTypeCaption, barCaption: 'Distribution of Impact Types', spark: impactSpark },
       { label: 'Resolution Rate', value: `${resolutionPct}%`, pill: total ? `<span class="kpi-pill ${pillClass(resolutionPct, 60, 35)}">${resolutionPct >= 60 ? 'Good' : resolutionPct >= 35 ? 'Average' : 'Poor'}</span>` : '', foot: `${resolved} of ${total} resolved` }
     ];
 
@@ -731,7 +745,8 @@
         ${c.value !== '' ? `<div class="kpi-card-value">${c.value}${c.pill || ''}</div>` : ''}
         <div class="kpi-bottom-group">
           ${c.legend ? `<div class="kpi-mini-legend">${c.legend}</div>` : ''}
-          ${c.foot ? `<div class="kpi-card-foot">${c.foot}</div>` : ''}
+          ${c.captionHtml || (c.foot ? `<div class="kpi-card-foot">${c.foot}</div>` : '')}
+          ${c.barCaption ? `<div class="kpi-bar-caption">${c.barCaption}</div>` : ''}
           ${c.spark ? `<div class="kpi-spark">${c.spark}</div>` : ''}
         </div>
       </div>`).join('');
