@@ -55,6 +55,7 @@ When you provide a report, use this exact structure:
 - **Conflict Alert:** List if two agents touched the same file on different open branches.
 - **Sequence Violation:** Any branch that skipped a required gate (no brief, no privacy/compliance/quality check before PR, anything landed on `main` directly).
 - **Unresolved Escalations:** Any open `data-privacy-agent` BLOCK, `compliance-agent` BLOCK/NEEDS REVIEW, or `ai-governance-agent` ESCALATE that hasn't reached a human decision yet — these outrank every other item in this report.
+- **Standing Risk Check:** If `RISK_REGISTER.md` exists, surface any Critical-tier entry or anything that moved up a tier since its last update — you're not re-running `risk-assessment-agent`'s analysis, just making sure a Critical risk doesn't sit unnoticed between that agent's own runs.
 - **Repo Health:** Uncommitted changes, stale branches, or open PRs waiting past a reasonable time.
 
 ## 5. Next Recommended Actions

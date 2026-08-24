@@ -39,7 +39,9 @@ User prompt (+ optional attachment)
 
 `admin-control-agent` runs orthogonally to this — it audits whether the sequence above was actually followed (brief exists, every gate ran before any PR, nothing landed on `main` directly) and reports drift. It does not execute the sequence itself. `ai-governance-agent` is not a duplicate of this — `admin-control-agent` checks *stage order*, `ai-governance-agent` checks *whether the process was operated responsibly* (disclosure, human sign-off on irreversible actions, provenance).
 
-For a lightweight ad hoc change, running all four new gates (privacy, compliance, quality, governance) may be more process than the change warrants — use judgment, but `data-privacy-agent` is cheap to run and should be the one gate you don't skip, since it's the one that catches something genuinely hard to undo.
+`risk-assessment-agent` also runs orthogonally, but at a different altitude than either of those: it doesn't look at one branch or one pipeline run at all. It periodically (or after a major system change — a new data source, a new deployment target, a new external party referenced) rolls up findings from `data-privacy-agent`, `compliance-agent`, and `admin-control-agent` into a single quantified Risk Register (`RISK_REGISTER.md`) covering business operations, project delivery, contracts, and the AI pipeline itself as a source of risk. Think of the three orthogonal agents as three different questions asked at three different scopes: *did we follow the process* (admin-control), *was the process operated responsibly* (ai-governance), *what could actually hurt us, quantified* (risk-assessment).
+
+For a lightweight ad hoc change, running all four per-branch gates (privacy, compliance, quality, governance) may be more process than the change warrants — use judgment, but `data-privacy-agent` is cheap to run and should be the one gate you don't skip, since it's the one that catches something genuinely hard to undo. `risk-assessment-agent` isn't part of that per-change judgment call at all — it's a standing system health check, run on its own cadence regardless of how many small changes happened in between.
 
 ## Why a brief instead of the raw prompt
 
@@ -63,7 +65,7 @@ There is no automatic chaining between subagents — you (or the top-level Claud
 8. If all PASS: "Use ai-governance-agent to audit this round" — ESCALATE stops everything, FLAGGED is noted but doesn't block
 9. Open the PR (`gh pr create`) and stop for your review — do not auto-merge.
 
-`admin-control-agent` can be run any time you want a portfolio-level check on whether branches/PRs are following this order.
+`admin-control-agent` can be run any time you want a portfolio-level check on whether branches/PRs are following this order. `risk-assessment-agent` can be run any time you want the standing Risk Register refreshed — on a schedule (e.g. weekly), or immediately after something like a new data source, new deployment, or new external-party reference lands.
 
 ## Known gaps this doesn't solve (see chat for full list)
 
