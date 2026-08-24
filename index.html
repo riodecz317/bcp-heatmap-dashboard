@@ -186,7 +186,10 @@
   .brand-block { flex: none; min-width: 0; }
   .brand-block h1 { margin: 0; font-size: clamp(18px, 1.6vw, 24px); font-weight: 700; white-space: nowrap; color: #FFFFFF; }
   .data-status-line { font-size: clamp(9px, 0.65vw, 11px); color: rgba(255,255,255,0.85); margin-top: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .data-status-line.is-live, .data-status-line.is-cached, .data-status-line.is-error { color: rgba(255,255,255,0.85); }
+  .data-status-line.is-live, .data-status-line.is-cached { color: rgba(255,255,255,0.85); }
+  .data-status-line.is-stale, .data-status-line.is-error {
+    color: #FFE8DC; font-weight: 700;
+  }
 
   .filters-cluster { flex: 0 1 auto; display: flex; align-items: center; gap: 8px; justify-content: flex-end; flex-wrap: wrap; margin-left: auto; }
   .filters-cluster select {
@@ -467,7 +470,7 @@
           <h2>Heat Map</h2>
           <div class="card-sub" style="margin:0;">Employees impacted by province</div>
         </div>
-        <div id="impactMapLeaflet"></div>
+        <div id="impactMapLeaflet" aria-label="Heat map of employees impacted by province across the Philippines" aria-describedby="heatmapTable"></div>
         <div class="status-mix-legend" id="mapStatusLegend"></div>
       </div>
     </div>
@@ -475,13 +478,13 @@
     <div class="main-col">
       <div class="card">
         <div class="card-head">
-          <h2>Impact by Provinces</h2>
+          <h2 id="provincesHeading">Impact by Provinces</h2>
           <select class="toggle-select" id="labelToggle">
             <option value="yes">Counts: Yes</option>
             <option value="no">Counts: No</option>
           </select>
         </div>
-        <div class="card-body"><div class="province-list" id="heatmapTable"></div></div>
+        <div class="card-body"><div class="province-list" id="heatmapTable" role="table" aria-labelledby="provincesHeading"></div></div>
       </div>
       <div class="card">
         <div class="card-head">
@@ -507,8 +510,12 @@
 <script>
   const BRIDGE_URL = 'http://localhost:8790/data';
 
-  // Cached fallback snapshot — used until (or unless) the local data bridge
-  // (bcp_bridge.ps1) responds with a live pull from the Power BI model.
+  // Offline sample fallback, frozen at build time (currently 15 synthetic
+  // rows) — only ever shown if BOTH the local bridge and the published
+  // ./bcp_data.json snapshot fail to load. loadLiveData()'s catch branch
+  // labels this explicitly as offline/stale via setDataStatus('stale', ...)
+  // rather than presenting it with the same styling as a fresh load — see
+  // dashboard-scrutiny-agent's 2026-08-25 review (Major #3).
   let RAW_DATA = [
     { id:"EMP013", name:"Pedro Gil", account:"Deloitte", lob:"Manufacturing", office:"QC Office", province:"Batangas", island:"Luzon", status:"Active", impact:"Building Integrity", issue:"Earthquake", help:"Yes", remarks:"Structural inspection needed" },
     { id:"EMP011", name:"Mark Gomez", account:"Deloitte", lob:"Supply Chain", office:"QC Office", province:"Benguet", island:"Luzon", status:"Active", impact:"Flooded", issue:"Typhoon", help:"Yes", remarks:"Evacuation plan needed" },
@@ -921,26 +928,26 @@
     if (!provinceRows.length) { heatmapTable.innerHTML = '<div style="padding:8px;color:var(--text-muted);font-size:11px;">No cases match the current filters.</div>'; }
     else {
       const head = `
-        <div class="province-row province-row-head">
-          <span class="col-name">Province</span>
-          <span class="col-stat">Active</span>
-          <span class="col-stat">Monitoring</span>
-          <span class="col-stat">Resolved</span>
-          <span class="col-total">Total</span>
+        <div class="province-row province-row-head" role="row">
+          <span class="col-name" role="columnheader">Province</span>
+          <span class="col-stat" role="columnheader">Active</span>
+          <span class="col-stat" role="columnheader">Monitoring</span>
+          <span class="col-stat" role="columnheader">Resolved</span>
+          <span class="col-total" role="columnheader">Total</span>
         </div>`;
       const rows = provinceRows.map(r => {
         const cells = STATUS_ORDER.map(st => {
           const val = r[st];
-          if (!val) return '<span class="col-stat"></span>';
-          return `<span class="col-stat"><span class="status-pill" style="background:${STATUS_SOFT[st]};color:${STATUS_TEXT[st]}">${val}</span></span>`;
+          if (!val) return '<span class="col-stat" role="cell"></span>';
+          return `<span class="col-stat" role="cell"><span class="status-pill" style="background:${STATUS_SOFT[st]};color:${STATUS_TEXT[st]}">${val}</span></span>`;
         }).join('');
         return `
-        <div class="province-row">
-          <span class="col-name">
+        <div class="province-row" role="row">
+          <span class="col-name" role="rowheader">
             <span class="province-name">${r.name}</span>
           </span>
           ${cells}
-          <span class="col-total">${r.total}</span>
+          <span class="col-total" role="cell">${r.total}</span>
         </div>`;
       }).join('');
       heatmapTable.innerHTML = head + rows;
@@ -1014,12 +1021,16 @@
   //     schedule, so this fetch is a same-origin request, no CORS involved.
   const IS_LOCAL_FILE = location.protocol === 'file:';
 
+  const STALE_AFTER_MS = 6 * 60 * 60 * 1000; // published snapshot older than this reads as stale, not "current"
+
   async function tryFetchJson(url) {
     const res = await fetch(url, { cache: 'no-store' });
     if (!res.ok) throw new Error(`${url} responded ${res.status}`);
     const rows = await res.json();
     if (!Array.isArray(rows) || !rows.length) throw new Error(`${url} returned no rows`);
-    return rows;
+    const lastModifiedHeader = res.headers.get('last-modified');
+    const lastModified = lastModifiedHeader ? new Date(lastModifiedHeader) : null;
+    return { rows, lastModified };
   }
 
   async function loadLiveData(isManualRefresh) {
@@ -1027,7 +1038,8 @@
     if (isManualRefresh) { btn.disabled = true; }
     if (IS_LOCAL_FILE) {
       try {
-        RAW_DATA = await tryFetchJson(BRIDGE_URL);
+        const { rows } = await tryFetchJson(BRIDGE_URL);
+        RAW_DATA = rows;
         refreshFilterOptions();
         renderAll();
         const now = new Date().toLocaleTimeString();
@@ -1039,15 +1051,24 @@
       }
     }
     try {
-      RAW_DATA = await tryFetchJson('./bcp_data.json');
+      const { rows, lastModified } = await tryFetchJson('./bcp_data.json');
+      RAW_DATA = rows;
       refreshFilterOptions();
       renderAll();
-      const now = new Date().toLocaleTimeString();
-      setDataStatus('cached', `&#9679; Published snapshot (auto-refreshed) &middot; loaded ${now}`);
+      const ageMs = lastModified ? Date.now() - lastModified.getTime() : null;
+      if (ageMs !== null && ageMs > STALE_AFTER_MS) {
+        const hrs = Math.round(ageMs / 3600000);
+        setDataStatus('stale', `&#9679; Published snapshot last refreshed ${hrs}h ago &mdash; auto-publish may be stalled`);
+      } else {
+        const now = new Date().toLocaleTimeString();
+        setDataStatus('cached', `&#9679; Published snapshot (auto-refreshed) &middot; loaded ${now}`);
+      }
     } catch (jsonErr) {
       // Neither source available (e.g. opened as a bare file:// page with no
-      // bcp_data.json next to it) — keep whatever RAW_DATA already holds.
-      setDataStatus('cached', `&#9679; Cached snapshot embedded in this file &mdash; no live bridge or published data found`);
+      // bcp_data.json next to it) — RAW_DATA still holds the fallback sample
+      // baked into this file at build time, not current data. Say so plainly
+      // rather than presenting it with the same styling as a fresh load.
+      setDataStatus('stale', `&#9679; Offline sample data &mdash; no live bridge or published snapshot reachable, showing bundled fallback`);
     } finally {
       if (isManualRefresh) { btn.disabled = false; }
     }
