@@ -268,7 +268,7 @@
   .kpi-row { flex: 0 0 auto; display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: var(--gap); min-width: 0; align-items: stretch; }
   .kpi-card { min-height: 80px; padding: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.04); border-color: #F3F4F6; }
   .kpi-card-label { font-size: 12px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; color: #6B7280; }
-  .kpi-card-value { font-size: 28px; font-weight: 800; line-height: 1.15; margin-top: 4px; color: #1E293B; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .kpi-card-value { font-size: 28px; font-weight: 800; line-height: 1.15; color: #1E293B; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .kpi-card-value .unit { font-size: 0.55em; font-weight: 600; color: var(--text-muted); }
   /* Small colored trend caption (replaces the old plain-gray foot text
      and, on Resolution Rate, the separate Good/Average/Poor pill badge —
@@ -799,8 +799,10 @@
     return `
       <div class="card kpi-card">
         <div class="kpi-card-label">${c.label}</div>
-        ${c.value !== '' ? `<div class="kpi-card-value">${c.value}</div>` : ''}
-        <div class="kpi-bottom-group">${c.trend || ''}</div>
+        <div class="kpi-bottom-group">
+          ${c.value !== '' ? `<div class="kpi-card-value">${c.value}</div>` : ''}
+          ${c.trend || ''}
+        </div>
       </div>`;
   }
 
