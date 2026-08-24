@@ -301,18 +301,29 @@
   /* ---- Band 4: main 3-column grid ---- */
   .main-grid { flex: 1 1 auto; min-height: 0; display: grid; grid-template-columns: 3fr 4fr 3fr; gap: var(--gap); }
   .main-col { display: flex; flex-direction: column; gap: var(--gap); min-height: 0; }
-  .main-col .card { flex: 1 1 0; min-height: 0; }
+  /* min-height floor (not 0) gives these stacked cards some guaranteed
+     room instead of collapsing arbitrarily thin — kept modest (rather
+     than a tall fixed value) so it can't force the page past 100vh on
+     the documented 1366x768 target viewport once the banner/KPI row/
+     footer bands have taken their share; .card-body's own overflow:auto
+     still handles any content that needs more room than this. */
+  .main-col .card { flex: 1 1 0; min-height: 150px; }
   /* Leftmost column stands in for the reference's left panel — a clean
      white block with a soft orange accent bar across the top of each card. */
   .main-col:first-child .card { border-top: 3px solid var(--accent-orange); }
 
   /* Left column: compact bar charts */
-  .legend-row { flex: none; display: flex; gap: 10px; font-size: clamp(10px, 0.72vw, 11.5px); font-weight: 600; margin-bottom: 4px; flex-wrap: wrap; }
+  .legend-row { flex: none; display: flex; gap: 10px; font-size: clamp(10px, 0.72vw, 11.5px); font-weight: 600; margin-bottom: 12px; flex-wrap: wrap; }
   .legend-row .item { display: flex; align-items: center; gap: 4px; }
   .legend-row .swatch { width: 7px; height: 7px; border-radius: 2px; }
-  .bar-row { display: grid; grid-template-columns: 76px 1fr 22px; align-items: center; gap: 6px; margin-bottom: 5px; font-size: clamp(9.5px, 0.7vw, 11px); }
-  .bar-row .label { color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .bar-track { display: flex; height: 7px; border-radius: 3px; overflow: hidden; background: var(--hatch-track); }
+  /* Fixed (not auto) label column: each .bar-row is its own independent
+     grid, so "auto" would size every row's label column to just that
+     row's own text and leave bars starting at different x-offsets per
+     row. 112px comfortably fits the longest label ("Food & Beverage")
+     without truncating shorter ones, and keeps every bar aligned. */
+  .bar-row { display: grid; grid-template-columns: 112px 1fr 26px; align-items: center; gap: 6px; margin-bottom: 8px; font-size: clamp(9.5px, 0.7vw, 11px); }
+  .bar-row .label { color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding-right: 12px; }
+  .bar-track { display: flex; height: 11px; border-radius: 4px; overflow: hidden; background: var(--hatch-track); }
   .bar-seg { height: 100%; }
   .bar-total { text-align: right; color: var(--text-secondary); font-variant-numeric: tabular-nums; }
 
@@ -348,12 +359,12 @@
      snug against Resolved instead of floating off toward the edge. */
   .province-row {
     display: grid; grid-template-columns: minmax(110px, 2fr) repeat(3, minmax(56px, 1fr)) minmax(40px, 0.5fr);
-    align-items: center; justify-items: center; gap: 6px;
+    align-items: center; justify-items: center; gap: 6px; min-height: 48px;
     background: #F8F9FC; border-radius: 8px; padding: 12px 16px;
   }
   .province-row .col-name { justify-self: start; }
   .province-row-head {
-    background: var(--surface-1); padding: 4px 16px; margin-bottom: 4px; position: sticky; top: 0; z-index: 1;
+    background: var(--surface-1); padding: 4px 16px; margin-bottom: 12px; position: sticky; top: 0; z-index: 1;
     font-weight: 700; color: #1E293B; font-size: clamp(9.5px, 0.68vw, 11px);
   }
   .province-row-head .col-stat, .province-row-head .col-total { text-align: center; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -361,20 +372,20 @@
   .province-name { font-weight: 500; color: #1E293B; white-space: normal; overflow: visible; text-overflow: clip; line-height: 1.3; font-size: clamp(9.5px, 0.7vw, 11px); }
   .col-stat { text-align: center; font-variant-numeric: tabular-nums; min-width: 0; }
   .col-total { text-align: center; font-weight: 700; color: #1E293B; font-variant-numeric: tabular-nums; font-size: clamp(9.5px, 0.7vw, 11px); min-width: 0; }
-  .status-pill { display: inline-block; min-width: 26px; padding: 2px 10px; border-radius: 50px; font-weight: 700; font-size: clamp(9px, 0.65vw, 10.5px); }
+  .status-pill { display: inline-block; min-width: 26px; padding: 6px 14px; border-radius: 50px; font-weight: 700; font-size: clamp(9px, 0.65vw, 10.5px); }
   .province-list.hide-labels .status-pill { font-size: 0; }
 
   .case-list { flex: 1 1 0; min-height: 0; list-style: none; margin: 0; padding: 0; overflow-y: auto; }
-  .case-item { display: flex; gap: 8px; align-items: flex-start; padding: 6px 2px 6px 8px; border-bottom: 1px solid var(--gridline); border-left: 3px solid transparent; border-radius: 0 5px 5px 0; transition: background .1s ease; }
-  .case-item:last-child { border-bottom: none; }
+  .case-item { display: flex; gap: 10px; align-items: flex-start; padding: 12px 16px; margin-bottom: 10px; border-left: 3px solid transparent; border-radius: 8px; background: #F8F9FC; transition: background .1s ease; }
+  .case-item:last-child { margin-bottom: 0; }
   .case-item:hover { background: var(--row-hover); }
   .case-badge { width: 20px; height: 20px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 9.5px; flex: none; margin-top: 1px; }
   .case-body { flex: 1; min-width: 0; }
-  .case-title-row { display: flex; justify-content: space-between; gap: 6px; align-items: baseline; }
-  .case-name { font-weight: 600; color: #1E293B; font-size: clamp(9.5px, 0.7vw, 11px); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .case-title-row { display: flex; justify-content: space-between; gap: 6px; align-items: baseline; flex-wrap: wrap; }
+  .case-name { font-weight: 600; color: #1E293B; font-size: clamp(9.5px, 0.7vw, 11px); }
   .case-status-pill { flex: none; font-size: clamp(8.5px, 0.6vw, 10px); font-weight: 600; padding: 2px 7px; border-radius: var(--radius-pill); white-space: nowrap; }
-  .case-account-lob { font-size: clamp(10px, 0.6vw, 12px); color: #1E293B; margin-top: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .case-meta { font-size: clamp(8.5px, 0.6vw, 10px); color: #1E293B; margin-top: 2px; }
+  .case-account-lob { font-size: clamp(10px, 0.6vw, 12px); color: #1E293B; margin-top: 4px; }
+  .case-meta { font-size: clamp(8.5px, 0.6vw, 10px); color: #1E293B; margin-top: 4px; line-height: 1.4; }
   .case-help-line { font-size: clamp(8.5px, 0.6vw, 10px); margin-top: 2px; }
   .case-help-line.is-yes { color: var(--status-critical-text); font-weight: 700; }
   .case-help-line.is-no { color: var(--text-muted); }
