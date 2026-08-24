@@ -275,7 +275,7 @@
      that quality label now lives inline in the caption text itself, so
      it's restyled, not erased: a genuinely poor rate still reads red and
      still says "Poor," it just isn't a standalone pill anymore). */
-  .kpi-trend { display: flex; align-items: center; gap: 4px; font-size: 12px; font-weight: 600; color: #16A34A; margin-top: 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .kpi-trend { display: flex; align-items: center; gap: 4px; font-size: 12px; font-weight: 600; color: #16A34A; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .kpi-trend .trend-icon { flex: none; font-size: 9px; line-height: 1; }
   .kpi-trend.is-warn { color: var(--status-warning-text); }
   .kpi-trend.is-bad  { color: var(--status-critical-text); }
@@ -285,7 +285,7 @@
      Type, Resolution Rate) — its distribution bar previously ranked
      impact TYPES here; removed per the minimalist reformat, the number +
      top-issue caption now carry the card on their own. */
-  .kpi-bottom-group { margin-top: 0; padding-top: 0; display: flex; flex-direction: column; gap: 4px; }
+  .kpi-bottom-group { margin-top: auto; padding-top: 8px; display: flex; flex-direction: column; gap: 4px; }
   /* Status bars: each row is a full-width track with an absolutely
      positioned colored fill sized to the status's real share of the
      total (the actual "chart" data) — the label/HC/ratio text sits in a
