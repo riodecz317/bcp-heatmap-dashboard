@@ -15,7 +15,7 @@
      ============================================================ */
   :root {
     color-scheme: light;
-    --page:           #F0F0F0;
+    --page:           #F0F2F5;
     --surface-1:      #FFFFFF;
     --text-primary:   #21263F;
     --text-secondary: #6B7280;
@@ -68,7 +68,7 @@
     --radius-control: 12px;
     --radius-pill:    999px;
     --gray-500: #6B7280;
-    --shadow-outer: 0 16px 40px rgba(0,0,0,0.05);
+    --shadow-outer: 0 20px 60px rgba(0,0,0,0.06);
     --shadow-card:  0 10px 30px rgba(0,0,0,0.05);
 
     /* Single-screen band heights: clamp() so the layout stays sane from a
@@ -78,9 +78,9 @@
        the Executive Summary inside it needs to grow; the main grid below
        (flex:1, min-height:0) is what absorbs that growth. */
     --h-footer: clamp(38px, 5.5vh, 58px);
-    --gap:      clamp(16px, 1.6vh, 24px);
-    --pad-x:    clamp(12px, 1.4vw, 20px);
-    --shell-margin: 24px;
+    --gap:      24px;
+    --pad-x:    24px;
+    --shell-margin: 32px;
   }
   @media (prefers-color-scheme: dark) {
     :root:where(:not([data-theme="light"])) {
@@ -161,7 +161,7 @@
     box-shadow: var(--shadow-card);
     display: flex; flex-direction: column;
     min-height: 0; overflow: hidden;
-    padding: 16px;
+    padding: 24px;
   }
   .card h2 {
     flex: none; margin: 0 0 8px; font-size: clamp(10px, 0.75vw, 12px);
@@ -265,7 +265,7 @@
      band height. Content is top-left aligned and stacks naturally
      (label -> value -> trend caption); any leftover height below that is
      just quiet whitespace, not something to fill or center into. */
-  .kpi-row { flex: 0 0 auto; display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: var(--gap); min-width: 0; align-items: stretch; }
+  .kpi-row { flex: 0 0 auto; display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 16px; min-width: 0; align-items: stretch; }
   .kpi-card { min-height: 80px; padding: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.04); border-color: #F3F4F6; }
   .kpi-card-label { font-size: 12px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; color: #6B7280; }
   .kpi-card-value { font-size: 28px; font-weight: 800; line-height: 1.15; color: #1E293B; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -323,7 +323,7 @@
   .bar-total { text-align: right; color: var(--text-secondary); font-variant-numeric: tabular-nums; }
 
   /* Center column: map */
-  .map-card { padding: 16px; }
+  .map-card { padding: 24px; }
   #impactMapLeaflet { flex: 1 1 0; min-height: 0; border-radius: calc(var(--radius-card) - 3px); overflow: hidden; background: #FFFFFF; box-shadow: inset 0 0 0 1px var(--border); }
   .leaflet-container { font-family: inherit; background: #FFFFFF; }
   .leaflet-control-attribution { display: none; }
@@ -386,7 +386,7 @@
   .case-help-line.is-no { color: var(--text-muted); }
 
   /* ---- Band 5: footer office-sites strip ---- */
-  .footer-strip.card { flex: 0 0 var(--h-footer); flex-direction: row; align-items: center; gap: 8px; overflow-x: auto; overflow-y: hidden; padding: 0 16px; }
+  .footer-strip.card { flex: 0 0 var(--h-footer); flex-direction: row; align-items: center; gap: 8px; overflow-x: auto; overflow-y: hidden; padding: 0 24px; }
   .footer-strip .foot-label { flex: none; font-size: clamp(8.5px, 0.62vw, 10px); font-weight: 700; text-transform: uppercase; letter-spacing: .04em; color: var(--text-muted); margin-right: 4px; }
   .office-chip {
     flex: none; display: flex; align-items: center; gap: 7px; white-space: nowrap;
