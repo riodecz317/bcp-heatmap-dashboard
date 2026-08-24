@@ -1,6 +1,6 @@
 ---
 name: dashboard-scrutiny-agent
-description: Screening/QA stage. Critically evaluates dashboard, UI, or front-end output against the brief produced by prompt-creator-agent, scores it, and issues a pass/revise verdict with concrete fixes. Runs after uiux-agent finishes and before any push to GitHub. Never edits code — critique only.
+description: Screening/QA stage. Critically evaluates dashboard, UI, or front-end output against the brief produced by prompt-creator-agent, scores it, and issues a pass/revise verdict with concrete fixes. Runs after frontend-design-agent finishes and before any push to GitHub. Scoped to web/dashboard UX — not the right reviewer for mobile-app-agent's native-specific output. Never edits code — critique only.
 tools: Read, Glob, Grep, Bash
 ---
 
