@@ -51,9 +51,6 @@
     --accent-soft:    var(--brand-light);
     --gradient-walenteer: linear-gradient(90deg, #FF7E5F, #FEB47B);
 
-    /* Ranking bar (BCP Type distribution — impact TYPE, not status):
-       1st = deep orange, 2nd = navy, rest fade to neutral slate. */
-    --rank-1: #FF5C00; --rank-2: #21263F; --rank-3: #94A3B8; --rank-4: #CBD5E1;
     /* Impact by Provinces (heatmap) intensity scale: kept deliberately
        pale across every tier — readability comes from the bold dark text
        on top (see textColorFor in renderAll), not from a dark cell fill,
@@ -101,7 +98,6 @@
       --status-good-text:     #34D399;
       --status-warning-text:  #FBBF24;
       --status-critical-text: #F87171;
-      --rank-1: #F3897F; --rank-2: #EF4444; --rank-3: #B91C1C; --rank-4: #7F1D1D;
       --seq-0: #3B1D1D; --seq-1: #5C2626; --seq-2: #8C3330; --seq-3: #B91C1C; --seq-4: #EF4444;
     }
   }
@@ -120,7 +116,6 @@
     --status-good-text:     #34D399;
     --status-warning-text:  #FBBF24;
     --status-critical-text: #F87171;
-    --rank-1: #F3897F; --rank-2: #EF4444; --rank-3: #B91C1C; --rank-4: #7F1D1D;
     --seq-0: #3B1D1D; --seq-1: #5C2626; --seq-2: #8C3330; --seq-3: #B91C1C; --seq-4: #EF4444;
   }
 
@@ -267,37 +262,30 @@
   /* ---- Band 3: KPI row (6 compact cards) ----
      flex:0 0 auto (not a fixed vh band) so the row is exactly as tall as
      its tallest card's real content — no more empty space from a clamped
-     band height. .kpi-card centers its content vertically (label+value+
-     bottom-group as one block) rather than pinning it to the top, so
-     shorter cards don't read as mostly empty next to the taller ones the
-     row stretches to match. Status is exempt in practice since its
-     .status-bars is flex:1 and consumes the full card height itself. */
+     band height. Content is top-left aligned and stacks naturally
+     (label -> value -> trend caption); any leftover height below that is
+     just quiet whitespace, not something to fill or center into. */
   .kpi-row { flex: 0 0 auto; display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: var(--gap); min-width: 0; align-items: stretch; }
-  /* Center label+value+bottom-group as one block instead of pinning the
-     bottom-group to the card's bottom edge — Status is unaffected since
-     its .status-bars is flex:1 and fills the card regardless of this. */
-  .kpi-card { min-height: 80px; justify-content: center; }
-  .kpi-card-label { font-size: clamp(8.5px, 0.65vw, 10px); font-weight: 700; letter-spacing: .04em; text-transform: uppercase; color: var(--text-muted); }
-  .kpi-card-value { font-size: clamp(1.05rem, 1.9vw, 1.55rem); font-weight: 800; line-height: 1.15; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .kpi-card { min-height: 80px; padding: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.04); border-color: #F3F4F6; }
+  .kpi-card-label { font-size: 12px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; color: #6B7280; }
+  .kpi-card-value { font-size: 28px; font-weight: 800; line-height: 1.15; margin-top: 4px; color: #1E293B; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .kpi-card-value .unit { font-size: 0.55em; font-weight: 600; color: var(--text-muted); }
-  .kpi-pill { font-size: clamp(8px, 0.6vw, 9.5px); font-weight: 700; padding: 1px 6px; border-radius: var(--radius-pill); margin-left: 4px; }
-  .kpi-pill.good { background: #DCFCE7; color: var(--status-good-text); }
-  .kpi-pill.warn { background: #FEF3C7; color: var(--status-warning-text); }
-  .kpi-pill.bad  { background: #FFE8DC; color: var(--status-critical-text); }
+  /* Small colored trend caption (replaces the old plain-gray foot text
+     and, on Resolution Rate, the separate Good/Average/Poor pill badge —
+     that quality label now lives inline in the caption text itself, so
+     it's restyled, not erased: a genuinely poor rate still reads red and
+     still says "Poor," it just isn't a standalone pill anymore). */
+  .kpi-trend { display: flex; align-items: center; gap: 4px; font-size: 12px; font-weight: 600; color: #16A34A; margin-top: 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .kpi-trend .trend-icon { flex: none; font-size: 9px; line-height: 1; }
+  .kpi-trend.is-warn { color: var(--status-warning-text); }
+  .kpi-trend.is-bad  { color: var(--status-critical-text); }
+  .kpi-trend.is-neutral { color: var(--text-secondary); }
+  .kpi-trend strong { color: inherit; }
   /* BCP Type is the 5th card (Employees, Active, Need Help, Status, BCP
-     Type, Resolution Rate) — its distribution bar ranks impact TYPES
-     (not operational status), so the --rank-* tokens (1st=orange,
-     2nd=navy, fading to slate) drive its segment colors already, read
-     straight from CSS by JS at load time — no override needed here. */
-  .kpi-bottom-group { margin-top: 0; padding-top: 8px; display: flex; flex-direction: column; gap: 4px; }
-  .kpi-spark { height: 6px; border-radius: 3px; overflow: hidden; display: flex; background: var(--hatch-track); }
-  .kpi-spark span { display: block; height: 100%; }
-  .kpi-card-foot { font-size: clamp(8px, 0.6vw, 9.5px); color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .kpi-caption-primary { font-size: clamp(8.5px, 0.62vw, 10.5px); color: var(--text-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .kpi-caption-primary strong { color: var(--text-primary); }
-  .kpi-caption-secondary { font-size: clamp(7.5px, 0.56vw, 9px); color: var(--text-muted); margin-top: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .kpi-caption-secondary strong { color: var(--text-secondary); font-weight: 600; }
-  .kpi-bar-caption { font-size: clamp(7.5px, 0.56vw, 9px); color: var(--text-muted); text-transform: uppercase; letter-spacing: .03em; font-weight: 700; margin-top: 5px; }
+     Type, Resolution Rate) — its distribution bar previously ranked
+     impact TYPES here; removed per the minimalist reformat, the number +
+     top-issue caption now carry the card on their own. */
+  .kpi-bottom-group { margin-top: 0; padding-top: 0; display: flex; flex-direction: column; gap: 4px; }
   /* Status bars: each row is a full-width track with an absolutely
      positioned colored fill sized to the status's real share of the
      total (the actual "chart" data) — the label/HC/ratio text sits in a
@@ -540,7 +528,6 @@
   const STATUS_SOFT  = { Active: v('--status-critical-soft'), Monitoring: v('--status-warning-soft'), Resolved: v('--status-good-soft') };
   const STATUS_ICON  = { Active: '!', Monitoring: '◐', Resolved: '✓' };
   const STATUS_ORDER = ["Active", "Monitoring", "Resolved"];
-  const RANK_COLORS = [v('--rank-1'), v('--rank-2'), v('--rank-3'), v('--rank-4')];
   const SEQ = [v('--seq-0'), v('--seq-1'), v('--seq-2'), v('--seq-3'), v('--seq-4')];
 
   const activeFilters = { account: 'All', lob: 'All', province: 'All', status: 'All', help: 'All' };
@@ -812,12 +799,8 @@
     return `
       <div class="card kpi-card">
         <div class="kpi-card-label">${c.label}</div>
-        ${c.value !== '' ? `<div class="kpi-card-value">${c.value}${c.pill || ''}</div>` : ''}
-        <div class="kpi-bottom-group">
-          ${c.captionHtml || (c.foot ? `<div class="kpi-card-foot">${c.foot}</div>` : '')}
-          ${c.barCaption ? `<div class="kpi-bar-caption">${c.barCaption}</div>` : ''}
-          ${c.spark ? `<div class="kpi-spark">${c.spark}</div>` : ''}
-        </div>
+        ${c.value !== '' ? `<div class="kpi-card-value">${c.value}</div>` : ''}
+        <div class="kpi-bottom-group">${c.trend || ''}</div>
       </div>`;
   }
 
@@ -857,28 +840,37 @@
 
     const impactRows = total ? countBy(data, 'impact') : [];
     const topImpact = impactRows[0];
-    const impactMax = impactRows.length ? impactRows[0].count : 1;
-    const impactSpark = impactRows.slice(0, 4).map((r, i) =>
-      `<span style="width:${(r.count / impactMax) * 100}%;background:${RANK_COLORS[i % RANK_COLORS.length]}" title="${r.name}: ${r.count}"></span>`
-    ).join('');
     // "impact" (Building Integrity, Flooded, ...) and "issue" (Typhoon,
-    // Earthquake, ...) are two different fields — the bar below is a
-    // distribution of impact TYPES, so the top issue is reported as a
-    // separate line rather than folded into that bar (which would
-    // misrepresent it as one of the bar's segments).
+    // Earthquake, ...) are two different fields — kept as a separate
+    // caption line rather than implying it's the same thing as the
+    // headline impact-type percentage above it.
     const topIssueName = s && s.topIssue ? s.topIssue.name : (total ? countBy(data, 'issue')[0]?.name : null);
-    const bcpTypeCaption = topIssueName
-      ? `<div class="kpi-caption-primary">Top issue in this view: <strong>${topIssueName}</strong></div>`
-      : `<div class="kpi-caption-primary">No data</div>`;
+    // BCP Type's caption is informational (which issue is most common),
+    // not a positive/negative measure, so it stays neutral-toned rather
+    // than the green used for the other cards' trend captions below —
+    // painting "most common issue: Typhoon" green would read as good
+    // news when it isn't necessarily anything of the sort.
+    const bcpTypeTrend = topIssueName
+      ? `<div class="kpi-trend is-neutral">Top issue: <strong>${topIssueName}</strong></div>`
+      : `<div class="kpi-trend is-neutral">No data</div>`;
 
+    const activePct = total ? Math.round((active / total) * 100) : 0;
+    const helpPct = total ? Math.round((help / total) * 100) : 0;
     const before = [
-      { label: 'Employees Impacted', value: `${total}`, foot: 'Current filtered view' },
-      { label: 'Active Cases', value: `${active}`, foot: total ? `${Math.round((active / total) * 100)}% of total` : '&mdash;' },
-      { label: 'Need Help', value: `${help}<span class="unit">/${total}</span>`, foot: total ? `${Math.round((help / total) * 100)}% requested help` : '&mdash;' }
+      { label: 'Employees Impacted', value: `${total}`, trend: `<div class="kpi-trend"><span class="trend-icon">&#9650;</span>Live data snapshot</div>` },
+      { label: 'Active Cases', value: `${active}`, trend: total ? `<div class="kpi-trend"><span class="trend-icon">&#9650;</span>${activePct}% of total</div>` : '' },
+      { label: 'Need Help', value: `${help}<span class="unit">/${total}</span>`, trend: total ? `<div class="kpi-trend"><span class="trend-icon">&#9650;</span>${helpPct}% requesting</div>` : '' }
     ];
+    // Resolution Rate's quality read (Good/Average/Poor) still drives the
+    // trend caption's color and arrow direction — restyled off the old
+    // standalone pill, not erased, so a genuinely poor rate still shows
+    // red with a down arrow rather than being forced green.
+    const resQuality = total ? pillClass(resolutionPct, 60, 35) : 'neutral';
+    const resLabel = resolutionPct >= 60 ? 'Good' : resolutionPct >= 35 ? 'Average' : 'Poor';
+    const resIcon = resQuality === 'good' ? '&#9650;' : resQuality === 'bad' ? '&#9660;' : '&#9644;';
     const after = [
-      { label: 'BCP Type', value: topImpact ? `${((topImpact.count / total) * 100).toFixed(0)}%` : '&mdash;', captionHtml: bcpTypeCaption, barCaption: 'Distribution of Impact Types', spark: impactSpark },
-      { label: 'Resolution Rate', value: `${resolutionPct}%`, pill: total ? `<span class="kpi-pill ${pillClass(resolutionPct, 60, 35)}">${resolutionPct >= 60 ? 'Good' : resolutionPct >= 35 ? 'Average' : 'Poor'}</span>` : '', foot: `${resolved} of ${total} resolved` }
+      { label: 'BCP Type', value: topImpact ? `${((topImpact.count / total) * 100).toFixed(0)}%` : '&mdash;', trend: bcpTypeTrend },
+      { label: 'Resolution Rate', value: `${resolutionPct}%`, trend: total ? `<div class="kpi-trend is-${resQuality}"><span class="trend-icon">${resIcon}</span>${resLabel} &middot; ${resolved} of ${total} resolved</div>` : '' }
     ];
 
     document.getElementById('kpiRow').innerHTML =
