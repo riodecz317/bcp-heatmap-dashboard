@@ -63,12 +63,10 @@
     --hatch-track: repeating-linear-gradient(135deg, #F3F4F6, #F3F4F6 4px, #EAEBEF 4px, #EAEBEF 8px);
 
     --font-sans: "Inter", "Poppins", "Manrope", -apple-system, system-ui, sans-serif;
-    --radius-outer:   24px;
     --radius-card:    16px;
     --radius-control: 12px;
     --radius-pill:    999px;
     --gray-500: #6B7280;
-    --shadow-outer: 0 20px 60px rgba(0,0,0,0.06);
     --shadow-card:  0 10px 30px rgba(0,0,0,0.05);
 
     /* Single-screen band heights: clamp() so the layout stays sane from a
@@ -78,9 +76,8 @@
        the Executive Summary inside it needs to grow; the main grid below
        (flex:1, min-height:0) is what absorbs that growth. */
     --h-footer: clamp(38px, 5.5vh, 58px);
-    --gap:      24px;
-    --pad-x:    24px;
-    --shell-margin: 32px;
+    --gap:      20px;
+    --shell-margin: 20px;
   }
   @media (prefers-color-scheme: dark) {
     :root:where(:not([data-theme="light"])) {
@@ -137,21 +134,18 @@
   a:focus-visible, button:focus-visible, select:focus-visible, input:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 1px; }
 
   /* ============================================================
-     SHELL: five fixed/flexible bands, zero page scroll — also the large
-     floating white container itself ("MoonRow" reference: a crisp flat
-     white panel on a soft gray page, thin border, wide soft shadow — no
-     glass/blur effect). height:100% (not 100vh) so it fills exactly the
-     area body's own padding (--shell-margin) leaves for it.
+     SHELL: five fixed/flexible bands, zero page scroll — no longer a
+     "floating card" itself (that outer-container look was removed):
+     transparent, no radius/shadow/border of its own. The individual
+     cards are the only visible containers now, sitting directly on the
+     body's light-gray background. height:100% (not 100vh) so it fills
+     exactly the area body's own padding (--shell-margin, the single
+     global edge margin) leaves for it.
      ============================================================ */
   .shell {
     height: 100%; overflow: hidden; position: relative; z-index: 1;
     display: flex; flex-direction: column;
-    padding: var(--gap) var(--pad-x);
     gap: var(--gap);
-    background: var(--surface-1);
-    border: 1px solid var(--border);
-    border-radius: var(--radius-outer);
-    box-shadow: var(--shadow-outer);
   }
 
   .card {
@@ -161,7 +155,7 @@
     box-shadow: var(--shadow-card);
     display: flex; flex-direction: column;
     min-height: 0; overflow: hidden;
-    padding: 24px;
+    padding: 20px;
   }
   .card h2 {
     flex: none; margin: 0 0 8px; font-size: clamp(10px, 0.75vw, 12px);
@@ -323,7 +317,7 @@
   .bar-total { text-align: right; color: var(--text-secondary); font-variant-numeric: tabular-nums; }
 
   /* Center column: map */
-  .map-card { padding: 24px; }
+  .map-card { padding: 20px; }
   #impactMapLeaflet { flex: 1 1 0; min-height: 0; border-radius: calc(var(--radius-card) - 3px); overflow: hidden; background: #FFFFFF; box-shadow: inset 0 0 0 1px var(--border); }
   .leaflet-container { font-family: inherit; background: #FFFFFF; }
   .leaflet-control-attribution { display: none; }
@@ -386,7 +380,7 @@
   .case-help-line.is-no { color: var(--text-muted); }
 
   /* ---- Band 5: footer office-sites strip ---- */
-  .footer-strip.card { flex: 0 0 var(--h-footer); flex-direction: row; align-items: center; gap: 8px; overflow-x: auto; overflow-y: hidden; padding: 0 24px; }
+  .footer-strip.card { flex: 0 0 var(--h-footer); flex-direction: row; align-items: center; gap: 8px; overflow-x: auto; overflow-y: hidden; padding: 0 20px; }
   .footer-strip .foot-label { flex: none; font-size: clamp(8.5px, 0.62vw, 10px); font-weight: 700; text-transform: uppercase; letter-spacing: .04em; color: var(--text-muted); margin-right: 4px; }
   .office-chip {
     flex: none; display: flex; align-items: center; gap: 7px; white-space: nowrap;
