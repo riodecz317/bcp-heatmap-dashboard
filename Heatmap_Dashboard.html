@@ -267,12 +267,16 @@
   /* ---- Band 3: KPI row (6 compact cards) ----
      flex:0 0 auto (not a fixed vh band) so the row is exactly as tall as
      its tallest card's real content — no more empty space from a clamped
-     band height. Each card stacks top-down (no justify-content:center/
-     space-between); only .kpi-bottom-group carries margin-top:auto, so
-     legends/progress bars/captions sit as one flush-bottom block while
-     the label+value stay pinned to the top. */
+     band height. .kpi-card centers its content vertically (label+value+
+     bottom-group as one block) rather than pinning it to the top, so
+     shorter cards don't read as mostly empty next to the taller ones the
+     row stretches to match. Status is exempt in practice since its
+     .status-bars is flex:1 and consumes the full card height itself. */
   .kpi-row { flex: 0 0 auto; display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: var(--gap); min-width: 0; align-items: stretch; }
-  .kpi-card { min-height: 80px; }
+  /* Center label+value+bottom-group as one block instead of pinning the
+     bottom-group to the card's bottom edge — Status is unaffected since
+     its .status-bars is flex:1 and fills the card regardless of this. */
+  .kpi-card { min-height: 80px; justify-content: center; }
   .kpi-card-label { font-size: clamp(8.5px, 0.65vw, 10px); font-weight: 700; letter-spacing: .04em; text-transform: uppercase; color: var(--text-muted); }
   .kpi-card-value { font-size: clamp(1.05rem, 1.9vw, 1.55rem); font-weight: 800; line-height: 1.15; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .kpi-card-value .unit { font-size: 0.55em; font-weight: 600; color: var(--text-muted); }
@@ -285,7 +289,7 @@
      (not operational status), so the --rank-* tokens (1st=orange,
      2nd=navy, fading to slate) drive its segment colors already, read
      straight from CSS by JS at load time — no override needed here. */
-  .kpi-bottom-group { margin-top: auto; padding-top: 8px; display: flex; flex-direction: column; gap: 4px; }
+  .kpi-bottom-group { margin-top: 0; padding-top: 8px; display: flex; flex-direction: column; gap: 4px; }
   .kpi-spark { height: 6px; border-radius: 3px; overflow: hidden; display: flex; background: var(--hatch-track); }
   .kpi-spark span { display: block; height: 100%; }
   .kpi-card-foot { font-size: clamp(8px, 0.6vw, 9.5px); color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
