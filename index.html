@@ -429,11 +429,11 @@
       </div>
       <div class="filters-cluster">
         <button class="refresh-btn" id="refreshBtn" title="Re-fetch from the local data bridge" type="button">&#8635; Refresh</button>
-        <select id="f-account" data-label="Account"><option value="All">Account: All</option></select>
-        <select id="f-lob" data-label="Line of Business"><option value="All">Line of Business: All</option></select>
-        <select id="f-province" data-label="Province"><option value="All">Province: All</option></select>
-        <select id="f-status" data-label="Status"><option value="All">Status: All</option></select>
-        <select id="f-help" data-label="Needed Help"><option value="All">Needed Help: All</option></select>
+        <select id="f-account" data-label="Account" aria-label="Filter by Account"><option value="All">Account: All</option></select>
+        <select id="f-lob" data-label="Line of Business" aria-label="Filter by Line of Business"><option value="All">Line of Business: All</option></select>
+        <select id="f-province" data-label="Province" aria-label="Filter by Province"><option value="All">Province: All</option></select>
+        <select id="f-status" data-label="Status" aria-label="Filter by Status"><option value="All">Status: All</option></select>
+        <select id="f-help" data-label="Needed Help" aria-label="Filter by Needed Help"><option value="All">Needed Help: All</option></select>
       </div>
     </div>
 
@@ -479,7 +479,7 @@
       <div class="card">
         <div class="card-head">
           <h2 id="provincesHeading">Impact by Provinces</h2>
-          <select class="toggle-select" id="labelToggle">
+          <select class="toggle-select" id="labelToggle" aria-label="Show province counts as">
             <option value="yes">Counts: Yes</option>
             <option value="no">Counts: No</option>
           </select>
@@ -489,7 +489,7 @@
       <div class="card">
         <div class="card-head">
           <h2>Case Feed</h2>
-          <select class="toggle-select" id="sortToggle">
+          <select class="toggle-select" id="sortToggle" aria-label="Sort case feed by">
             <option value="severity">Sort: Status</option>
             <option value="name">Sort: Name</option>
           </select>
