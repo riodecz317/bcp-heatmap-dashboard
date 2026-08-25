@@ -76,6 +76,19 @@
     --status-good-text:     #166534;
     --status-warning-text:  #854D0E;
     --status-critical-text: #9A3412;
+    /* Re-validation pass (accessibility-enhancements brief, 2026-08-25):
+       re-checked this triad (and the --seq-0..4 sequential scale below) for
+       CVD-safety/contrast before deciding whether to touch either. The
+       dataviz skill's validate_palette.js referenced above could not be
+       located in this repo or anywhere on this machine (checked the local
+       skills/plugins directories and the sibling shadowrealm-agents repo —
+       it holds only agent .md definitions, no skill scripts), so this pass
+       fell back to the same manual WCAG relative-luminance/contrast math
+       already used and documented throughout this file (e.g. PR #11's
+       comments) rather than skipping validation. No failure was found in
+       this status triad or in --seq-0..4 — both are unchanged as a result;
+       see the --status-warning note above for the one documented failure
+       that WAS found and fixed in an earlier pass, for contrast. */
     /* Light tints for pills/badges — text is the dark -text color above,
        never white and never the bright fill itself, so contrast stays
        readable (the bright fills above are for swatches/dots/bars only). */
@@ -474,11 +487,15 @@
     padding: 2px 5px; border-radius: var(--radius-pill); white-space: nowrap;
     box-shadow: 0 1px 3px rgba(0,0,0,0.35); font-variant-numeric: tabular-nums;
   }
-  /* STATUS_ICON glyph (!/◐/✓) prepended to the permanent map count label --
+  /* STATUS_ICON glyph (!/◆/✓) prepended to the permanent map count label --
      see renderMapLayer(). Fixed white-on-navy badge regardless of theme
      (like the rest of this label), so the glyph's own contrast never
      depends on which status color it represents; the shape alone is what
-     survives grayscale/desaturation. */
+     survives grayscale/desaturation. Monitoring's glyph is '◆' (solid
+     diamond), not a circle -- a half-filled circle was tried here first and
+     was found, at this label's actual ~9.5px render size, to be visually
+     indistinguishable from the digit "0" sitting next to it; see STATUS_ICON
+     for the full rationale. */
   .province-count-label .status-glyph { font-style: normal; margin-right: 3px; }
   .status-mix-legend { flex: none; display: flex; gap: 8px; margin-top: 4px; font-size: clamp(8px, 0.6vw, 10px); color: var(--text-secondary); flex-wrap: wrap; }
   .status-mix-legend .item { display: flex; align-items: center; gap: 4px; }
@@ -655,7 +672,7 @@
         <h1>Executive BCP Dashboard</h1>
         <div class="data-status-line" id="dataStatus">Loading from Power BI model <code>Fact_BCP</code>&hellip;</div>
       </div>
-      <button class="theme-toggle-btn" id="themeToggleBtn" type="button" aria-label="Switch to dark mode"></button>
+      <button class="theme-toggle-btn" id="themeToggleBtn" type="button" title="Switch to dark mode" aria-label="Switch to dark mode"></button>
       <div class="filters-cluster">
         <button class="refresh-btn" id="refreshBtn" title="Re-fetch from the local data bridge" type="button">&#8635; Refresh</button>
         <select id="f-account" data-label="Account" aria-label="Filter by Account"><option value="All">Account: All</option></select>
@@ -768,7 +785,18 @@
   const STATUS_COLOR = { Active: v('--status-critical'), Monitoring: v('--status-warning'), Resolved: v('--status-good') };
   const STATUS_TEXT  = { Active: v('--status-critical-text'), Monitoring: v('--status-warning-text'), Resolved: v('--status-good-text') };
   const STATUS_SOFT  = { Active: v('--status-critical-soft'), Monitoring: v('--status-warning-soft'), Resolved: v('--status-good-soft') };
-  const STATUS_ICON  = { Active: '!', Monitoring: '◐', Resolved: '✓' };
+  // Monitoring was '◐' (half-filled circle) until this pass -- at this
+  // label's actual render size (~8.5-9.5px bold Inter) a half-filled circle
+  // sitting directly next to a digit is visually indistinguishable from the
+  // digit "0" (screenshot review: icon+"1" read as "0"+"1"), which defeated
+  // the grayscale-distinguishable requirement for exactly the one status it
+  // mattered most for. Replaced with '◆' (solid diamond) -- an unambiguous
+  // geometric shape with no digit lookalike at small bold sizes, kept out of
+  // resIcon's ▲/▼/▬ trend-triangle family on purpose since those three encode
+  // an ordered good/neutral/bad trend direction and Monitoring is not a
+  // trend, it's an in-progress category state. Active ('!') and Resolved
+  // ('✓') were unaffected and are unchanged.
+  const STATUS_ICON  = { Active: '!', Monitoring: '◆', Resolved: '✓' };
   const STATUS_ORDER = ["Active", "Monitoring", "Resolved"];
   const SEQ = [v('--seq-0'), v('--seq-1'), v('--seq-2'), v('--seq-3'), v('--seq-4')];
 
@@ -1071,12 +1099,17 @@
     }
 
     // Icon/label always show the mode a click would SWITCH TO (sun = go
-    // light, moon = go dark), the common convention for this control.
+    // light, moon = go dark), the common convention for this control. title
+    // mirrors aria-label (same pattern as #refreshBtn, which has both a
+    // title and visible text) so a mouse-hover tooltip matches what screen
+    // readers announce -- both are kept in sync here since, unlike
+    // refreshBtn's static title, this button's label changes with theme.
     function syncButton() {
       const theme = currentTheme();
       const goingTo = theme === 'dark' ? 'light' : 'dark';
       btn.innerHTML = theme === 'dark' ? SUN_SVG : MOON_SVG;
       btn.setAttribute('aria-label', `Switch to ${goingTo} mode`);
+      btn.setAttribute('title', `Switch to ${goingTo} mode`);
     }
 
     syncButton();
@@ -1376,5 +1409,69 @@
     new ResizeObserver(() => leafletMap && leafletMap.invalidateSize()).observe(document.getElementById('impactMapLeaflet'));
   }
 </script>
+
+<!-- ================================================================
+     MANUAL TEST CHECKLIST — accessibility-enhancements brief
+     (.claude/briefs/2026-08-25-bcp-dashboard-accessibility-gaps.md)
+
+     Run through all four passes below before signing off on any change to
+     this file's theming, status-color, or status-icon code. Kept in-file
+     (this file's existing convention for documenting decisions/checks
+     inline) rather than as a separate doc, so it travels with the code it
+     verifies and can't drift out of sync with a standalone file.
+
+     1. LIGHT MODE / DESKTOP
+        - Load with no stored theme choice and OS set to light.
+        - [ ] Page renders in light palette; no dark-mode colors leak in.
+        - [ ] KPI values, province names/headers, status pills all readable.
+        - [ ] .exec-toggle-btn / .exec-top-row divider look unchanged from
+              before this brief (no visual regression).
+        - [ ] Office-chip footer dividers visible between chips and after
+              the "Office Sites" label.
+        - [ ] .province-row / .case-item show a subtle odd/even banding.
+
+     2. DARK MODE / DESKTOP
+        - Load with no stored theme choice and OS set to dark.
+        - [ ] Page renders in dark palette automatically (no toggle click
+              needed) via prefers-color-scheme.
+        - [ ] Same checks as pass 1, but in dark: KPI values, province
+              names/headers, status-soft pill text, hatch-track, and
+              --status-warning all remain visible (PR #11's fixes — spot
+              check, don't re-derive).
+        - [ ] .exec-toggle-btn / .exec-top-row / #sortToggle / #labelToggle
+              are no longer a bright light-gray island — they adapt.
+        - [ ] Row banding (.province-row / .case-item) is still perceptible
+              and no status-pill text on either banding color looks washed
+              out (this is the pass where the critical-soft alpha fix
+              matters most — check the Active/critical pills specifically
+              in both banding colors).
+
+     3. OS SET TO DARK + MANUAL OVERRIDE TO LIGHT (and vice versa)
+        - With OS in dark mode, click the header sun/moon toggle
+          (#themeToggleBtn) to switch to light.
+        - [ ] Page immediately switches to light regardless of OS setting.
+        - [ ] Toggle icon flips to moon (showing "switch to dark" as the
+              next action); its title/aria-label read "Switch to dark
+              mode".
+        - [ ] Reload the page (still OS-dark) — light mode persists with NO
+              flash of dark on load (localStorage + early <head> script).
+        - Now click the toggle again to go back to dark; repeat the same
+          checks in reverse (icon flips to sun, title/aria-label read
+          "Switch to light mode", persists across reload) with OS set to
+          light instead, to confirm the override works in both directions.
+
+     4. GRAYSCALE / DESATURATED PASS
+        - Convert a full-page screenshot to true grayscale (or use a
+          browser/OS grayscale display filter) in BOTH light and dark mode.
+        - [ ] Map province-count-label glyphs (!/◆/✓) are each clearly
+              legible and distinguishable from each other AND from the
+              adjacent count digit — confirm the Monitoring diamond (◆) in
+              particular is not misreadable as "0" or any other digit at
+              actual render size (~9.5px bold).
+        - [ ] Province-grid .status-pill icons and Case Feed .case-badge
+              icons remain distinguishable from each other by shape alone.
+        - [ ] Sequential choropleth (--seq-0..4) province fills remain
+              distinguishable by magnitude without relying on hue.
+     ================================================================ -->
 </body>
 </html>
