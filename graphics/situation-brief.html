@@ -25,12 +25,12 @@
 
   .stage { flex: 1 1 auto; min-height: 0; display: flex; align-items: center; justify-content: center; padding: 14px; background: var(--ground); }
   #posterWrap { height: 100%; max-width: 100%; display: flex; }
-  #posterWrap svg { height: 100%; width: auto; max-width: 100%; border-radius: 14px; box-shadow: 0 16px 50px rgba(0,0,0,0.35); display: block; }
+  #posterWrap svg { height: 100%; width: auto; max-width: 100%; border-radius: 14px; box-shadow: 0 16px 50px rgba(0,0,0,0.18); display: block; }
 
   @media print {
     body { height: auto; overflow: visible; }
     .toolbar { display: none; }
-    .stage { padding: 0; height: 100vh; background: #000; }
+    .stage { padding: 0; height: 100vh; background: #fff; }
     #posterWrap { height: 100vh; }
     #posterWrap svg { border-radius: 0; box-shadow: none; height: 100vh; width: auto; margin: 0 auto; }
     @page { margin: 0; }
@@ -53,11 +53,11 @@
 </div>
 
 <script>
-  // ---------- Palette: deep charcoal, warm white, muted blue-gray, orange used only for criticality/action ----------
+  // ---------- Palette: light paper, dark ink, muted blue-gray, orange used only for criticality/action ----------
   const PAL = {
-    bg: '#12131A', ink: '#F4F2ED', muted: '#8B93A8', faint: '#5E6577',
-    accent: '#F97316', accentBright: '#FB923C',
-    rule: 'rgba(255,255,255,0.12)', track: 'rgba(255,255,255,0.08)'
+    bg: '#FFFFFF', ink: '#1B2036', muted: '#5B6478', faint: '#8891A3',
+    accent: '#F97316', accentDeep: '#9A3412',
+    rule: '#E7E9EF', track: '#F1F2F5'
   };
   const W = 1600;
   const COL_X = 300, COL_W = 1000; // centered editorial column — generous side margins, not edge-to-edge dashboard fill
@@ -67,6 +67,20 @@
     words.forEach(w => { if ((cur+' '+w).trim().length > maxChars) { lines.push(cur.trim()); cur = w; } else { cur = (cur+' '+w).trim(); } });
     if (cur) lines.push(cur);
     return lines;
+  }
+  // Rough text-width estimate so a number's label always clears it, instead of
+  // hand-guessed fixed offsets (which is exactly what caused the "15.UZON"
+  // crowding — a two-digit 72px Archivo number is much wider than the 90px
+  // gap I'd guessed). Deliberately generous, not exact font metrics.
+  function estWidth(str, fontSize, family, weight) {
+    const factor = family === 'Archivo' ? (weight >= 800 ? 0.64 : 0.58) : (weight >= 700 ? 0.56 : 0.50);
+    return str.length * fontSize * factor;
+  }
+  function numLabel(parts, numX, y, numStr, numSize, numWeight, label, labelSize, labelWeight, gap, numColor, labelColor) {
+    parts.push(`<text x="${numX}" y="${y}" font-family="Archivo" font-weight="${numWeight}" font-size="${numSize}" fill="${numColor}">${esc(numStr)}</text>`);
+    const labelX = numX + estWidth(numStr, numSize, 'Archivo', numWeight) + gap;
+    parts.push(`<text x="${labelX}" y="${y}" font-family="Inter" font-weight="${labelWeight}" font-size="${labelSize}" letter-spacing="1" fill="${labelColor}">${esc(label)}</text>`);
+    return labelX;
   }
 
   function buildSVG() {
@@ -94,37 +108,32 @@
     rule();
 
     // ---- Hero: 12 ----
-    parts.push(`<text x="${cx}" y="${y}" font-family="Inter" font-weight="800" font-size="17" letter-spacing="2" fill="${PAL.accentBright}">CRITICAL &#8212; ACTIVE / UNDISPATCHED</text>`);
+    parts.push(`<text x="${cx}" y="${y}" font-family="Inter" font-weight="800" font-size="17" letter-spacing="2" fill="${PAL.accentDeep}">CRITICAL &#8212; ACTIVE / UNDISPATCHED</text>`);
     y += 234;
     parts.push(`<text x="${cx}" y="${y}" font-family="Archivo" font-weight="900" font-size="256" fill="${PAL.accent}">12</text>`);
     y += 40;
     parts.push(`<text x="${cx}" y="${y}" font-family="Inter" font-weight="500" font-size="24" fill="${PAL.muted}">of 21 open cases have no assistance in motion yet</text>`);
-    y += 50;
-    parts.push(`<text x="${cx}" y="${y}" font-family="Archivo" font-weight="800" font-size="26" fill="${PAL.ink}">21</text>`);
-    parts.push(`<text x="${cx+34}" y="${y}" font-family="Inter" font-weight="600" font-size="17" fill="${PAL.faint}">open cases</text>`);
-    parts.push(`<text x="${cx+230}" y="${y}" font-family="Archivo" font-weight="800" font-size="26" fill="${PAL.ink}">8</text>`);
-    parts.push(`<text x="${cx+254}" y="${y}" font-family="Inter" font-weight="600" font-size="17" fill="${PAL.faint}">provinces affected</text>`);
+    y += 60;
+    const stat2X = numLabel(parts, cx, y, '21', 26, 800, 'open cases', 17, 600, 24, PAL.ink, PAL.faint) + estWidth('open cases', 17, 'Inter', 600) + 70;
+    numLabel(parts, stat2X, y, '8', 26, 800, 'provinces affected', 17, 600, 24, PAL.ink, PAL.faint);
     y += 60;
     rule();
 
     // ---- Where is the exposure ----
     parts.push(`<text x="${cx}" y="${y}" font-family="Inter" font-weight="800" font-size="16" letter-spacing="2" fill="${PAL.faint}">WHERE IS THE EXPOSURE?</text>`);
-    y += 70;
-    parts.push(`<text x="${cx}" y="${y}" font-family="Archivo" font-weight="900" font-size="72" fill="${PAL.ink}">15</text>`);
-    parts.push(`<text x="${cx+90}" y="${y}" font-family="Inter" font-weight="700" font-size="20" letter-spacing="1" fill="${PAL.muted}">LUZON</text>`);
+    y += 78;
+    numLabel(parts, cx, y, '15', 72, 900, 'LUZON', 20, 700, 30, PAL.ink, PAL.muted);
     y += 30;
     // Nested subset indicator — Metro Manila reads as PART OF Luzon, not a sibling
     const nestTop = y, indent = cx + 46;
     y += 58;
-    parts.push(`<text x="${indent}" y="${y}" font-family="Archivo" font-weight="800" font-size="46" fill="${PAL.accentBright}">8</text>`);
-    parts.push(`<text x="${indent+56}" y="${y}" font-family="Inter" font-weight="700" font-size="16" letter-spacing="1" fill="${PAL.muted}">METRO MANILA</text>`);
+    numLabel(parts, indent, y, '8', 46, 800, 'METRO MANILA', 16, 700, 24, PAL.accentDeep, PAL.muted);
     parts.push(`<line x1="${cx+8}" y1="${nestTop}" x2="${cx+8}" y2="${y-16}" stroke="${PAL.rule}" stroke-width="2"/>`);
     parts.push(`<line x1="${cx+8}" y1="${y-16}" x2="${indent-10}" y2="${y-16}" stroke="${PAL.rule}" stroke-width="2"/>`);
     y += 66;
-    [['3','VISAYAS'], ['3','MINDANAO']].forEach(([v,k], i) => {
-      const bx = cx + i*220;
-      parts.push(`<text x="${bx}" y="${y}" font-family="Archivo" font-weight="800" font-size="40" fill="${PAL.ink}">${v}</text>`);
-      parts.push(`<text x="${bx+48}" y="${y}" font-family="Inter" font-weight="700" font-size="15" letter-spacing="1" fill="${PAL.faint}">${k}</text>`);
+    let bx = cx;
+    [['3','VISAYAS'], ['3','MINDANAO']].forEach(([v,k]) => {
+      bx = numLabel(parts, bx, y, v, 40, 800, k, 15, 700, 22, PAL.ink, PAL.faint) + estWidth(k, 15, 'Inter', 700) + 70;
     });
     y += 58;
     rule();
@@ -135,8 +144,7 @@
     const hazards = [['Power Outage', 7], ['Typhoon', 6], ['Earthquake', 4], ['Internet Outage', 4]];
     const maxH = Math.max(...hazards.map(h => h[1]));
     hazards.forEach(([label, val]) => {
-      parts.push(`<text x="${cx}" y="${y}" font-family="Archivo" font-weight="800" font-size="24" fill="${PAL.ink}">${String(val).padStart(2,'0')}</text>`);
-      parts.push(`<text x="${cx+52}" y="${y}" font-family="Inter" font-weight="600" font-size="19" fill="${PAL.muted}">${esc(label)}</text>`);
+      numLabel(parts, cx, y, String(val).padStart(2,'0'), 24, 800, label, 19, 600, 26, PAL.ink, PAL.muted);
       const barY = y + 12, barMaxW = cw - 260;
       parts.push(`<rect x="${cx+260}" y="${barY}" width="${barMaxW}" height="6" rx="3" fill="${PAL.track}"/>`);
       parts.push(`<rect x="${cx+260}" y="${barY}" width="${barMaxW*(val/maxH)}" height="6" rx="3" fill="${PAL.accent}" fill-opacity="0.85"/>`);
@@ -158,7 +166,7 @@
     parts.push(`<text x="${cx}" y="${y}" font-family="Inter" font-weight="800" font-size="16" letter-spacing="2" fill="${PAL.faint}">RECOMMENDED ACTION</text>`);
     y += 46;
     const actionLines = wrapText('Stand up a Metro Manila contingency pool', 30);
-    actionLines.forEach((line, i) => parts.push(`<text x="${cx}" y="${y + i*46}" font-family="Archivo" font-weight="900" font-size="38" fill="${PAL.accentBright}">${esc(line.toUpperCase())}</text>`));
+    actionLines.forEach((line, i) => parts.push(`<text x="${cx}" y="${y + i*46}" font-family="Archivo" font-weight="900" font-size="38" fill="${PAL.accentDeep}">${esc(line.toUpperCase())}</text>`));
     y += (actionLines.length - 1) * 46 + 40;
     parts.push(`<text x="${cx}" y="${y}" font-family="Inter" font-weight="700" font-size="19" fill="${PAL.ink}">Shared generators + backup ISP capacity</text>`);
     y += 32;
@@ -193,7 +201,7 @@
     const canvas = document.createElement('canvas');
     canvas.width = W_OUT * scale; canvas.height = H_OUT * scale;
     const ctx = canvas.getContext('2d');
-    ctx.fillStyle = '#12131A'; ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.fillStyle = '#FFFFFF'; ctx.fillRect(0, 0, canvas.width, canvas.height);
     ctx.scale(scale, scale);
     ctx.drawImage(img, 0, 0, W_OUT, H_OUT);
     URL.revokeObjectURL(url);
