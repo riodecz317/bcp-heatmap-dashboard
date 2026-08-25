@@ -31,6 +31,21 @@ try {
 
   $rows = Get-FactBcpRows
   $rowCount = $rows.Count
+
+  # This dataset must stay synthetic -- see RISK_REGISTER.md (R-01/R-03) in
+  # the shadowrealm-agents repo. Nothing else in the automated path checks
+  # this, so it belongs here, immediately after the data leaves Power BI and
+  # before anything gets written or pushed. Add a name to this list only
+  # once it's confirmed fictional; do not add a real company name to make a
+  # blocked publish go through.
+  $approvedAccounts = @('Contoso', 'Fabrikam', 'Northwind Traders', 'Tailwind Traders')
+  $unapproved = $rows | Where-Object { $_.account -and ($approvedAccounts -notcontains $_.account) } |
+    Select-Object -ExpandProperty account -Unique
+  if ($unapproved) {
+    Write-Log "BLOCKED: unapproved account name(s) in source data: $($unapproved -join ', ') -- publish skipped. Update Fact_BCP[Account] in Power BI to a name in `$approvedAccounts, or add the new name here only if it is confirmed fictional."
+    exit 0
+  }
+
   $newJson = ConvertTo-JsonArray -Rows $rows
 
   # Two independent things can each need publishing: the data (bcp_data.json)
