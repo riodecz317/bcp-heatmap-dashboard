@@ -7,17 +7,20 @@
 <script>
   // Apply any explicit stored light/dark choice to <html> as early as
   // possible (before the stylesheet below paints anything) so a returning
-  // visitor never sees a flash of the wrong theme. BCP_THEME_KEY is a var
-  // (not const) so the main script block later in this file can reuse the
-  // same key instead of redefining it. Wrapped in try/catch to match the
-  // existing EXEC_COLLAPSE_KEY localStorage pattern used elsewhere in this
-  // file -- storage can be unavailable (private browsing, disabled, etc).
-  // If nothing has been explicitly stored, data-theme is left unset and
-  // the CSS below falls back to prefers-color-scheme, same as before this
-  // feature existed.
-  var BCP_THEME_KEY = 'bcpTheme';
+  // visitor never sees a flash of the wrong theme. Declared with const, not
+  // var -- a top-level const/let in one <script> tag is already visible to
+  // every later <script> tag in the same document (they share one global
+  // lexical environment), so the main script block later in this file can
+  // reuse this same BCP_THEME_KEY without redeclaring it; var was never
+  // required for that and this file uses const/let everywhere else.
+  // Wrapped in try/catch to match the existing EXEC_COLLAPSE_KEY localStorage
+  // pattern used elsewhere in this file -- storage can be unavailable
+  // (private browsing, disabled, etc). If nothing has been explicitly
+  // stored, data-theme is left unset and the CSS below falls back to
+  // prefers-color-scheme, same as before this feature existed.
+  const BCP_THEME_KEY = 'bcpTheme';
   try {
-    var storedTheme = localStorage.getItem(BCP_THEME_KEY);
+    const storedTheme = localStorage.getItem(BCP_THEME_KEY);
     if (storedTheme === 'light' || storedTheme === 'dark') {
       document.documentElement.setAttribute('data-theme', storedTheme);
     }
@@ -156,10 +159,21 @@
          highest value (of 0.08-0.22 tested) that clears 4.5:1 on all three
          -- higher alpha lightens the effective background enough to
          actually REDUCE contrast against the bright text sitting on it.
-         Result: 4.62:1 / 7.10:1 / 6.24:1. */
+         Result: 4.62:1 / 7.10:1 / 6.24:1.
+         UPDATE (accessibility-enhancements branch, row-banding pass): that
+         0.10 test was only ever run against --surface-1, the only
+         background a pill could sit on at the time. Once .province-row/
+         .case-item gained alternating --surface-1/--surface-2 banding
+         below, --status-critical-soft at 0.10 measured 4.42:1 against
+         --surface-2 -- failing 4.5:1 (good/warning still pass both
+         surfaces at 0.10: 5.97:1/6.81:1 against --surface-2). Lowered
+         --status-critical-soft to 0.07 here and in the matching
+         [data-theme="dark"] block below: 4.82:1 (--surface-1, up from
+         4.61:1) / 4.62:1 (--surface-2, up from the failing 4.42:1) -- see
+         the .province-row banding comment for the full re-derivation. */
       --status-good-soft:     rgba(52,211,153,0.10);
       --status-warning-soft:  rgba(251,191,36,0.10);
-      --status-critical-soft: rgba(248,113,113,0.10);
+      --status-critical-soft: rgba(248,113,113,0.07);
       /* --hatch-track (the diagonal-hatch bar background behind every
          Impact by Account / Impact by Line of Business bar) had no dark-
          mode override at all -- it stayed the light theme's pale gray
@@ -187,9 +201,13 @@
     --status-good-text:     #34D399;
     --status-warning-text:  #FBBF24;
     --status-critical-text: #F87171;
+    /* --status-critical-soft is 0.07, not 0.10 like good/warning -- see the
+       matching @media (prefers-color-scheme: dark) block above for why
+       (0.10 fails 4.5:1 against --surface-2 once row-banding put a pill on
+       top of it) and the .province-row banding comment for the numbers. */
     --status-good-soft:     rgba(52,211,153,0.10);
     --status-warning-soft:  rgba(251,191,36,0.10);
-    --status-critical-soft: rgba(248,113,113,0.10);
+    --status-critical-soft: rgba(248,113,113,0.07);
     --hatch-track: repeating-linear-gradient(135deg, #24344A, #24344A 4px, #1B283C 4px, #1B283C 8px);
     --seq-0: #3B1D1D; --seq-1: #5C2626; --seq-2: #8C3330; --seq-3: #B91C1C; --seq-4: #EF4444;
   }
@@ -488,20 +506,61 @@
      row rendered the identical flat var(--surface-2), so rows were only
      separated by margin/gap whitespace, not color. Reuses the existing
      --surface-1 (card background) / --surface-2 (default row tint) pair
-     rather than inventing a new hue -- both are already proven-safe here
-     (--surface-1 is the .province-row-head background already sitting
-     under var(--text-primary) headers, and --surface-2 is this row's own
-     pre-existing default), so no new contrast pair needs validating.
-     Measured (relative-luminance WCAG math, same method as the PR #11
-     comments above): text-primary/text-secondary against --surface-1 is
-     13.1-14.9:1 (light) / 11.3-13.4:1 (dark), against --surface-2 is
-     4.6-14.1:1 (light) / 9.4-12.8:1 (dark) -- every combination clears
-     4.5:1 with margin in both themes. :not(.province-row-head) keeps the
-     sticky column-header row out of the striping (nth-of-type still counts
-     it as sibling #1 since it shares the .province-row class, so excluding
-     it explicitly avoids it accidentally picking up a banding color). This
-     rule is intentionally placed before .case-item:hover below so :hover
-     (same selector specificity, later in source) still wins on interaction. */
+     rather than inventing a new hue.
+
+     PLAIN TEXT: measured (relative-luminance WCAG math, same method as the
+     PR #11 comments above), grouped by TEXT color against each background
+     (an earlier version of this comment wrongly grouped these by
+     background label instead, which made the numbers below unreadable
+     against what's actually on the page):
+       - text-primary vs --surface-1 / --surface-2: 14.85:1 / 14.11:1
+         (light), 13.35:1 / 12.78:1 (dark).
+       - text-secondary vs --surface-1 / --surface-2: 4.83:1 / 4.59:1
+         (light), 9.85:1 / 9.43:1 (dark). This is the pair that actually
+         governs .case-item's .case-meta / .case-account-lob text; all
+         four clear 4.5:1, light-mode-against-surface-2 (4.59:1) is the
+         tightest margin of the set.
+     Every plain-text combination clears 4.5:1 in both themes.
+
+     STATUS PILLS ARE A SEPARATE CASE and were NOT covered by the check
+     above: .status-pill / .case-status-pill render STATUS_SOFT[st] as
+     their background, which in dark mode is a semi-transparent rgba(...)
+     (see the --status-*-soft tokens above), not an opaque color. A
+     translucent background's true visible color is a composite of the
+     pill's own tint AND whichever row color sits behind it -- exactly what
+     this banding rule makes variable (light mode's -soft tokens are opaque
+     hex, so they don't composite with the row and aren't affected here).
+     Re-checked all three status -text/-soft pairs against BOTH
+     --surface-1 and --surface-2 in dark mode: good 6.24:1 / 5.97:1,
+     warning 7.10:1 / 6.81:1, critical 4.61:1 / 4.42:1 (surface-1 /
+     surface-2) at critical's original alpha of 0.10 -- critical failed
+     4.5:1 against --surface-2. This gap predates this banding rule
+     (--surface-2 was already every row's un-striped default background
+     before this change existed; PR #11's own soft-pill validation only
+     checked against --surface-1 and never against --surface-2, so it
+     never caught this), but this rule is what surfaced it, since the pill
+     now has to hold contrast against both banding colors instead of just
+     one. Fixed by lowering --status-critical-soft's alpha from 0.10 to
+     0.07 in both dark-mode token blocks above (the @media
+     prefers-color-scheme block and the [data-theme="dark"] block) -- a
+     LOWER alpha mixes less of the bright critical-text hue into the very
+     dark surface, which *raises* contrast here (the same inverse
+     relationship PR #11's own comment documents: higher alpha lightens
+     the effective background and reduces contrast against the light text
+     sitting on it). Re-measured at 0.07: 4.82:1 (surface-1, up from
+     4.61:1) / 4.62:1 (surface-2, up from the failing 4.42:1) -- both now
+     clear 4.5:1 with margin, and the already-passing surface-1 case
+     improved rather than regressed. good-soft/warning-soft are untouched
+     (already pass both surfaces at 0.10). Light mode: all three -soft
+     tokens are opaque and measure 6.6-6.9:1 against either surface,
+     unaffected by this rule.
+
+     :not(.province-row-head) keeps the sticky column-header row out of the
+     striping (nth-of-type still counts it as sibling #1 since it shares
+     the .province-row class, so excluding it explicitly avoids it
+     accidentally picking up a banding color). This rule is intentionally
+     placed before .case-item:hover below so :hover (same selector
+     specificity, later in source) still wins on interaction. */
   .province-row:not(.province-row-head):nth-of-type(odd) { background: var(--surface-1); }
   .case-item:nth-child(even) { background: var(--surface-1); }
   /* .province-row-head: background IS theme-aware (--surface-1, dark navy in
@@ -986,10 +1045,12 @@
   }
 
   // ---- Manual light/dark toggle ----
-  // BCP_THEME_KEY is declared once, in the small inline <script> at the top
-  // of <head> (runs before this file's stylesheet paints, so a returning
-  // visitor's stored choice is already applied to <html> with no flash of
-  // the wrong theme). Reused here rather than redeclared.
+  // BCP_THEME_KEY is declared once, as a const, in the small inline
+  // <script> at the top of <head> (runs before this file's stylesheet
+  // paints, so a returning visitor's stored choice is already applied to
+  // <html> with no flash of the wrong theme). Reused here rather than
+  // redeclared -- a top-level const in an earlier <script> tag is already
+  // in scope for every later <script> tag in the same document.
   const SUN_SVG = '<svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="4" stroke="currentColor" stroke-width="2"/><path d="M12 2v2.5M12 19.5V22M4.2 4.2l1.8 1.8M18 18l1.8 1.8M2 12h2.5M19.5 12H22M4.2 19.8L6 18M18 6l1.8-1.8" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>';
   const MOON_SVG = '<svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M20 14.3A8.5 8.5 0 1 1 9.7 4a7 7 0 0 0 10.3 10.3Z" fill="currentColor"/></svg>';
 
