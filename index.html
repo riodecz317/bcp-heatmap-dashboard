@@ -4,6 +4,25 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Executive BCP Dashboard</title>
+<script>
+  // Apply any explicit stored light/dark choice to <html> as early as
+  // possible (before the stylesheet below paints anything) so a returning
+  // visitor never sees a flash of the wrong theme. BCP_THEME_KEY is a var
+  // (not const) so the main script block later in this file can reuse the
+  // same key instead of redefining it. Wrapped in try/catch to match the
+  // existing EXEC_COLLAPSE_KEY localStorage pattern used elsewhere in this
+  // file -- storage can be unavailable (private browsing, disabled, etc).
+  // If nothing has been explicitly stored, data-theme is left unset and
+  // the CSS below falls back to prefers-color-scheme, same as before this
+  // feature existed.
+  var BCP_THEME_KEY = 'bcpTheme';
+  try {
+    var storedTheme = localStorage.getItem(BCP_THEME_KEY);
+    if (storedTheme === 'light' || storedTheme === 'dark') {
+      document.documentElement.setAttribute('data-theme', storedTheme);
+    }
+  } catch (e) { /* storage unavailable — fall back to prefers-color-scheme */ }
+</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -250,6 +269,24 @@
     color: #FFE8DC; font-weight: 700;
   }
 
+  /* Manual light/dark toggle -- sits on the same always-orange banner as
+     the filter selects below it, so like those selects it carries its own
+     self-contained background/text tokens rather than white/orange (the
+     orange banner is the surrounding page area, not this control's own
+     background; contrast is evaluated against the pill's own fill, same
+     reasoning already applied to .filters-cluster select). */
+  .theme-toggle-btn {
+    flex: none; display: inline-flex; align-items: center; justify-content: center;
+    width: 26px; height: 26px; align-self: center; margin-left: 10px;
+    border: 1px solid var(--border); border-radius: 50%;
+    background: var(--surface-1); color: var(--text-primary);
+    cursor: pointer; padding: 0;
+    transition: background .15s ease, border-color .15s ease, transform .1s ease;
+  }
+  .theme-toggle-btn:hover { background: var(--row-hover); border-color: var(--text-muted); }
+  .theme-toggle-btn:active { transform: scale(0.92); }
+  .theme-toggle-btn svg { width: 13px; height: 13px; display: block; }
+
   .filters-cluster { flex: 0 1 auto; display: flex; align-items: center; gap: 8px; justify-content: flex-end; flex-wrap: wrap; margin-left: auto; }
   .filters-cluster select {
     font-size: clamp(9px, 0.65vw, 11px); color: var(--text-primary);
@@ -281,20 +318,31 @@
   .exec-summary-head { flex: none; display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; padding: 6px 0 0 16px; border-top: 1px solid var(--gridline); margin-top: 6px; margin-bottom: 4px; }
   .exec-summary-head h2 { margin: 0; }
   #execSummaryBody { padding: 8px 16px; }
+  /* Was hardcoded #1E293B text / #F3F4F6 background / #E9EAEE hover -- none
+     referenced a token, so unlike every other interactive control on this
+     page this button stayed a flat light-gray/white pill in dark mode too
+     (a bright island on the dark card). Swapped for the same
+     surface-2/row-hover/text-primary tokens already used by the identical
+     "quiet pill button on a card" pattern elsewhere (.case-item's own
+     hover), so it now adapts like everything else. */
   .exec-toggle-btn {
     flex: none; display: inline-flex; align-items: center; gap: 5px;
-    font-size: clamp(9px, 0.62vw, 10.5px); font-weight: 600; color: #1E293B;
+    font-size: clamp(9px, 0.62vw, 10.5px); font-weight: 600; color: var(--text-primary);
     border: 1px solid var(--border); border-radius: 50px; padding: 4px 10px;
-    background: #F3F4F6; cursor: pointer; white-space: nowrap;
+    background: var(--surface-2); cursor: pointer; white-space: nowrap;
     align-self: flex-start; margin-top: 0; margin-right: 12px;
     transition: background .15s ease, border-color .15s ease;
   }
-  .exec-toggle-btn:hover { background: #E9EAEE; border-color: var(--text-muted); }
+  .exec-toggle-btn:hover { background: var(--row-hover); border-color: var(--text-muted); }
   .exec-toggle-btn .chevron-icon { transition: transform .15s ease; }
   .exec-toggle-btn[aria-expanded="true"] .chevron-icon { transform: rotate(180deg); }
   #mainBanner.is-collapsed #execSummaryBody { display: none; }
 
-  .exec-top-row { display: flex; align-items: center; justify-content: space-between; gap: 10px 16px; flex-wrap: wrap; padding: 6px 0; border-bottom: 1px solid #E5E7EB; }
+  /* Was hardcoded #E5E7EB -- an opaque light-gray line that never changed
+     with theme, so it read as a stray bright hairline across an otherwise
+     dark card in dark mode. var(--border) has its own dark-mode value
+     (a translucent white overlay) like every other divider on this page. */
+  .exec-top-row { display: flex; align-items: center; justify-content: space-between; gap: 10px 16px; flex-wrap: wrap; padding: 6px 0; border-bottom: 1px solid var(--border); }
   .exec-stats-row { display: flex; gap: 12px; flex-wrap: wrap; }
   .exec-stat { display: flex; align-items: baseline; gap: 5px; font-size: clamp(9px, 0.7vw, 11px); color: var(--text-secondary); white-space: nowrap; }
   .exec-stat strong { font-size: 1.1em; color: var(--text-primary); }
@@ -408,6 +456,12 @@
     padding: 2px 5px; border-radius: var(--radius-pill); white-space: nowrap;
     box-shadow: 0 1px 3px rgba(0,0,0,0.35); font-variant-numeric: tabular-nums;
   }
+  /* STATUS_ICON glyph (!/◐/✓) prepended to the permanent map count label --
+     see renderMapLayer(). Fixed white-on-navy badge regardless of theme
+     (like the rest of this label), so the glyph's own contrast never
+     depends on which status color it represents; the shape alone is what
+     survives grayscale/desaturation. */
+  .province-count-label .status-glyph { font-style: normal; margin-right: 3px; }
   .status-mix-legend { flex: none; display: flex; gap: 8px; margin-top: 4px; font-size: clamp(8px, 0.6vw, 10px); color: var(--text-secondary); flex-wrap: wrap; }
   .status-mix-legend .item { display: flex; align-items: center; gap: 4px; }
   .status-mix-legend .swatch { width: 7px; height: 7px; border-radius: 2px; }
@@ -430,6 +484,26 @@
     background: var(--surface-2); border-radius: 6px; padding: 6px 8px;
   }
   .province-row .col-name { justify-self: start; }
+  /* Alternating row banding (province grid + Case Feed): previously every
+     row rendered the identical flat var(--surface-2), so rows were only
+     separated by margin/gap whitespace, not color. Reuses the existing
+     --surface-1 (card background) / --surface-2 (default row tint) pair
+     rather than inventing a new hue -- both are already proven-safe here
+     (--surface-1 is the .province-row-head background already sitting
+     under var(--text-primary) headers, and --surface-2 is this row's own
+     pre-existing default), so no new contrast pair needs validating.
+     Measured (relative-luminance WCAG math, same method as the PR #11
+     comments above): text-primary/text-secondary against --surface-1 is
+     13.1-14.9:1 (light) / 11.3-13.4:1 (dark), against --surface-2 is
+     4.6-14.1:1 (light) / 9.4-12.8:1 (dark) -- every combination clears
+     4.5:1 with margin in both themes. :not(.province-row-head) keeps the
+     sticky column-header row out of the striping (nth-of-type still counts
+     it as sibling #1 since it shares the .province-row class, so excluding
+     it explicitly avoids it accidentally picking up a banding color). This
+     rule is intentionally placed before .case-item:hover below so :hover
+     (same selector specificity, later in source) still wins on interaction. */
+  .province-row:not(.province-row-head):nth-of-type(odd) { background: var(--surface-1); }
+  .case-item:nth-child(even) { background: var(--surface-1); }
   /* .province-row-head: background IS theme-aware (--surface-1, dark navy in
      dark mode) but color was hardcoded #1E293B -- that hex is the exact
      dark-mode value of --surface-1 itself, so the "Province/Active/
@@ -447,6 +521,13 @@
   .col-stat { text-align: center; font-variant-numeric: tabular-nums; min-width: 0; }
   .col-total { text-align: center; font-weight: 700; color: var(--text-primary); font-variant-numeric: tabular-nums; font-size: clamp(9px, 0.8vw, 11px); min-width: 0; }
   .status-pill { display: inline-block; min-width: 20px; padding: 3px 8px; border-radius: 50px; font-weight: 700; font-size: clamp(8.5px, 0.7vw, 10px); }
+  /* Consistency polish with the Case Feed's already-compliant icon+color+text
+     pattern (STATUS_ICON, defined once in the script below and reused
+     everywhere): the column header already labels these as Active/
+     Monitoring/Resolved, so this pill was borderline-compliant on its own,
+     but adding the same glyph keeps every status encoding on the page
+     using the same color+shape convention. */
+  .status-pill .status-pill-icon { margin-right: 3px; font-weight: 700; font-style: normal; }
   .province-list.hide-labels .status-pill { font-size: 0; }
 
   .case-list { flex: 1 1 0; min-height: 0; height: 100%; list-style: none; margin: 0; padding: 0; overflow-y: auto; }
@@ -466,7 +547,10 @@
 
   /* ---- Band 5: footer office-sites strip ---- */
   .footer-strip.card { flex: 0 0 var(--h-footer); flex-direction: row; align-items: center; gap: 6px; overflow-x: auto; overflow-y: hidden; padding: 0 14px; }
-  .footer-strip .foot-label { flex: none; font-size: clamp(9px, 0.65vw, 10.5px); font-weight: 700; text-transform: uppercase; letter-spacing: .04em; color: var(--text-muted); margin-right: 3px; }
+  /* Divider between the "Office Sites" label and the first chip -- was just
+     an 8px margin, no rule line, so the label read as loosely floating
+     rather than clearly separated from the chip row. */
+  .footer-strip .foot-label { flex: none; font-size: clamp(9px, 0.65vw, 10.5px); font-weight: 700; text-transform: uppercase; letter-spacing: .04em; color: var(--text-muted); margin-right: 10px; padding-right: 10px; border-right: 1px solid var(--border); }
   .office-chip {
     flex: none; display: flex; align-items: center; gap: 5px; white-space: nowrap;
     font-size: clamp(9px, 0.75vw, 11px); padding: 4px 10px; border-radius: var(--radius-pill);
@@ -476,15 +560,30 @@
   .office-chip .name { font-weight: 600; color: var(--text-primary); }
   .office-chip .stat { color: var(--text-muted); }
   .office-chip .stat strong { color: var(--status-critical-text); font-weight: 700; }
+  /* Divider between chips: each chip already has its own pill background,
+     but the row otherwise only separated chips with an 8px flex gap and no
+     rule line -- rendered as a real flex sibling (see renderOfficeStrip)
+     rather than a ::before/::after hack, so it sits cleanly in the existing
+     gap without needing to duplicate that gap value in CSS. */
+  .office-chip-divider { flex: none; width: 1px; align-self: stretch; margin: 4px 0; background: var(--border); }
 
-  /* "Sort Status" and "Counts: Yes/No" — dark navy text on white/light
-     gray, per the strict contrast rule (no white text on a colored fill
-     for either control). */
+  /* "Sort Status" and "Counts: Yes/No" -- were hardcoded #F3F4F6/#FFFFFF
+     backgrounds + #1E293B text + (labelToggle) a hardcoded #93C5FD border,
+     none theme-aware, so like .exec-toggle-btn these stayed a bright
+     white/light-gray island in dark mode instead of adapting. --row-hover
+     and --surface-1 already equal the old light-mode hex values exactly
+     (#F3F4F6 and #FFFFFF respectively) so light mode is visually unchanged;
+     both now also pick up proper dark values. The accent border on
+     #labelToggle is left as-is -- it's a decorative accent, not a text/fill
+     pair, and already renders visibly in both themes (measured 1.80:1
+     light / 8.11:1 dark against its own background, non-text UI elements
+     only need ~3:1 and this is a pre-existing cosmetic choice, not part of
+     this brief's scope). */
   #sortToggle {
-    background: #F3F4F6; color: #1E293B; border: 1px solid var(--border);
+    background: var(--row-hover); color: var(--text-primary); border: 1px solid var(--border);
   }
   #labelToggle {
-    border-radius: 50px; border: 1px solid #93C5FD; color: #1E293B; background: #FFFFFF;
+    border-radius: 50px; border: 1px solid #93C5FD; color: var(--text-primary); background: var(--surface-1);
   }
 </style>
 </head>
@@ -497,6 +596,7 @@
         <h1>Executive BCP Dashboard</h1>
         <div class="data-status-line" id="dataStatus">Loading from Power BI model <code>Fact_BCP</code>&hellip;</div>
       </div>
+      <button class="theme-toggle-btn" id="themeToggleBtn" type="button" aria-label="Switch to dark mode"></button>
       <div class="filters-cluster">
         <button class="refresh-btn" id="refreshBtn" title="Re-fetch from the local data bridge" type="button">&#8635; Refresh</button>
         <select id="f-account" data-label="Account" aria-label="Filter by Account"><option value="All">Account: All</option></select>
@@ -757,8 +857,17 @@
       // Permanent data callout: the count itself, always visible on the map
       // without hovering. The circleMarker above still carries the fuller
       // "Province: N impacted" text as a hover tooltip.
+      // The circleMarker's fill above was the only status cue on the map --
+      // color alone, gone without a hover. Reusing this already-permanent
+      // label (rather than adding a second overlapping divIcon) to also
+      // carry the same STATUS_ICON glyph used everywhere else on this page
+      // (case badges, Case Feed pills) closes that gap: the marker now
+      // reads correctly in grayscale/desaturated mode via the glyph's shape
+      // alone, with the count itself unchanged. Icon renders in the label's
+      // existing fixed white-on-navy styling (not the status color) so its
+      // own contrast never depends on which status it is.
       L.marker(center, {
-        icon: L.divIcon({ className: 'province-count-label', html: `<span>${r.total}</span>`, iconSize: [0, 0], iconAnchor: [0, 0] }),
+        icon: L.divIcon({ className: 'province-count-label', html: `<span><i class="status-glyph" aria-hidden="true">${STATUS_ICON[dotStatus]}</i>${r.total}</span>`, iconSize: [0, 0], iconAnchor: [0, 0] }),
         interactive: false, keyboard: false
       }).addTo(provinceLayerGroup);
     });
@@ -876,6 +985,49 @@
     });
   }
 
+  // ---- Manual light/dark toggle ----
+  // BCP_THEME_KEY is declared once, in the small inline <script> at the top
+  // of <head> (runs before this file's stylesheet paints, so a returning
+  // visitor's stored choice is already applied to <html> with no flash of
+  // the wrong theme). Reused here rather than redeclared.
+  const SUN_SVG = '<svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="4" stroke="currentColor" stroke-width="2"/><path d="M12 2v2.5M12 19.5V22M4.2 4.2l1.8 1.8M18 18l1.8 1.8M2 12h2.5M19.5 12H22M4.2 19.8L6 18M18 6l1.8-1.8" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>';
+  const MOON_SVG = '<svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M20 14.3A8.5 8.5 0 1 1 9.7 4a7 7 0 0 0 10.3 10.3Z" fill="currentColor"/></svg>';
+
+  function initThemeToggle() {
+    const btn = document.getElementById('themeToggleBtn');
+    const root = document.documentElement;
+
+    // The explicit choice (data-theme, set either by the early <head>
+    // script from a stored value, or by a previous click this session)
+    // always wins; with no explicit choice, fall back to the OS preference
+    // purely to decide which icon/label to show right now -- this never
+    // itself sets data-theme, matching the "defer to prefers-color-scheme
+    // until the user actively toggles" requirement.
+    function currentTheme() {
+      const explicit = root.getAttribute('data-theme');
+      if (explicit === 'light' || explicit === 'dark') return explicit;
+      return (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light';
+    }
+
+    // Icon/label always show the mode a click would SWITCH TO (sun = go
+    // light, moon = go dark), the common convention for this control.
+    function syncButton() {
+      const theme = currentTheme();
+      const goingTo = theme === 'dark' ? 'light' : 'dark';
+      btn.innerHTML = theme === 'dark' ? SUN_SVG : MOON_SVG;
+      btn.setAttribute('aria-label', `Switch to ${goingTo} mode`);
+    }
+
+    syncButton();
+
+    btn.addEventListener('click', () => {
+      const next = currentTheme() === 'dark' ? 'light' : 'dark';
+      root.setAttribute('data-theme', next);
+      try { localStorage.setItem(BCP_THEME_KEY, next); } catch (e) { /* ignore — nothing to persist to */ }
+      syncButton();
+    });
+  }
+
   function pillClass(pct, goodMin, warnMin) { return pct >= goodMin ? 'good' : pct >= warnMin ? 'warn' : 'bad'; }
 
   function renderGenericKpiCard(c) {
@@ -969,6 +1121,7 @@
     const rows = groupByStatus(data, 'office');
     if (!rows.length) { empty(el, 'No cases match the current filters.'); return; }
     el.innerHTML = rows.map((r, i) => `
+      ${i > 0 ? '<span class="office-chip-divider" aria-hidden="true"></span>' : ''}
       <span class="office-chip">
         <span class="rank">#${i + 1}</span>
         <span class="name">${r.name}</span>
@@ -1009,7 +1162,10 @@
         const cells = STATUS_ORDER.map(st => {
           const val = r[st];
           if (!val) return '<span class="col-stat" role="cell"></span>';
-          return `<span class="col-stat" role="cell"><span class="status-pill" style="background:${STATUS_SOFT[st]};color:${STATUS_TEXT[st]}">${val}</span></span>`;
+          // STATUS_ICON glyph alongside the count -- consistency polish
+          // matching the Case Feed's icon+color+text pattern (this column
+          // was already borderline-compliant via its text header alone).
+          return `<span class="col-stat" role="cell"><span class="status-pill" style="background:${STATUS_SOFT[st]};color:${STATUS_TEXT[st]}"><i class="status-pill-icon" aria-hidden="true">${STATUS_ICON[st]}</i>${val}</span></span>`;
         }).join('');
         return `
         <div class="province-row" role="row">
@@ -1146,6 +1302,7 @@
 
   initFilters();
   initExecSummaryToggle();
+  initThemeToggle();
   document.getElementById('sortToggle').addEventListener('change', (e) => { sortMode = e.target.value; renderAll(); });
   document.getElementById('refreshBtn').addEventListener('click', () => loadLiveData(true));
 
