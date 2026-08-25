@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Situation Brief — BCP Leadership Update</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Archivo:wght@600;800;900&family=Inter:wght@400;500;600;700;800&display=swap');
+
+  :root {
+    --ground: #E7EAF0; --surface: #FFFFFF; --surface-2: #F4F5F8;
+    --ink: #1B2036; --ink-muted: #5B6478; --ink-faint: #8891A3; --line: #E2E5EC;
+    --accent: #F97316; --accent-deep: #9A3412;
+    --st-active: #F97316; --st-active-tint: #FFF1E6;
+    --st-monitoring: #B45309; --st-monitoring-tint: #FEF3E7;
+    --st-resolved: #16A34A; --st-resolved-tint: #EAF9EF;
+    --map-fill: #FDE4CE; --map-fill-strong: #F97316;
+    --font-display: "Archivo", "Arial Narrow", sans-serif;
+    --font-body: "Inter", -apple-system, system-ui, sans-serif;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --ground: #0B1220; --surface: #1E293B; --surface-2: #182233;
+      --ink: #F1F5F9; --ink-muted: #B3BDD1; --ink-faint: #7C879C; --line: rgba(255,255,255,0.10);
+      --accent: #FB923C; --accent-deep: #FFE8DC;
+      --st-active: #F87171; --st-active-tint: rgba(248,113,113,0.14);
+      --st-monitoring: #FBBF24; --st-monitoring-tint: rgba(251,191,36,0.14);
+      --st-resolved: #34D399; --st-resolved-tint: rgba(52,211,153,0.14);
+      --map-fill: rgba(249,115,22,0.18); --map-fill-strong: #FB923C;
+    }
+  }
+  :root[data-theme="dark"] {
+    --ground: #0B1220; --surface: #1E293B; --surface-2: #182233;
+    --ink: #F1F5F9; --ink-muted: #B3BDD1; --ink-faint: #7C879C; --line: rgba(255,255,255,0.10);
+    --accent: #FB923C; --accent-deep: #FFE8DC;
+    --st-active: #F87171; --st-active-tint: rgba(248,113,113,0.14);
+    --st-monitoring: #FBBF24; --st-monitoring-tint: rgba(251,191,36,0.14);
+    --st-resolved: #34D399; --st-resolved-tint: rgba(52,211,153,0.14);
+    --map-fill: rgba(249,115,22,0.18); --map-fill-strong: #FB923C;
+  }
+
+  * { box-sizing: border-box; }
+  html, body { height: 100%; margin: 0; overflow: hidden; }
+  body { background: var(--ground); color: var(--ink); font-family: var(--font-body); -webkit-font-smoothing: antialiased; display: flex; flex-direction: column; }
+  .num { font-variant-numeric: tabular-nums; }
+
+  .toolbar { flex: 0 0 auto; display: flex; align-items: center; justify-content: space-between; padding: 10px 18px; gap: 12px; background: var(--surface); border-bottom: 1px solid var(--line); }
+  .toolbar .app-name { font-family: var(--font-display); font-weight: 800; font-size: 14px; letter-spacing: -0.01em; }
+  .toolbar .actions { display: flex; gap: 8px; align-items: center; }
+  .btn { font-family: var(--font-body); font-size: 12.5px; font-weight: 700; border-radius: 7px; padding: 8px 13px; border: 1px solid var(--line); cursor: pointer; display: inline-flex; align-items: center; gap: 6px; background: var(--surface-2); color: var(--ink); }
+  .btn.primary { background: var(--accent); color: #fff; border-color: transparent; }
+  .btn:active { transform: translateY(1px); }
+  .btn[disabled] { opacity: 0.55; cursor: default; }
+  .status-msg { font-size: 11.5px; color: var(--ink-faint); }
+
+  .stage { flex: 1 1 auto; min-height: 0; display: flex; align-items: center; justify-content: center; padding: 14px; }
+
+  .poster {
+    container-type: size; container-name: poster;
+    aspect-ratio: 16 / 9; width: 100%; max-height: 100%; height: auto;
+    background: var(--surface); border-radius: 0.9cqh; overflow: hidden;
+    box-shadow: 0 1cqh 3cqh rgba(0,0,0,0.18);
+    display: flex; flex-direction: column;
+    padding: 3.4cqh 3cqw;
+  }
+
+  .head { display: flex; align-items: flex-start; justify-content: space-between; padding-bottom: 1.8cqh; border-bottom: 2px solid var(--ink); }
+  .eyebrow { font-size: 1.3cqh; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: var(--accent-deep); display: flex; align-items: center; gap: 0.5cqw; }
+  .eyebrow::before { content: "●"; color: var(--accent); font-size: 1cqh; }
+  h1.title { font-family: var(--font-display); font-weight: 900; font-size: 4.6cqh; line-height: 0.98; margin: 0.6cqh 0 0; letter-spacing: -0.01em; }
+  .head-right { text-align: right; }
+  .confidential { font-size: 1.25cqh; font-weight: 800; letter-spacing: 0.1em; color: var(--st-active); text-transform: uppercase; }
+  .head-right .date { font-size: 1.3cqh; color: var(--ink-faint); margin-top: 0.5cqh; }
+
+  .body-grid { flex: 1; min-height: 0; display: grid; grid-template-columns: 1.05fr 1.5fr; gap: 3cqw; padding-top: 2.2cqh; }
+
+  /* -------- Left: KPI stack + narrative -------- */
+  .kpis { display: flex; flex-direction: column; gap: 1.4cqh; }
+  .kpi { background: var(--surface-2); border-radius: 0.9cqh; padding: 1.6cqh 1.6cqw; box-shadow: inset 0 0 0 1px var(--line); }
+  .kpi.hero { background: var(--st-active-tint); }
+  .kpi .k { font-size: 1.25cqh; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--ink-faint); }
+  .kpi.hero .k { color: var(--accent-deep); }
+  .kpi .v { font-family: var(--font-display); font-weight: 900; font-size: 5cqh; line-height: 1; color: var(--ink); margin-top: 0.6cqh; }
+  .kpi.hero .v { color: var(--st-active); font-size: 6.4cqh; }
+  .kpi .d { font-size: 1.35cqh; color: var(--ink-muted); margin-top: 0.4cqh; }
+
+  .narrative { margin-top: 1.6cqh; display: flex; flex-direction: column; gap: 1cqh; }
+  .narrative .n-head { font-size: 1.25cqh; font-weight: 800; text-transform: uppercase; letter-spacing: 0.06em; color: var(--ink-faint); }
+  .narrative li { font-size: 1.55cqh; line-height: 1.4; color: var(--ink-muted); margin-bottom: 0.7cqh; }
+  .narrative li strong { color: var(--ink); }
+  .narrative ul { margin: 0.4cqh 0 0; padding-left: 1.6cqw; }
+
+  /* -------- Right: schematic geographic concentration -------- */
+  .geo { display: flex; flex-direction: column; gap: 1cqh; min-height: 0; }
+  .geo-head { display: flex; align-items: baseline; justify-content: space-between; }
+  .geo-head h2 { font-family: var(--font-display); font-weight: 800; font-size: 2.2cqh; }
+  .geo-head .tag { font-size: 1.25cqh; font-weight: 700; color: var(--ink-faint); text-transform: uppercase; letter-spacing: 0.04em; }
+  .geo-note { font-size: 1.15cqh; color: var(--ink-faint); font-style: italic; margin-top: -0.4cqh; }
+
+  .islands { flex: 1; display: flex; flex-direction: column; gap: 1cqh; justify-content: center; }
+  .island-row { display: flex; align-items: center; gap: 1.6cqw; }
+  .island-label { width: 11cqw; font-size: 1.5cqh; font-weight: 700; color: var(--ink); text-align: right; flex: 0 0 auto; }
+  .island-shape {
+    height: 4.2cqh; border-radius: 2.1cqh; background: var(--map-fill);
+    display: flex; align-items: center; position: relative; transition: none;
+  }
+  .island-shape .fill-cap { position: absolute; left: 0; top: 0; bottom: 0; background: var(--map-fill-strong); border-radius: 2.1cqh; }
+  .island-shape .count { position: relative; z-index: 1; margin-left: 1.2cqw; font-family: var(--font-display); font-weight: 800; font-size: 1.7cqh; color: #fff; }
+  .island-row.dim .island-shape .count { color: var(--ink); }
+
+  .pin {
+    position: relative; margin-left: 12.6cqw; margin-top: -1.2cqh; display: flex; align-items: center; gap: 0.6cqw;
+    background: var(--ink); color: var(--surface); border-radius: 999px; padding: 0.5cqh 1cqw; width: fit-content;
+    font-size: 1.25cqh; font-weight: 700;
+  }
+  .pin::before { content: "📍"; font-size: 1.3cqh; }
+  .pin strong { color: var(--accent); font-family: var(--font-display); font-weight: 900; }
+
+  .hazard-row { display: flex; gap: 1.2cqw; margin-top: 0.6cqh; }
+  .hazard-chip { flex: 1; background: var(--surface-2); border-radius: 0.7cqh; padding: 1cqh 1cqw; text-align: center; box-shadow: inset 0 0 0 1px var(--line); }
+  .hazard-chip .hv { font-family: var(--font-display); font-weight: 800; font-size: 2cqh; color: var(--ink); }
+  .hazard-chip .hk { font-size: 1.05cqh; color: var(--ink-faint); margin-top: 0.2cqh; }
+
+  .action-strip { margin-top: 1.8cqh; padding: 1.4cqh 1.6cqw; background: var(--ink); border-radius: 0.9cqh; display: flex; align-items: center; gap: 1.4cqw; }
+  .action-strip .a-label { font-size: 1.1cqh; font-weight: 800; text-transform: uppercase; letter-spacing: 0.08em; color: var(--accent); flex: 0 0 auto; }
+  .action-strip p { margin: 0; font-size: 1.5cqh; color: var(--surface); line-height: 1.35; }
+  .action-strip p strong { color: #fff; }
+
+  footer { flex: 0 0 auto; margin-top: 1.4cqh; padding-top: 1.2cqh; border-top: 1px solid var(--line); display: flex; justify-content: space-between; align-items: flex-end; gap: 2cqw; }
+  footer p { margin: 0; font-size: 1.1cqh; line-height: 1.5; color: var(--ink-faint); max-width: 60cqw; }
+  footer .src { font-size: 1.1cqh; font-weight: 700; color: var(--ink-faint); text-align: right; white-space: nowrap; }
+
+  @media print {
+    body { height: auto; overflow: visible; }
+    .toolbar { display: none; }
+    .stage { padding: 0; height: 100vh; }
+    .poster { box-shadow: none; border-radius: 0; height: 100vh; width: 100vw; max-width: 100vw; aspect-ratio: unset; }
+    @page { size: landscape; margin: 0; }
+  }
+</style>
+</head>
+<body>
+
+<div class="toolbar">
+  <span class="app-name">Situation Brief &mdash; BCP Leadership Update</span>
+  <div class="actions">
+    <span class="status-msg" id="statusMsg"></span>
+    <button class="btn" id="printBtn" type="button">&#128438; Print / Save as PDF</button>
+    <button class="btn primary" id="downloadBtn" type="button">&#8681; Download PNG</button>
+  </div>
+</div>
+
+<div class="stage">
+  <div class="poster" id="poster">
+
+    <div class="head">
+      <div>
+        <div class="eyebrow">Business Continuity &middot; Leadership Update</div>
+        <h1 class="title">Situation Brief</h1>
+      </div>
+      <div class="head-right">
+        <div class="confidential">Internal &middot; Leadership Only</div>
+        <div class="date">bcp-heatmap-dashboard &middot; 2026-08-25</div>
+      </div>
+    </div>
+
+    <div class="body-grid">
+      <div class="left-col">
+        <div class="kpis">
+          <div class="kpi hero">
+            <div class="k">Critical &mdash; Active, Undispatched</div>
+            <div class="v num">12</div>
+            <div class="d">of 21 open cases have no assistance in motion yet</div>
+          </div>
+          <div class="kpi">
+            <div class="k">Total Open Cases</div>
+            <div class="v num">21</div>
+            <div class="d">14 Active &middot; 7 Monitoring &middot; (9 already Resolved, of 30 total)</div>
+          </div>
+        </div>
+
+        <div class="narrative">
+          <div class="n-head">Situation</div>
+          <ul>
+            <li><strong>Two-thirds of critical exposure sits in one region</strong> &mdash; Metro Manila holds 8 of the 12 critical cases, spanning three unrelated hazard types.</li>
+            <li><strong>Power infrastructure is the leading driver</strong> &mdash; outages account for 7 of 21 open cases, ahead of Typhoon (6).</li>
+            <li>Luzon carries 15 of 21 open cases (71%); Visayas and Mindanao are each holding steady at 3.</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="geo">
+        <div class="geo-head">
+          <h2>Concentration by Island Group</h2>
+          <span class="tag">Open cases &middot; schematic, not to scale</span>
+        </div>
+        <div class="islands">
+          <div class="island-row">
+            <span class="island-label">Luzon</span>
+            <div class="island-shape" style="width: 90%;"><div class="fill-cap" style="width: 100%;"></div><span class="count num">15</span></div>
+          </div>
+          <div class="pin">Metro Manila <strong>12</strong> open &middot; <strong>8</strong> critical</div>
+          <div class="island-row dim">
+            <span class="island-label">Visayas</span>
+            <div class="island-shape" style="width: 18%; background: var(--surface-2);"><span class="count num">3</span></div>
+          </div>
+          <div class="island-row dim">
+            <span class="island-label">Mindanao</span>
+            <div class="island-shape" style="width: 18%; background: var(--surface-2);"><span class="count num">3</span></div>
+          </div>
+        </div>
+        <div class="hazard-row">
+          <div class="hazard-chip"><div class="hv num">7</div><div class="hk">Power Outage</div></div>
+          <div class="hazard-chip"><div class="hv num">6</div><div class="hk">Typhoon</div></div>
+          <div class="hazard-chip"><div class="hv num">4</div><div class="hk">Earthquake</div></div>
+          <div class="hazard-chip"><div class="hv num">4</div><div class="hk">Internet Outage</div></div>
+        </div>
+        <div class="action-strip">
+          <span class="a-label">Recommend</span>
+          <p>Stand up a <strong>Metro Manila contingency pool</strong> (shared generators, backup ISP failover) &mdash; the current one-case-at-a-time response doesn't address a concentration this size.</p>
+        </div>
+      </div>
+    </div>
+
+    <footer>
+      <p>Synthetic demonstration data (confirmed by data-privacy-agent) &middot; figures pulled directly from bcp_data.json, 30 rows, no numbers invented. Companion operational roster: "Who Needs Help."</p>
+      <span class="src">Prepared by graphic-designer-agent</span>
+    </footer>
+
+  </div>
+</div>
+
+<script>
+  const statusMsg = document.getElementById('statusMsg');
+  function setStatus(text, ms) {
+    statusMsg.textContent = text;
+    if (ms) setTimeout(() => { if (statusMsg.textContent === text) statusMsg.textContent = ''; }, ms);
+  }
+  document.getElementById('printBtn').addEventListener('click', () => window.print());
+
+  async function rasterizePoster() {
+    const source = document.getElementById('poster');
+    const clone = source.cloneNode(true);
+    clone.style.position = 'fixed';
+    clone.style.left = '-99999px';
+    clone.style.top = '0';
+    clone.style.width = '1600px';
+    clone.style.height = '900px';
+    clone.style.aspectRatio = 'unset';
+    document.body.appendChild(clone);
+    try {
+      await document.fonts.ready;
+      const xml = new XMLSerializer().serializeToString(clone);
+      const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="900">
+        <foreignObject width="100%" height="100%">${xml}</foreignObject>
+      </svg>`;
+      const svgBlob = new Blob([svg], { type: 'image/svg+xml;charset=utf-8' });
+      const url = URL.createObjectURL(svgBlob);
+      const img = new Image();
+      img.width = 1600; img.height = 900;
+      const loaded = new Promise((resolve, reject) => { img.onload = resolve; img.onerror = reject; });
+      img.src = url;
+      await loaded;
+      const canvas = document.createElement('canvas');
+      canvas.width = 1600 * 2; canvas.height = 900 * 2;
+      const ctx = canvas.getContext('2d');
+      ctx.scale(2, 2);
+      ctx.drawImage(img, 0, 0, 1600, 900);
+      URL.revokeObjectURL(url);
+      return await new Promise((resolve, reject) => {
+        canvas.toBlob((blob) => blob ? resolve(blob) : reject(new Error('toBlob returned null')), 'image/png');
+      });
+    } finally {
+      document.body.removeChild(clone);
+    }
+  }
+
+  document.getElementById('downloadBtn').addEventListener('click', async (e) => {
+    const btn = e.currentTarget;
+    btn.disabled = true;
+    setStatus('Rendering…');
+    try {
+      const blob = await rasterizePoster();
+      let downloads;
+      try { downloads = await claude.use('downloads'); } catch (err) { downloads = null; }
+      if (!downloads) {
+        const url = URL.createObjectURL(blob);
+        window.open(url, '_blank');
+        setStatus('Opened image in a new tab — right-click to save.', 6000);
+        return;
+      }
+      await downloads.save({ filename: 'situation-brief-bcp.png', data: blob });
+      setStatus('Saved.', 4000);
+    } catch (err) {
+      const code = err && err.code;
+      if (code === 'declined') { setStatus('Download cancelled.', 4000); }
+      else { setStatus('Could not generate the image — try Print / Save as PDF instead.', 6000); }
+    } finally {
+      btn.disabled = false;
+    }
+  });
+</script>
+</body>
+</html>
