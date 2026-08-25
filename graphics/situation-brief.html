@@ -5,8 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Situation Brief — BCP Leadership Update</title>
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=Archivo:wght@700;800;900&family=Inter:wght@400;500;600;700;800&display=swap');
-  :root { --ground: #E7EAF0; --surface: #FFFFFF; --ink: #1B2036; --ink-faint: #8891A3; --line: #E2E5EC; }
+  @import url('https://fonts.googleapis.com/css2?family=Archivo:wght@600;700;800;900&family=Inter:wght@400;500;600;700;800&display=swap');
+  :root { --ground: #E7EAF0; --ink: #1B2036; --ink-faint: #8891A3; }
   @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --ground: #05060A; --ink-faint: #7C879C; } }
   :root[data-theme="dark"] { --ground: #05060A; --ink-faint: #7C879C; }
 
@@ -14,10 +14,10 @@
   html, body { height: 100%; margin: 0; overflow: hidden; }
   body { background: var(--ground); color: var(--ink); font-family: "Inter", sans-serif; display: flex; flex-direction: column; }
 
-  .toolbar { flex: 0 0 auto; display: flex; align-items: center; justify-content: space-between; padding: 10px 18px; gap: 12px; background: var(--surface); border-bottom: 1px solid var(--line); }
+  .toolbar { flex: 0 0 auto; display: flex; align-items: center; justify-content: space-between; padding: 10px 18px; gap: 12px; background: #fff; border-bottom: 1px solid #E2E5EC; }
   .toolbar .app-name { font-family: "Archivo", sans-serif; font-weight: 800; font-size: 14px; color: var(--ink); }
   .toolbar .actions { display: flex; gap: 8px; align-items: center; }
-  .btn { font-family: "Inter", sans-serif; font-size: 12.5px; font-weight: 700; border-radius: 7px; padding: 8px 13px; border: 1px solid var(--line); cursor: pointer; display: inline-flex; align-items: center; gap: 6px; background: var(--ground); color: var(--ink); }
+  .btn { font-family: "Inter", sans-serif; font-size: 12.5px; font-weight: 700; border-radius: 7px; padding: 8px 13px; border: 1px solid #E2E5EC; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; background: #F4F5F8; color: var(--ink); }
   .btn.primary { background: #F97316; color: #fff; border-color: transparent; }
   .btn:active { transform: translateY(1px); }
   .btn[disabled] { opacity: 0.5; cursor: default; }
@@ -25,7 +25,7 @@
 
   .stage { flex: 1 1 auto; min-height: 0; display: flex; align-items: center; justify-content: center; padding: 14px; background: var(--ground); }
   #posterWrap { height: 100%; max-width: 100%; display: flex; }
-  #posterWrap svg { height: 100%; width: auto; max-width: 100%; border-radius: 16px; box-shadow: 0 16px 50px rgba(0,0,0,0.35); display: block; }
+  #posterWrap svg { height: 100%; width: auto; max-width: 100%; border-radius: 14px; box-shadow: 0 16px 50px rgba(0,0,0,0.35); display: block; }
 
   @media print {
     body { height: auto; overflow: visible; }
@@ -33,7 +33,7 @@
     .stage { padding: 0; height: 100vh; background: #000; }
     #posterWrap { height: 100vh; }
     #posterWrap svg { border-radius: 0; box-shadow: none; height: 100vh; width: auto; margin: 0 auto; }
-    @page { size: landscape; margin: 0; }
+    @page { margin: 0; }
   }
 </style>
 </head>
@@ -53,137 +53,133 @@
 </div>
 
 <script>
-  const W = 1600, H = 900;
+  // ---------- Palette: deep charcoal, warm white, muted blue-gray, orange used only for criticality/action ----------
   const PAL = {
-    bg: '#12131C', panel: '#1B1D2B', panel2: '#22243664',
-    ink: '#F5F6FA', muted: '#AEB3C4', faint: '#7B819A',
-    accent: '#FB923C', accentDeep: '#F97316',
-    bubbleFill: '#3A3D57', bubbleStroke: '#565A79',
-    line: 'rgba(255,255,255,0.10)'
+    bg: '#12131A', ink: '#F4F2ED', muted: '#8B93A8', faint: '#5E6577',
+    accent: '#F97316', accentBright: '#FB923C',
+    rule: 'rgba(255,255,255,0.12)', track: 'rgba(255,255,255,0.08)'
   };
+  const W = 1600;
+  const COL_X = 300, COL_W = 1000; // centered editorial column — generous side margins, not edge-to-edge dashboard fill
   function esc(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
-
-  function buildSVG() {
-    const M = 64;
-    const parts = [];
-    parts.push(`<rect x="0" y="0" width="${W}" height="${H}" fill="${PAL.bg}"/>`);
-    // subtle vertical accent glow behind the hero number
-    parts.push(`<defs>
-      <radialGradient id="glow" cx="30%" cy="45%" r="60%">
-        <stop offset="0%" stop-color="${PAL.accentDeep}" stop-opacity="0.18"/>
-        <stop offset="100%" stop-color="${PAL.accentDeep}" stop-opacity="0"/>
-      </radialGradient>
-    </defs>`);
-    parts.push(`<rect x="0" y="0" width="900" height="${H}" fill="url(#glow)"/>`);
-
-    // Header
-    let y = 58;
-    parts.push(`<circle cx="${M+5}" cy="${y-6}" r="5" fill="${PAL.accent}"/>`);
-    parts.push(`<text x="${M+18}" y="${y}" font-family="Inter" font-weight="700" font-size="15" letter-spacing="2.4" fill="${PAL.accent}">BUSINESS CONTINUITY &#8226; LEADERSHIP UPDATE</text>`);
-    parts.push(`<text x="${W-M}" y="${y-6}" text-anchor="end" font-family="Inter" font-weight="800" font-size="14" letter-spacing="1.6" fill="${PAL.faint}">INTERNAL &#8226; LEADERSHIP ONLY</text>`);
-    parts.push(`<text x="${W-M}" y="${y+16}" text-anchor="end" font-family="Inter" font-weight="500" font-size="14" fill="${PAL.faint}">bcp-heatmap-dashboard &#8226; 2026-08-25</text>`);
-    y += 60;
-    parts.push(`<text x="${M}" y="${y}" font-family="Archivo" font-weight="900" font-size="58" fill="${PAL.ink}">Situation Brief</text>`);
-    y += 20;
-    parts.push(`<line x1="${M}" y1="${y}" x2="${W-M}" y2="${y}" stroke="${PAL.line}" stroke-width="2"/>`);
-
-    // ---- Left: hero number + secondary stats + narrative ----
-    const leftX = M, leftW = 800;
-    let ly = y + 150;
-    parts.push(`<text x="${leftX}" y="${ly}" font-family="Inter" font-weight="800" font-size="18" letter-spacing="1.5" fill="${PAL.accent}">CRITICAL &#8212; ACTIVE, UNDISPATCHED</text>`);
-    ly += 150;
-    parts.push(`<text x="${leftX}" y="${ly}" font-family="Archivo" font-weight="900" font-size="220" fill="${PAL.accent}">12</text>`);
-    ly += 46;
-    parts.push(`<text x="${leftX}" y="${ly}" font-family="Inter" font-weight="600" font-size="22" fill="${PAL.muted}">of 21 open cases have no assistance in motion yet</text>`);
-
-    ly += 56;
-    const statW = (leftW - 32) / 2;
-    [['21','TOTAL OPEN CASES','14 Active &#8226; 7 Monitoring'], ['8','PROVINCES AFFECTED','of 11 total, 30 records']].forEach(([v,k,d], i) => {
-      const sx = leftX + i*(statW+32);
-      parts.push(`<rect x="${sx}" y="${ly}" width="${statW}" height="108" rx="10" fill="${PAL.panel}"/>`);
-      parts.push(`<text x="${sx+24}" y="${ly+42}" font-family="Archivo" font-weight="800" font-size="38" fill="${PAL.ink}">${v}</text>`);
-      parts.push(`<text x="${sx+24}" y="${ly+66}" font-family="Inter" font-weight="700" font-size="13" letter-spacing="1" fill="${PAL.faint}">${k}</text>`);
-      parts.push(`<text x="${sx+24}" y="${ly+90}" font-family="Inter" font-weight="500" font-size="14" fill="${PAL.muted}">${d}</text>`);
-    });
-
-    ly += 108 + 48;
-    parts.push(`<text x="${leftX}" y="${ly}" font-family="Inter" font-weight="800" font-size="14" letter-spacing="1.5" fill="${PAL.faint}">SITUATION</text>`);
-    const bullets = [
-      'Two-thirds of critical exposure sits in one region — Metro Manila holds 8 of 12 critical cases across three unrelated hazard types.',
-      'Power infrastructure is the leading driver: outages account for 7 of 21 open cases, ahead of Typhoon (6).',
-      'Luzon carries 71% of open cases (15 of 21); Visayas and Mindanao each hold steady at 3.'
-    ];
-    let by = ly + 34;
-    bullets.forEach(b => {
-      parts.push(`<circle cx="${leftX+5}" cy="${by-6}" r="3.5" fill="${PAL.accent}"/>`);
-      const lines = wrapText(b, 78);
-      lines.forEach((line, li) => {
-        parts.push(`<text x="${leftX+22}" y="${by + li*26}" font-family="Inter" font-weight="500" font-size="17.5" fill="${PAL.muted}">${esc(line)}</text>`);
-      });
-      by += lines.length*26 + 14;
-    });
-
-    // ---- Right: proportional bubble map (area-proportional, schematic) ----
-    const rx0 = 1000, rw = W - M - rx0;
-    let ry = y + 50;
-    parts.push(`<text x="${rx0}" y="${ry}" font-family="Archivo" font-weight="800" font-size="24" fill="${PAL.ink}">Concentration by Island Group</text>`);
-    parts.push(`<text x="${rx0}" y="${ry+26}" font-family="Inter" font-weight="500" font-size="14" font-style="italic" fill="${PAL.faint}">Open cases &#8226; bubble area proportional to count &#8226; schematic, not a geographic map</text>`);
-
-    const cx = rx0 + rw*0.42, topY = ry + 190;
-    // Luzon (r=90, count 15), Metro Manila nested (r=66, count 8), Visayas & Mindanao (r=40 each, count 3)
-    parts.push(`<circle cx="${cx}" cy="${topY}" r="90" fill="${PAL.bubbleFill}" stroke="${PAL.bubbleStroke}" stroke-width="2"/>`);
-    parts.push(`<circle cx="${cx-14}" cy="${topY+16}" r="66" fill="${PAL.accentDeep}" fill-opacity="0.88"/>`);
-    parts.push(`<text x="${cx-14}" y="${topY+8}" text-anchor="middle" font-family="Archivo" font-weight="900" font-size="40" fill="#fff">8</text>`);
-    parts.push(`<text x="${cx-14}" y="${topY+30}" text-anchor="middle" font-family="Inter" font-weight="700" font-size="13" fill="#FFE8DC">METRO MANILA</text>`);
-    parts.push(`<text x="${cx+58}" y="${topY-72}" font-family="Inter" font-weight="700" font-size="15" fill="${PAL.muted}">LUZON</text>`);
-    parts.push(`<text x="${cx+58}" y="${topY-52}" font-family="Archivo" font-weight="800" font-size="22" fill="${PAL.ink}">15 open</text>`);
-
-    const mid1x = cx - 190, midY = topY + 190;
-    parts.push(`<circle cx="${mid1x}" cy="${midY}" r="40" fill="${PAL.bubbleFill}" stroke="${PAL.bubbleStroke}" stroke-width="2"/>`);
-    parts.push(`<text x="${mid1x}" y="${midY+6}" text-anchor="middle" font-family="Archivo" font-weight="800" font-size="24" fill="${PAL.muted}">3</text>`);
-    parts.push(`<text x="${mid1x}" y="${midY+62}" text-anchor="middle" font-family="Inter" font-weight="700" font-size="14" fill="${PAL.faint}">VISAYAS</text>`);
-
-    const mid2x = cx + 100, midY2 = topY + 205;
-    parts.push(`<circle cx="${mid2x}" cy="${midY2}" r="40" fill="${PAL.bubbleFill}" stroke="${PAL.bubbleStroke}" stroke-width="2"/>`);
-    parts.push(`<text x="${mid2x}" y="${midY2+6}" text-anchor="middle" font-family="Archivo" font-weight="800" font-size="24" fill="${PAL.muted}">3</text>`);
-    parts.push(`<text x="${mid2x}" y="${midY2+62}" text-anchor="middle" font-family="Inter" font-weight="700" font-size="14" fill="${PAL.faint}">MINDANAO</text>`);
-
-    // Hazard chips under the bubbles
-    const hz = [['7','Power Outage'],['6','Typhoon'],['4','Earthquake'],['4','Internet Outage']];
-    const hzY = topY + 300, hzW = (rw-24)/4;
-    hz.forEach(([v,k], i) => {
-      const hx = rx0 + i*(hzW+8);
-      parts.push(`<rect x="${hx}" y="${hzY}" width="${hzW}" height="72" rx="8" fill="${PAL.panel}"/>`);
-      parts.push(`<text x="${hx+hzW/2}" y="${hzY+34}" text-anchor="middle" font-family="Archivo" font-weight="800" font-size="24" fill="${PAL.ink}">${v}</text>`);
-      parts.push(`<text x="${hx+hzW/2}" y="${hzY+54}" text-anchor="middle" font-family="Inter" font-weight="600" font-size="11.5" fill="${PAL.faint}">${esc(k)}</text>`);
-    });
-
-    // Recommendation strip
-    const recY = H - 128;
-    parts.push(`<rect x="${M}" y="${recY}" width="${W-2*M}" height="64" rx="10" fill="${PAL.accentDeep}"/>`);
-    parts.push(`<text x="${M+24}" y="${recY+26}" font-family="Inter" font-weight="800" font-size="13" letter-spacing="1.5" fill="#FFE8DC">RECOMMEND</text>`);
-    parts.push(`<text x="${M+24}" y="${recY+48}" font-family="Inter" font-weight="700" font-size="19" fill="#fff">Stand up a Metro Manila contingency pool (shared generators, backup ISP failover) — the current one-case-at-a-time response doesn't match this concentration.</text>`);
-
-    // Footer
-    parts.push(`<text x="${M}" y="${H-32}" font-family="Inter" font-weight="500" font-size="13" fill="${PAL.faint}">Synthetic demonstration data (confirmed by data-privacy-agent) &#8226; figures pulled directly from bcp_data.json &#8226; no numbers invented.</text>`);
-    parts.push(`<text x="${W-M}" y="${H-32}" text-anchor="end" font-family="Inter" font-weight="700" font-size="13" fill="${PAL.faint}">Prepared by graphic-designer-agent</text>`);
-
-    const fontStyle = `<style>@import url('https://fonts.googleapis.com/css2?family=Archivo:wght@700;800;900&amp;family=Inter:wght@400;500;600;700;800&amp;display=swap');</style>`;
-    return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}" width="${W}" height="${H}">${fontStyle}${parts.join('')}</svg>`;
-  }
-
   function wrapText(text, maxChars) {
-    const words = text.split(' ');
-    const lines = []; let cur = '';
-    words.forEach(w => {
-      if ((cur + ' ' + w).trim().length > maxChars) { lines.push(cur.trim()); cur = w; }
-      else { cur = (cur + ' ' + w).trim(); }
-    });
+    const words = text.split(' '); const lines = []; let cur = '';
+    words.forEach(w => { if ((cur+' '+w).trim().length > maxChars) { lines.push(cur.trim()); cur = w; } else { cur = (cur+' '+w).trim(); } });
     if (cur) lines.push(cur);
     return lines;
   }
 
-  const svgMarkup = buildSVG();
+  function buildSVG() {
+    const parts = [];
+    let y = 0;
+    const cx = COL_X, cw = COL_W;
+
+    // ---- Masthead ----
+    y = 80;
+    parts.push(`<circle cx="${cx+5}" cy="${y-6}" r="4.5" fill="${PAL.accent}"/>`);
+    parts.push(`<text x="${cx+16}" y="${y}" font-family="Inter" font-weight="700" font-size="14" letter-spacing="2.6" fill="${PAL.faint}">BUSINESS CONTINUITY &#8226; LEADERSHIP UPDATE</text>`);
+    parts.push(`<text x="${cx+cw}" y="${y-6}" text-anchor="end" font-family="Inter" font-weight="700" font-size="12.5" letter-spacing="1.4" fill="${PAL.faint}">INTERNAL &#8226; LEADERSHIP ONLY</text>`);
+    parts.push(`<text x="${cx+cw}" y="${y+13}" text-anchor="end" font-family="Inter" font-weight="500" font-size="12.5" fill="${PAL.faint}">bcp-heatmap-dashboard &#8226; 2026-08-25</text>`);
+
+    y += 66;
+    parts.push(`<text x="${cx}" y="${y}" font-family="Archivo" font-weight="900" font-size="58" fill="${PAL.ink}">Situation Brief</text>`);
+
+    y += 46;
+    const headline = 'Critical exposure is concentrated in Metro Manila, increasing the need for shared contingency capacity.';
+    const hLines = wrapText(headline, 62);
+    hLines.forEach((line, i) => parts.push(`<text x="${cx}" y="${y + i*32}" font-family="Inter" font-weight="500" font-size="24" fill="${PAL.muted}">${esc(line)}</text>`));
+    y += (hLines.length - 1) * 32 + 44;
+
+    const rule = () => { parts.push(`<line x1="${cx}" y1="${y}" x2="${cx+cw}" y2="${y}" stroke="${PAL.rule}" stroke-width="1"/>`); y += 50; };
+    rule();
+
+    // ---- Hero: 12 ----
+    parts.push(`<text x="${cx}" y="${y}" font-family="Inter" font-weight="800" font-size="17" letter-spacing="2" fill="${PAL.accentBright}">CRITICAL &#8212; ACTIVE / UNDISPATCHED</text>`);
+    y += 234;
+    parts.push(`<text x="${cx}" y="${y}" font-family="Archivo" font-weight="900" font-size="256" fill="${PAL.accent}">12</text>`);
+    y += 40;
+    parts.push(`<text x="${cx}" y="${y}" font-family="Inter" font-weight="500" font-size="24" fill="${PAL.muted}">of 21 open cases have no assistance in motion yet</text>`);
+    y += 50;
+    parts.push(`<text x="${cx}" y="${y}" font-family="Archivo" font-weight="800" font-size="26" fill="${PAL.ink}">21</text>`);
+    parts.push(`<text x="${cx+34}" y="${y}" font-family="Inter" font-weight="600" font-size="17" fill="${PAL.faint}">open cases</text>`);
+    parts.push(`<text x="${cx+230}" y="${y}" font-family="Archivo" font-weight="800" font-size="26" fill="${PAL.ink}">8</text>`);
+    parts.push(`<text x="${cx+254}" y="${y}" font-family="Inter" font-weight="600" font-size="17" fill="${PAL.faint}">provinces affected</text>`);
+    y += 60;
+    rule();
+
+    // ---- Where is the exposure ----
+    parts.push(`<text x="${cx}" y="${y}" font-family="Inter" font-weight="800" font-size="16" letter-spacing="2" fill="${PAL.faint}">WHERE IS THE EXPOSURE?</text>`);
+    y += 70;
+    parts.push(`<text x="${cx}" y="${y}" font-family="Archivo" font-weight="900" font-size="72" fill="${PAL.ink}">15</text>`);
+    parts.push(`<text x="${cx+90}" y="${y}" font-family="Inter" font-weight="700" font-size="20" letter-spacing="1" fill="${PAL.muted}">LUZON</text>`);
+    y += 30;
+    // Nested subset indicator — Metro Manila reads as PART OF Luzon, not a sibling
+    const nestTop = y, indent = cx + 46;
+    y += 58;
+    parts.push(`<text x="${indent}" y="${y}" font-family="Archivo" font-weight="800" font-size="46" fill="${PAL.accentBright}">8</text>`);
+    parts.push(`<text x="${indent+56}" y="${y}" font-family="Inter" font-weight="700" font-size="16" letter-spacing="1" fill="${PAL.muted}">METRO MANILA</text>`);
+    parts.push(`<line x1="${cx+8}" y1="${nestTop}" x2="${cx+8}" y2="${y-16}" stroke="${PAL.rule}" stroke-width="2"/>`);
+    parts.push(`<line x1="${cx+8}" y1="${y-16}" x2="${indent-10}" y2="${y-16}" stroke="${PAL.rule}" stroke-width="2"/>`);
+    y += 66;
+    [['3','VISAYAS'], ['3','MINDANAO']].forEach(([v,k], i) => {
+      const bx = cx + i*220;
+      parts.push(`<text x="${bx}" y="${y}" font-family="Archivo" font-weight="800" font-size="40" fill="${PAL.ink}">${v}</text>`);
+      parts.push(`<text x="${bx+48}" y="${y}" font-family="Inter" font-weight="700" font-size="15" letter-spacing="1" fill="${PAL.faint}">${k}</text>`);
+    });
+    y += 58;
+    rule();
+
+    // ---- What is driving it ----
+    parts.push(`<text x="${cx}" y="${y}" font-family="Inter" font-weight="800" font-size="16" letter-spacing="2" fill="${PAL.faint}">WHAT IS DRIVING IT?</text>`);
+    y += 40;
+    const hazards = [['Power Outage', 7], ['Typhoon', 6], ['Earthquake', 4], ['Internet Outage', 4]];
+    const maxH = Math.max(...hazards.map(h => h[1]));
+    hazards.forEach(([label, val]) => {
+      parts.push(`<text x="${cx}" y="${y}" font-family="Archivo" font-weight="800" font-size="24" fill="${PAL.ink}">${String(val).padStart(2,'0')}</text>`);
+      parts.push(`<text x="${cx+52}" y="${y}" font-family="Inter" font-weight="600" font-size="19" fill="${PAL.muted}">${esc(label)}</text>`);
+      const barY = y + 12, barMaxW = cw - 260;
+      parts.push(`<rect x="${cx+260}" y="${barY}" width="${barMaxW}" height="6" rx="3" fill="${PAL.track}"/>`);
+      parts.push(`<rect x="${cx+260}" y="${barY}" width="${barMaxW*(val/maxH)}" height="6" rx="3" fill="${PAL.accent}" fill-opacity="0.85"/>`);
+      y += 50;
+    });
+    y += 8;
+    rule();
+
+    // ---- Executive implication ----
+    parts.push(`<text x="${cx}" y="${y}" font-family="Inter" font-weight="800" font-size="16" letter-spacing="2" fill="${PAL.faint}">EXECUTIVE IMPLICATION</text>`);
+    y += 38;
+    const implication = 'Metro Manila represents 8 of 21 open cases, while Luzon accounts for 15. The concentration suggests a shared contingency response could address multiple exposures at once.';
+    const iLines = wrapText(implication, 78);
+    iLines.forEach((line, i) => parts.push(`<text x="${cx}" y="${y + i*32}" font-family="Inter" font-weight="500" font-size="21" fill="${PAL.muted}">${esc(line)}</text>`));
+    y += (iLines.length - 1) * 32 + 50;
+    rule();
+
+    // ---- Recommended action ----
+    parts.push(`<text x="${cx}" y="${y}" font-family="Inter" font-weight="800" font-size="16" letter-spacing="2" fill="${PAL.faint}">RECOMMENDED ACTION</text>`);
+    y += 46;
+    const actionLines = wrapText('Stand up a Metro Manila contingency pool', 30);
+    actionLines.forEach((line, i) => parts.push(`<text x="${cx}" y="${y + i*46}" font-family="Archivo" font-weight="900" font-size="38" fill="${PAL.accentBright}">${esc(line.toUpperCase())}</text>`));
+    y += (actionLines.length - 1) * 46 + 40;
+    parts.push(`<text x="${cx}" y="${y}" font-family="Inter" font-weight="700" font-size="19" fill="${PAL.ink}">Shared generators + backup ISP capacity</text>`);
+    y += 32;
+    parts.push(`<text x="${cx}" y="${y}" font-family="Inter" font-weight="500" font-size="15.5" font-style="italic" fill="${PAL.faint}">Prioritize shared response capacity where unresolved exposure is most concentrated.</text>`);
+
+    // ---- Footer ----
+    y += 56;
+    parts.push(`<line x1="${cx}" y1="${y}" x2="${cx+cw}" y2="${y}" stroke="${PAL.rule}" stroke-width="1"/>`);
+    y += 30;
+    parts.push(`<text x="${cx}" y="${y}" font-family="Inter" font-weight="500" font-size="13" fill="${PAL.faint}">Synthetic demonstration data (confirmed by data-privacy-agent) &#8226; figures pulled directly from bcp_data.json &#8226; no numbers invented.</text>`);
+    parts.push(`<text x="${cx+cw}" y="${y}" text-anchor="end" font-family="Inter" font-weight="700" font-size="13" fill="${PAL.faint}">Prepared by graphic-designer-agent</text>`);
+    y += 46; // bottom margin
+
+    const H = Math.ceil(y);
+    const fontStyle = `<style>@import url('https://fonts.googleapis.com/css2?family=Archivo:wght@600;700;800;900&amp;family=Inter:wght@400;500;600;700;800&amp;display=swap');</style>`;
+    const bg = `<rect x="0" y="0" width="${W}" height="${H}" fill="${PAL.bg}"/>`;
+    return { svg: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}" width="${W}" height="${H}">${fontStyle}${bg}${parts.join('')}</svg>`, W, H };
+  }
+
+  const built = buildSVG();
+  const svgMarkup = built.svg, W_OUT = built.W, H_OUT = built.H;
   document.getElementById('posterWrap').innerHTML = svgMarkup;
 
   async function rasterizeToCanvas(scale) {
@@ -195,11 +191,11 @@
     img.src = url;
     await loaded;
     const canvas = document.createElement('canvas');
-    canvas.width = W * scale; canvas.height = H * scale;
+    canvas.width = W_OUT * scale; canvas.height = H_OUT * scale;
     const ctx = canvas.getContext('2d');
-    ctx.fillStyle = '#12131C'; ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.fillStyle = '#12131A'; ctx.fillRect(0, 0, canvas.width, canvas.height);
     ctx.scale(scale, scale);
-    ctx.drawImage(img, 0, 0, W, H);
+    ctx.drawImage(img, 0, 0, W_OUT, H_OUT);
     URL.revokeObjectURL(url);
     return canvas;
   }
