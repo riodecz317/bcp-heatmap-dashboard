@@ -23,6 +23,15 @@
     --gridline:       #F9FAFB;
     --border:         #ECEDF1;
     --row-hover:      #F3F4F6;
+    /* Subtle inset background for a data row sitting inside a card (province
+       rows, Case Feed items) -- distinct from --row-hover, which is reserved
+       for the :hover state; identical to the value these previously had
+       hardcoded, so light mode is visually unchanged. */
+    --surface-2:      #F8F9FC;
+    /* Was hardcoded #16A34A directly on .kpi-trend (borderline 4.44:1 on the
+       dark card once that card became a real dark surface) -- own token so
+       dark mode can use a brighter green without touching light mode. */
+    --trend-up:       #16A34A;
     --focus-ring:     #F97316;
 
     /* Master status palette — the single source of truth for every
@@ -101,11 +110,43 @@
       --gridline:       #2A3B52;
       --border:         rgba(255,255,255,0.10);
       --row-hover:      #24344A;
+      --surface-2:      #202C42;
+      --trend-up:       #34D399;
       --focus-ring:     #F87171;
       --status-critical: #F87171;
+      /* --status-warning inherits #B45309 (PR #10, light-mode-only fix) if
+         not overridden here -- measured 2.91:1 as a swatch fill on the dark
+         card surface, failing WCAG AA. #FBBF24 is already this page's dark
+         -status-warning-text value; reusing it as the fill closes that gap
+         and keeps a single bright amber for both roles in dark mode. */
+      --status-warning: #FBBF24;
       --status-good-text:     #34D399;
       --status-warning-text:  #FBBF24;
       --status-critical-text: #F87171;
+      /* The "-soft" tokens were never overridden for dark mode, so every
+         status pill/badge (province table cells, Case Feed status pill,
+         the Status KPI card's stacked bars, the exec Top Risk callout) was
+         painting its dark-mode bright text (#F87171/#FBBF24/#34D399, above)
+         on a background token still hardcoded to the LIGHT theme's near-
+         white tint (#FFF7ED/#FEFCE8/#F0FDF4) -- light text on a light
+         background. Measured contrast on the unfixed pairing: 2.61:1,
+         1.61:1, 1.84:1 -- all fail WCAG AA (needs 4.5:1), Monitoring nearly
+         invisible. Fixed by giving dark mode its own low-alpha tint of each
+         status's own bright color over the dark surface instead of
+         inheriting the light tint; alpha 0.10 chosen because it's the
+         highest value (of 0.08-0.22 tested) that clears 4.5:1 on all three
+         -- higher alpha lightens the effective background enough to
+         actually REDUCE contrast against the bright text sitting on it.
+         Result: 4.62:1 / 7.10:1 / 6.24:1. */
+      --status-good-soft:     rgba(52,211,153,0.10);
+      --status-warning-soft:  rgba(251,191,36,0.10);
+      --status-critical-soft: rgba(248,113,113,0.10);
+      /* --hatch-track (the diagonal-hatch bar background behind every
+         Impact by Account / Impact by Line of Business bar) had no dark-
+         mode override at all -- it stayed the light theme's pale gray
+         gradient (#F3F4F6/#EAEBEF), showing as a bright hatched strip
+         inside an otherwise dark card. Dark-appropriate equivalent below. */
+      --hatch-track: repeating-linear-gradient(135deg, #24344A, #24344A 4px, #1B283C 4px, #1B283C 8px);
       --seq-0: #3B1D1D; --seq-1: #5C2626; --seq-2: #8C3330; --seq-3: #B91C1C; --seq-4: #EF4444;
     }
   }
@@ -119,11 +160,18 @@
     --gridline:       #2A3B52;
     --border:         rgba(255,255,255,0.10);
     --row-hover:      #24344A;
+    --surface-2:      #202C42;
+    --trend-up:       #34D399;
     --focus-ring:     #F87171;
     --status-critical: #F87171;
+    --status-warning: #FBBF24;
     --status-good-text:     #34D399;
     --status-warning-text:  #FBBF24;
     --status-critical-text: #F87171;
+    --status-good-soft:     rgba(52,211,153,0.10);
+    --status-warning-soft:  rgba(251,191,36,0.10);
+    --status-critical-soft: rgba(248,113,113,0.10);
+    --hatch-track: repeating-linear-gradient(135deg, #24344A, #24344A 4px, #1B283C 4px, #1B283C 8px);
     --seq-0: #3B1D1D; --seq-1: #5C2626; --seq-2: #8C3330; --seq-3: #B91C1C; --seq-4: #EF4444;
   }
 
@@ -264,7 +312,7 @@
 
   .exec-reco-label { display: block; margin: 6px 0 4px; font-size: 0.6rem; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; color: var(--text-muted); }
   .exec-reco-row { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
-  .exec-reco-item { position: relative; padding-left: 10px; border-left: 3px solid var(--accent); font-size: clamp(9.5px, 0.85vw, 11.5px); line-height: 1.4; color: #374151; }
+  .exec-reco-item { position: relative; padding-left: 10px; border-left: 3px solid var(--accent); font-size: clamp(9.5px, 0.85vw, 11.5px); line-height: 1.4; color: var(--text-primary); }
   .exec-reco-item strong { color: var(--text-primary); }
 
   /* ---- Band 3: KPI row (6 compact cards) ----
@@ -274,16 +322,20 @@
      (label -> value -> trend caption); any leftover height below that is
      just quiet whitespace, not something to fill or center into. */
   .kpi-row { flex: 0 0 auto; display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 8px; min-width: 0; align-items: stretch; }
-  .kpi-card { min-height: 64px; padding: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.04); border-color: #F3F4F6; }
-  .kpi-card-label { font-size: clamp(9px, 0.85vw, 11px); font-weight: 700; letter-spacing: .04em; text-transform: uppercase; color: #6B7280; }
-  .kpi-card-value { font-size: clamp(18px, 2vw, 28px); font-weight: 800; line-height: 1.15; color: #1E293B; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .kpi-card { min-height: 64px; padding: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.04); border-color: var(--border); }
+  .kpi-card-label { font-size: clamp(9px, 0.85vw, 11px); font-weight: 700; letter-spacing: .04em; text-transform: uppercase; color: var(--text-secondary); }
+  /* Was hardcoded #1E293B -- in dark mode --surface-1 IS #1E293B, so the KPI
+     numbers (Employees Impacted, Active Cases, etc.) were rendering the
+     exact same color as their own card background: 1.0:1 contrast, fully
+     invisible. */
+  .kpi-card-value { font-size: clamp(18px, 2vw, 28px); font-weight: 800; line-height: 1.15; color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .kpi-card-value .unit { font-size: 0.55em; font-weight: 600; color: var(--text-muted); }
   /* Small colored trend caption (replaces the old plain-gray foot text
      and, on Resolution Rate, the separate Good/Average/Poor pill badge —
      that quality label now lives inline in the caption text itself, so
      it's restyled, not erased: a genuinely poor rate still reads red and
      still says "Poor," it just isn't a standalone pill anymore). */
-  .kpi-trend { display: flex; align-items: center; gap: 4px; font-size: clamp(9px, 0.8vw, 11px); font-weight: 600; color: #16A34A; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .kpi-trend { display: flex; align-items: center; gap: 4px; font-size: clamp(9px, 0.8vw, 11px); font-weight: 600; color: var(--trend-up); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .kpi-trend .trend-icon { flex: none; font-size: 8px; line-height: 1; }
   .kpi-trend.is-warn { color: var(--status-warning-text); }
   .kpi-trend.is-bad  { color: var(--status-critical-text); }
@@ -375,32 +427,39 @@
   .province-row {
     display: grid; grid-template-columns: minmax(72px, 1.3fr) repeat(3, minmax(42px, 1fr)) minmax(30px, 0.55fr);
     align-items: center; justify-items: center; gap: 4px; min-height: 32px;
-    background: #F8F9FC; border-radius: 6px; padding: 6px 8px;
+    background: var(--surface-2); border-radius: 6px; padding: 6px 8px;
   }
   .province-row .col-name { justify-self: start; }
+  /* .province-row-head: background IS theme-aware (--surface-1, dark navy in
+     dark mode) but color was hardcoded #1E293B -- that hex is the exact
+     dark-mode value of --surface-1 itself, so the "Province/Active/
+     Monitoring/Resolved/Total" column headers were rendering invisible
+     (1.0:1) whenever dark mode was active. Same root cause as the KPI
+     value bug above -- a hardcoded hex that happened to equal another
+     token's dark-mode color. */
   .province-row-head {
     background: var(--surface-1); padding: 2px 8px; margin-bottom: 6px; position: sticky; top: 0; z-index: 1;
-    font-weight: 700; color: #1E293B; font-size: clamp(9px, 0.8vw, 11px);
+    font-weight: 700; color: var(--text-primary); font-size: clamp(9px, 0.8vw, 11px);
   }
   .province-row-head .col-stat, .province-row-head .col-total { text-align: center; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .col-name { display: flex; align-items: center; min-width: 0; }
-  .province-name { font-weight: 500; color: #1E293B; white-space: normal; overflow: visible; text-overflow: clip; line-height: 1.25; font-size: clamp(9px, 0.8vw, 11px); }
+  .province-name { font-weight: 500; color: var(--text-primary); white-space: normal; overflow: visible; text-overflow: clip; line-height: 1.25; font-size: clamp(9px, 0.8vw, 11px); }
   .col-stat { text-align: center; font-variant-numeric: tabular-nums; min-width: 0; }
-  .col-total { text-align: center; font-weight: 700; color: #1E293B; font-variant-numeric: tabular-nums; font-size: clamp(9px, 0.8vw, 11px); min-width: 0; }
+  .col-total { text-align: center; font-weight: 700; color: var(--text-primary); font-variant-numeric: tabular-nums; font-size: clamp(9px, 0.8vw, 11px); min-width: 0; }
   .status-pill { display: inline-block; min-width: 20px; padding: 3px 8px; border-radius: 50px; font-weight: 700; font-size: clamp(8.5px, 0.7vw, 10px); }
   .province-list.hide-labels .status-pill { font-size: 0; }
 
   .case-list { flex: 1 1 0; min-height: 0; height: 100%; list-style: none; margin: 0; padding: 0; overflow-y: auto; }
-  .case-item { display: flex; gap: 8px; align-items: flex-start; min-height: 56px; padding: 12px; margin-bottom: 8px; border-left: 3px solid transparent; border-radius: 6px; background: #F8F9FC; transition: background .1s ease; }
+  .case-item { display: flex; gap: 8px; align-items: flex-start; min-height: 56px; padding: 12px; margin-bottom: 8px; border-left: 3px solid transparent; border-radius: 6px; background: var(--surface-2); transition: background .1s ease; }
   .case-item:last-child { margin-bottom: 0; }
   .case-item:hover { background: var(--row-hover); }
   .case-badge { width: 16px; height: 16px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 8px; flex: none; margin-top: 1px; }
   .case-body { flex: 1; min-width: 0; }
   .case-title-row { display: flex; justify-content: space-between; gap: 5px; align-items: baseline; flex-wrap: wrap; }
-  .case-name { font-weight: 600; color: #1E293B; font-size: clamp(9.5px, 0.8vw, 11px); }
+  .case-name { font-weight: 600; color: var(--text-primary); font-size: clamp(9.5px, 0.8vw, 11px); }
   .case-status-pill { flex: none; font-size: clamp(8.5px, 0.7vw, 10px); font-weight: 600; padding: 2px 7px; border-radius: var(--radius-pill); white-space: nowrap; }
-  .case-account-lob { font-size: clamp(9px, 0.72vw, 10.5px); color: #1E293B; margin-top: 3px; }
-  .case-meta { font-size: clamp(9px, 0.72vw, 10.5px); color: #1E293B; margin-top: 3px; line-height: 1.35; }
+  .case-account-lob { font-size: clamp(9px, 0.72vw, 10.5px); color: var(--text-secondary); margin-top: 3px; }
+  .case-meta { font-size: clamp(9px, 0.72vw, 10.5px); color: var(--text-secondary); margin-top: 3px; line-height: 1.35; }
   .case-help-line { font-size: clamp(8.5px, 0.68vw, 10px); margin-top: 3px; }
   .case-help-line.is-yes { color: var(--status-critical-text); font-weight: 700; }
   .case-help-line.is-no { color: var(--text-muted); }
