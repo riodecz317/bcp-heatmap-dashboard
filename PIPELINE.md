@@ -7,18 +7,23 @@ User prompt (+ optional attachment)
         │
         ▼
 1. prompt-creator-agent   → writes .claude/briefs/<date>-<slug>.md, picks a lane
-        │                    (design | mobile | exec-insights | process | data-pipeline | architecture | docs | mixed)
+        │                    (design | graphics | mobile | exec-insights | process | data-pipeline |
+        │                     analysis | architecture | docs | mixed)
         ▼
 1.5. architect-agent      → ONLY if the brief needs one (new component/integration/tech-stack
         │                    decision) → writes an ADR at .claude/architecture/, required
         │                    reading for the builder below. Skipped for most briefs.
         ▼
 2. The builder for the lane:
-        │  - design        → frontend-design-agent  (web/desktop UI, brand, content, motion, a11y)
+        │  - design        → frontend-design-agent   (implements as WORKING CODE on a feature branch)
+        │  - graphics       → graphic-designer-agent  (standalone visual artifact OR a mockup that
+        │                     becomes frontend-design-agent's reference image — not code itself)
         │  - mobile        → mobile-app-agent        (native iOS/Android — ONLY on explicit confirmation)
         │  - exec-insights → exec-agent
         │  - process       → project-manager-agent
         │  - data-pipeline → data-engineer-agent
+        │  - analysis      → data-scientist-agent    (stats/forecasting — checks data adequacy FIRST,
+        │                     may refuse rather than fake rigor on data too small/synthetic to support it)
         │  - docs          → documentation-agent     (edits docs directly — see its own file for why that's still branch+PR)
         │    implements on a feature branch, commits, STOPS (no push)
         ▼
@@ -75,7 +80,7 @@ There is no automatic chaining between subagents — you (or the top-level Claud
 8. If all PASS: "Use ai-governance-agent to audit this round" — ESCALATE stops everything, FLAGGED is noted but doesn't block
 9. Open the PR (`gh pr create`) and stop for your review — do not auto-merge.
 
-For a request that needs `architect-agent` first (step 1.5) or routes to `mobile-app-agent`, `data-engineer-agent`, or `documentation-agent` instead of `frontend-design-agent` in step 2, the rest of the sequence (privacy → compliance → quality → governance → PR) is the same — only `dashboard-scrutiny-agent` in step 6 is design-lane-specific; other lanes skip straight from quality-agent to ai-governance-agent.
+For a request that needs `architect-agent` first (step 1.5) or routes to `graphic-designer-agent`, `mobile-app-agent`, `data-engineer-agent`, `data-scientist-agent`, or `documentation-agent` instead of `frontend-design-agent` in step 2, the rest of the sequence (privacy → compliance → quality → governance → PR) is the same — only `dashboard-scrutiny-agent` in step 6 is design-lane-specific; other lanes (including `graphics`) skip straight from quality-agent to ai-governance-agent.
 
 `admin-control-agent` can be run any time you want a portfolio-level check on whether branches/PRs are following this order. `risk-assessment-agent` can be run any time you want the standing Risk Register refreshed — on a schedule (e.g. weekly), or immediately after something like a new data source, new deployment, or new external-party reference lands. `documentation-agent` should be run right after any structural change to this roster itself (a rename, a new agent, a reordering) — not doing so is exactly how `uiux-agent` references survived in five different files after it was renamed to `frontend-design-agent` earlier in this project's history.
 
@@ -87,5 +92,6 @@ For a request that needs `architect-agent` first (step 1.5) or routes to `mobile
 - `compliance-agent` explicitly does not give legal conclusions — every NEEDS REVIEW/BLOCK still needs an actual human (ideally legal/DPO) decision. There is no agent that can close that loop; a human always has to.
 - None of the gates are wired into a CI trigger — like everything else in this pipeline, invoking them is still a manual step per round, not automatic on every commit.
 - `mobile-app-agent` output has no dedicated screening agent yet — `dashboard-scrutiny-agent` is explicitly scoped to web/dashboard UX and isn't equipped to judge native HIG/Material compliance. If a native mobile feature is ever actually built, this gap needs closing before treating it as production-ready.
+- `graphic-designer-agent` output (infographics, marketing graphics, mockups) has no dedicated reviewer either — `dashboard-scrutiny-agent` critiques working dashboard code, not standalone visual artifacts. A mockup that becomes `frontend-design-agent`'s reference image still gets reviewed once implemented; a standalone deliverable (an infographic shared as-is) currently does not.
 - `architect-agent`'s ADRs aren't currently checked by any gate for staleness — if the system changes enough that an old ADR's context no longer holds, nothing flags that automatically; `documentation-agent`'s periodic run is the closest thing today, but it checks for drift, not architectural obsolescence.
 - Stacking a PR's base branch on another still-open feature branch is fragile: if the base branch gets merged to `master`/`main` independently before the stacked PR merges, the stacked commits are silently stranded (this happened twice in this project's own history). Prefer basing new branches on `master`/`main` directly and targeting PRs there, even when building on work from an unmerged branch locally.

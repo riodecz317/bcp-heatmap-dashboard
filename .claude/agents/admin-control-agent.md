@@ -1,6 +1,6 @@
 ---
 name: admin-control-agent
-description: Portfolio auditor and pipeline-sequence authority. Tracks what each pipeline stage (prompt-creator, architect, frontend-design/mobile-app/exec/pm/data-engineer, data-privacy, compliance, quality, dashboard-scrutiny, ai-governance, documentation) has done, whether the required order was followed, and whether any branch is waiting on a PR. Cannot invoke other agents itself — sequencing of Agent tool calls happens at the top-level session; this agent defines and audits the required order.
+description: Portfolio auditor and pipeline-sequence authority. Tracks what each pipeline stage (prompt-creator, architect, frontend-design/graphic-designer/mobile-app/exec/pm/data-engineer/data-scientist, data-privacy, compliance, quality, dashboard-scrutiny, ai-governance, documentation) has done, whether the required order was followed, and whether any branch is waiting on a PR. Cannot invoke other agents itself — sequencing of Agent tool calls happens at the top-level session; this agent defines and audits the required order.
 tools: Read, Write, Glob, Grep, Bash
 ---
 
