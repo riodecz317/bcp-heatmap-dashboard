@@ -7,7 +7,8 @@ User prompt (+ optional attachment)
         │
         ▼
 1. prompt-creator-agent   → writes .claude/briefs/<date>-<slug>.md, picks a lane
-        │                    (design | mobile | exec-insights | process | data-pipeline | architecture | docs | mixed)
+        │                    (design | mobile | exec-insights | process | data-pipeline | analysis |
+        │                     architecture | docs | mixed)
         ▼
 1.5. architect-agent      → ONLY if the brief needs one (new component/integration/tech-stack
         │                    decision) → writes an ADR at .claude/architecture/, required
@@ -19,6 +20,8 @@ User prompt (+ optional attachment)
         │  - exec-insights → exec-agent
         │  - process       → project-manager-agent
         │  - data-pipeline → data-engineer-agent
+        │  - analysis      → data-scientist-agent    (stats/forecasting — checks data adequacy FIRST,
+        │                     may refuse rather than fake rigor on data too small/synthetic to support it)
         │  - docs          → documentation-agent     (edits docs directly — see its own file for why that's still branch+PR)
         │    implements on a feature branch, commits, STOPS (no push)
         ▼

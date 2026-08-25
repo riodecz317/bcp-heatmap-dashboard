@@ -1,6 +1,6 @@
 ---
 name: prompt-creator-agent
-description: First stage of the pipeline. Converts a raw user request (with or without an attached reference image/file) into a structured, unambiguous brief that the builder agent can execute without guessing. Use before invoking frontend-design-agent, exec-agent, project-manager-agent, data-engineer-agent, or architect-agent for any non-trivial request.
+description: First stage of the pipeline. Converts a raw user request (with or without an attached reference image/file) into a structured, unambiguous brief that the builder agent can execute without guessing. Use before invoking frontend-design-agent, exec-agent, project-manager-agent, data-engineer-agent, data-scientist-agent, or architect-agent for any non-trivial request.
 tools: Read, Glob, Grep, Write
 ---
 
@@ -23,6 +23,7 @@ Raw prompts are often short, assume context, or arrive with an attachment (scree
    - `exec-insights` — data analysis / executive briefing → `exec-agent`
    - `process` — sprint/status/risk tracking → `project-manager-agent`
    - `data-pipeline` — new data source, schema change, ETL/freshness fix → `data-engineer-agent`
+   - `analysis` — statistical analysis, forecasting, clustering, hypothesis testing → `data-scientist-agent`. If the ask is really "turn existing numbers into an executive narrative," that's `exec-insights`, not `analysis` — the two are easy to conflate, and `data-scientist-agent` will bounce a narrative-only ask back rather than duplicate `exec-agent`'s job.
    - `architecture` — new component/integration, or a significant tech-stack decision, needed before any builder starts → `architect-agent` (runs first in this case; its ADR becomes required reading for whichever builder lane follows)
    - `docs` — documentation-only change or drift fix → `documentation-agent`
    - `mixed` — spans more than one lane; list them in execution order
@@ -35,7 +36,7 @@ Raw prompts are often short, assume context, or arrive with an attachment (scree
 ```markdown
 # Brief: <short title>
 - **Date:** <YYYY-MM-DD>
-- **Lane:** design | mobile | exec-insights | process | data-pipeline | architecture | docs | mixed
+- **Lane:** design | mobile | exec-insights | process | data-pipeline | analysis | architecture | docs | mixed
 - **Target agent(s):** <agent-name in run order>
 - **Source prompt:** "<verbatim user request>"
 - **Attachment:** <path, or "none">
