@@ -27,9 +27,20 @@
 
     /* Master status palette — the single source of truth for every
        Active/Monitoring/Resolved element on the page (KPI donut, case
-       pills, map dots, province table, account/LOB bars, Top Risk pill). */
+       pills, map dots, province table, account/LOB bars, Top Risk pill).
+       --status-warning was #EAB308 (bright yellow) until this pass — it
+       failed colorblind-separation against --status-critical when the two
+       sit side by side as solid swatches (map dots, legends): ΔE 2.0 for
+       protanopia, normal-vision ΔE 14.8, both well under the safe floor
+       (validated with the dataviz skill's validate_palette.js, not
+       eyeballed — see graphic-designer-agent's who-needs-help infographic,
+       which surfaced this while building a status composition bar from
+       the same data). #B45309 passes cleanly against both --status-
+       critical and --status-good, in light AND dark mode, with no
+       separate dark-mode override needed since dark mode never redefined
+       this token — it was silently inheriting the failing light value. */
     --status-good:     #22C55E;
-    --status-warning:  #EAB308;
+    --status-warning:  #B45309;
     --status-critical: #F97316;
     --status-good-text:     #166534;
     --status-warning-text:  #854D0E;
