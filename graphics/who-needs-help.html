@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Who Needs Help — BCP Assistance Priority Brief</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Archivo:wght@600;800;900&family=Inter:wght@400;500;600;700;800&display=swap');
+
+  :root {
+    --ground: #F1F3F7;
+    --surface: #FFFFFF;
+    --surface-2: #F8F9FB;
+    --ink: #1B2036;
+    --ink-muted: #5B6478;
+    --ink-faint: #8891A3;
+    --line: #E2E5EC;
+
+    --accent: #F97316;
+    --accent-deep: #9A3412;
+    --accent-tint: #FFF1E6;
+
+    --st-active: #F97316;
+    --st-active-tint: #FFF1E6;
+    --st-monitoring: #A16207;
+    --st-monitoring-tint: #FEF6E3;
+    --st-resolved: #16A34A;
+    --st-resolved-tint: #EAF9EF;
+
+    --font-display: "Archivo", "Arial Narrow", sans-serif;
+    --font-body: "Inter", -apple-system, system-ui, sans-serif;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --ground: #0F172A;
+      --surface: #1E293B;
+      --surface-2: #182233;
+      --ink: #F1F5F9;
+      --ink-muted: #B3BDD1;
+      --ink-faint: #7C879C;
+      --line: rgba(255,255,255,0.10);
+
+      --accent: #FB923C;
+      --accent-deep: #FFE8DC;
+      --accent-tint: rgba(249,115,22,0.16);
+
+      --st-active: #F87171;
+      --st-active-tint: rgba(248,113,113,0.14);
+      --st-monitoring: #FBBF24;
+      --st-monitoring-tint: rgba(251,191,36,0.14);
+      --st-resolved: #34D399;
+      --st-resolved-tint: rgba(52,211,153,0.14);
+    }
+  }
+  :root[data-theme="dark"] {
+    --ground: #0F172A;
+    --surface: #1E293B;
+    --surface-2: #182233;
+    --ink: #F1F5F9;
+    --ink-muted: #B3BDD1;
+    --ink-faint: #7C879C;
+    --line: rgba(255,255,255,0.10);
+
+    --accent: #FB923C;
+    --accent-deep: #FFE8DC;
+    --accent-tint: rgba(249,115,22,0.16);
+
+    --st-active: #F87171;
+    --st-active-tint: rgba(248,113,113,0.14);
+    --st-monitoring: #FBBF24;
+    --st-monitoring-tint: rgba(251,191,36,0.14);
+    --st-resolved: #34D399;
+    --st-resolved-tint: rgba(52,211,153,0.14);
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--ground);
+    color: var(--ink);
+    font-family: var(--font-body);
+    -webkit-font-smoothing: antialiased;
+  }
+  .page {
+    max-width: 860px;
+    margin: 0 auto;
+    padding: 48px 24px 80px;
+  }
+  h1, h2, h3 { font-family: var(--font-display); text-wrap: balance; margin: 0; }
+  .num { font-variant-numeric: tabular-nums; }
+
+  /* ---------- Masthead ---------- */
+  .masthead { display: flex; flex-direction: column; gap: 10px; padding-bottom: 28px; border-bottom: 2px solid var(--ink); }
+  .eyebrow {
+    font-size: 12px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase;
+    color: var(--accent-deep); display: flex; align-items: center; gap: 8px;
+  }
+  .eyebrow::before { content: "●"; color: var(--accent); font-size: 10px; }
+  .masthead h1 { font-size: clamp(34px, 5.4vw, 52px); font-weight: 900; line-height: 1.02; letter-spacing: -0.01em; }
+  .masthead-meta { display: flex; flex-wrap: wrap; gap: 4px 18px; font-size: 13px; color: var(--ink-muted); margin-top: 4px; }
+  .masthead-meta strong { color: var(--ink); font-weight: 600; }
+
+  /* ---------- Hero stat ---------- */
+  .hero { display: grid; grid-template-columns: auto 1fr; gap: 32px; align-items: end; padding: 40px 0 36px; border-bottom: 1px solid var(--line); }
+  .hero-figure { font-family: var(--font-display); font-weight: 900; font-size: clamp(72px, 13vw, 132px); line-height: 0.82; letter-spacing: -0.02em; color: var(--accent); }
+  .hero-figure sup { font-size: 0.34em; font-weight: 800; color: var(--ink-faint); top: -0.5em; }
+  .hero-copy { padding-bottom: 10px; }
+  .hero-copy p { margin: 0; font-size: 17px; line-height: 1.55; color: var(--ink-muted); max-width: 46ch; }
+  .hero-copy strong { color: var(--ink); font-weight: 700; }
+
+  /* ---------- Section heading ---------- */
+  .section { padding: 36px 0; border-bottom: 1px solid var(--line); }
+  .section:last-of-type { border-bottom: none; }
+  .section-head { display: flex; align-items: baseline; justify-content: space-between; gap: 16px; margin-bottom: 20px; }
+  .section-head h2 { font-size: 22px; font-weight: 800; }
+  .section-head .tag { font-size: 12px; font-weight: 600; color: var(--ink-faint); letter-spacing: 0.04em; }
+
+  /* ---------- Composition bar (status) ---------- */
+  .comp-bar { display: flex; height: 40px; border-radius: 8px; overflow: hidden; box-shadow: inset 0 0 0 1px var(--line); }
+  .comp-seg { display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700; color: var(--surface); position: relative; }
+  .comp-seg.thin { color: var(--ink); font-size: 11px; }
+  .comp-legend { display: flex; flex-wrap: wrap; gap: 18px; margin-top: 14px; }
+  .comp-legend-item { display: flex; align-items: center; gap: 7px; font-size: 13px; color: var(--ink-muted); }
+  .comp-legend-item .dot { width: 10px; height: 10px; border-radius: 3px; flex: 0 0 auto; }
+  .comp-legend-item strong { color: var(--ink); font-weight: 700; }
+
+  /* ---------- Bar list (hazard / geography) ---------- */
+  .cols { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; }
+  @media (max-width: 620px) { .cols { grid-template-columns: 1fr; gap: 28px; } }
+  .bar-list { display: flex; flex-direction: column; gap: 12px; }
+  .bar-row { display: grid; grid-template-columns: 108px 1fr 28px; align-items: center; gap: 10px; }
+  .bar-row .label { font-size: 13px; font-weight: 600; color: var(--ink-muted); }
+  .bar-track { height: 14px; background: var(--surface-2); border-radius: 4px; overflow: hidden; box-shadow: inset 0 0 0 1px var(--line); }
+  .bar-fill { height: 100%; background: var(--accent); border-radius: 4px 0 0 4px; }
+  .bar-row .value { font-size: 13px; font-weight: 700; text-align: right; color: var(--ink); }
+  .col-title { font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--ink-faint); margin-bottom: 14px; }
+  .callout { margin-top: 18px; padding: 14px 16px; background: var(--surface-2); border-left: 3px solid var(--accent); border-radius: 0 8px 8px 0; font-size: 13.5px; line-height: 1.55; color: var(--ink-muted); }
+  .callout strong { color: var(--ink); }
+
+  /* ---------- Roster ---------- */
+  .roster { display: flex; flex-direction: column; gap: 10px; }
+  .roster-row {
+    display: grid; grid-template-columns: 30px 1.3fr 1fr 1.6fr; gap: 14px; align-items: center;
+    padding: 14px 16px; background: var(--surface); border-radius: 10px; box-shadow: inset 0 0 0 1px var(--line);
+  }
+  .roster-row .rank { font-family: var(--font-display); font-weight: 800; font-size: 14px; color: var(--ink-faint); }
+  .roster-person { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+  .roster-person .name { font-weight: 700; font-size: 14.5px; color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .roster-person .id { font-size: 11.5px; color: var(--ink-faint); font-variant-numeric: tabular-nums; }
+  .roster-loc { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+  .roster-loc .province { font-size: 13.5px; font-weight: 600; color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .roster-loc .hazard { display: inline-flex; align-items: center; gap: 5px; font-size: 11.5px; font-weight: 700; color: var(--st-active); text-transform: uppercase; letter-spacing: 0.03em; }
+  .roster-need { font-size: 13px; color: var(--ink-muted); line-height: 1.4; }
+  @media (max-width: 620px) {
+    .roster-row { grid-template-columns: 26px 1fr; grid-template-areas: "rank name" ". loc" ". need"; row-gap: 4px; }
+    .roster-row .rank { grid-area: rank; }
+    .roster-person { grid-area: name; }
+    .roster-loc { grid-area: loc; }
+    .roster-need { grid-area: need; }
+  }
+
+  /* ---------- Footer ---------- */
+  footer { padding-top: 28px; display: flex; flex-direction: column; gap: 8px; }
+  footer p { margin: 0; font-size: 12px; line-height: 1.6; color: var(--ink-faint); max-width: 62ch; }
+  footer .badge { display: inline-flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--ink-faint); }
+</style>
+</head>
+<body>
+
+<div class="page">
+
+  <div class="masthead">
+    <div class="eyebrow">BCP Incident Response &middot; Assistance Priority Brief</div>
+    <h1>Who Needs Help</h1>
+    <div class="masthead-meta">
+      <span>Source: <strong>Executive BCP Dashboard</strong> (bcp-heatmap-dashboard)</span>
+      <span>Snapshot: <strong>30 active case records</strong></span>
+      <span>Prepared: <strong>2026-08-25</strong></span>
+    </div>
+  </div>
+
+  <div class="hero">
+    <div class="hero-figure">21<sup>/30</sup></div>
+    <div class="hero-copy">
+      <p><strong>70% of logged employees</strong> across the Philippines have an open request for material assistance — generators, evacuation support, connectivity, or structural inspection — following recent typhoon, earthquake, and utility-outage events.</p>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-head">
+      <h2>By case status</h2>
+      <span class="tag">21 of 21 assistance requests</span>
+    </div>
+    <div class="comp-bar">
+      <div class="comp-seg" style="width: 57.1%; background: var(--st-active);">12 &middot; Active</div>
+      <div class="comp-seg thin" style="width: 33.3%; background: var(--st-monitoring-tint); color: var(--st-monitoring);">7 &middot; Monitoring</div>
+      <div class="comp-seg thin" style="width: 9.5%; background: var(--st-resolved-tint); color: var(--st-resolved);">2</div>
+    </div>
+    <div class="comp-legend">
+      <div class="comp-legend-item"><span class="dot" style="background: var(--st-active);"></span><strong>12 Active</strong> — help not yet dispatched, top priority</div>
+      <div class="comp-legend-item"><span class="dot" style="background: var(--st-monitoring);"></span><strong>7 Monitoring</strong> — help requested, situation tracked</div>
+      <div class="comp-legend-item"><span class="dot" style="background: var(--st-resolved);"></span><strong>2 Resolved</strong> — help was requested, case since closed</div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="cols">
+      <div>
+        <div class="col-title">By hazard type</div>
+        <div class="bar-list">
+          <div class="bar-row"><span class="label">Power Outage</span><div class="bar-track"><div class="bar-fill" style="width:100%"></div></div><span class="value num">7</span></div>
+          <div class="bar-row"><span class="label">Typhoon</span><div class="bar-track"><div class="bar-fill" style="width:71%"></div></div><span class="value num">5</span></div>
+          <div class="bar-row"><span class="label">Earthquake</span><div class="bar-track"><div class="bar-fill" style="width:71%"></div></div><span class="value num">5</span></div>
+          <div class="bar-row"><span class="label">Internet Outage</span><div class="bar-track"><div class="bar-fill" style="width:57%"></div></div><span class="value num">4</span></div>
+        </div>
+      </div>
+      <div>
+        <div class="col-title">By province</div>
+        <div class="bar-list">
+          <div class="bar-row"><span class="label">Metro Manila</span><div class="bar-track"><div class="bar-fill" style="width:100%"></div></div><span class="value num">11</span></div>
+          <div class="bar-row"><span class="label">Iloilo</span><div class="bar-track"><div class="bar-fill" style="width:18%"></div></div><span class="value num">2</span></div>
+          <div class="bar-row"><span class="label">Misamis Oriental</span><div class="bar-track"><div class="bar-fill" style="width:18%"></div></div><span class="value num">2</span></div>
+          <div class="bar-row"><span class="label">Pampanga</span><div class="bar-track"><div class="bar-fill" style="width:18%"></div></div><span class="value num">2</span></div>
+          <div class="bar-row"><span class="label">Benguet, Cebu, Negros Occ., Palawan</span><div class="bar-track"><div class="bar-fill" style="width:9%"></div></div><span class="value num">1 ea.</span></div>
+        </div>
+      </div>
+    </div>
+    <div class="callout"><strong>Metro Manila accounts for over half (11 of 21, 52%)</strong> of all open assistance requests — concentrated across Power Outage and Internet Outage cases in Muntinlupa, Taguig, and Makati.</div>
+  </div>
+
+  <div class="section">
+    <div class="section-head">
+      <h2>Priority roster</h2>
+      <span class="tag">12 Active cases &middot; not yet dispatched</span>
+    </div>
+    <div class="roster">
+      <div class="roster-row">
+        <span class="rank num">01</span>
+        <div class="roster-person"><span class="name">Maria Santos</span><span class="id">EMP001 &middot; Consulting</span></div>
+        <div class="roster-loc"><span class="province">Metro Manila</span><span class="hazard">Typhoon</span></div>
+        <div class="roster-need">Generator, water requested</div>
+      </div>
+      <div class="roster-row">
+        <span class="rank num">02</span>
+        <div class="roster-person"><span class="name">John Dela Cruz</span><span class="id">EMP002 &middot; Technology</span></div>
+        <div class="roster-loc"><span class="province">Metro Manila</span><span class="hazard">Power Outage</span></div>
+        <div class="roster-need">UPS, flashlight needed</div>
+      </div>
+      <div class="roster-row">
+        <span class="rank num">03</span>
+        <div class="roster-person"><span class="name">Patricia Go</span><span class="id">EMP007 &middot; Advisory</span></div>
+        <div class="roster-loc"><span class="province">Metro Manila</span><span class="hazard">Internet Outage</span></div>
+        <div class="roster-need">Backup ISP needed</div>
+      </div>
+      <div class="roster-row">
+        <span class="rank num">04</span>
+        <div class="roster-person"><span class="name">Mark Gomez</span><span class="id">EMP011 &middot; Supply Chain</span></div>
+        <div class="roster-loc"><span class="province">Benguet</span><span class="hazard">Typhoon</span></div>
+        <div class="roster-need">Evacuation plan needed</div>
+      </div>
+      <div class="roster-row">
+        <span class="rank num">05</span>
+        <div class="roster-person"><span class="name">Mark Reyes</span><span class="id">EMP016 &middot; Consulting</span></div>
+        <div class="roster-loc"><span class="province">Metro Manila</span><span class="hazard">Internet Outage</span></div>
+        <div class="roster-need">Router replacement needed</div>
+      </div>
+      <div class="roster-row">
+        <span class="rank num">06</span>
+        <div class="roster-person"><span class="name">Angela Cruz</span><span class="id">EMP019 &middot; Operations</span></div>
+        <div class="roster-loc"><span class="province">Iloilo</span><span class="hazard">Typhoon</span></div>
+        <div class="roster-need">Boats and water pumps requested</div>
+      </div>
+      <div class="roster-row">
+        <span class="rank num">07</span>
+        <div class="roster-person"><span class="name">Carlos Tan</span><span class="id">EMP020 &middot; Finance</span></div>
+        <div class="roster-loc"><span class="province">Metro Manila</span><span class="hazard">Power Outage</span></div>
+        <div class="roster-need">Portable chargers needed</div>
+      </div>
+      <div class="roster-row">
+        <span class="rank num">08</span>
+        <div class="roster-person"><span class="name">Daniel Reyes</span><span class="id">EMP023 &middot; Sales</span></div>
+        <div class="roster-loc"><span class="province">Pampanga</span><span class="hazard">Typhoon</span></div>
+        <div class="roster-need">Personnel relocation needed</div>
+      </div>
+      <div class="roster-row">
+        <span class="rank num">09</span>
+        <div class="roster-person"><span class="name">Patricia Santos</span><span class="id">EMP024 &middot; Risk</span></div>
+        <div class="roster-loc"><span class="province">Metro Manila</span><span class="hazard">Earthquake</span></div>
+        <div class="roster-need">Structural braces needed</div>
+      </div>
+      <div class="roster-row">
+        <span class="rank num">10</span>
+        <div class="roster-person"><span class="name">George Cruz</span><span class="id">EMP027 &middot; Manufacturing</span></div>
+        <div class="roster-loc"><span class="province">Metro Manila</span><span class="hazard">Power Outage</span></div>
+        <div class="roster-need">Technical crew dispatched</div>
+      </div>
+      <div class="roster-row">
+        <span class="rank num">11</span>
+        <div class="roster-person"><span class="name">Angela Martinez</span><span class="id">EMP028 &middot; Energy</span></div>
+        <div class="roster-loc"><span class="province">Metro Manila</span><span class="hazard">Typhoon</span></div>
+        <div class="roster-need">Evacuation route established</div>
+      </div>
+      <div class="roster-row">
+        <span class="rank num">12</span>
+        <div class="roster-person"><span class="name">Catherine Lim</span><span class="id">EMP009 &middot; Tax</span></div>
+        <div class="roster-loc"><span class="province">Negros Occidental</span><span class="hazard">Earthquake</span></div>
+        <div class="roster-need">Engineer inspection required</div>
+      </div>
+    </div>
+  </div>
+
+  <footer>
+    <span class="badge">&#9888; Data disclosure</span>
+    <p>All names, IDs, and case details in this brief are <strong style="color:var(--ink-muted)">synthetic demonstration data</strong> generated for the bcp-heatmap-dashboard project (confirmed by data-privacy-agent, 2026-08-25) — no real individuals are represented. Figures are pulled directly from the project's <code>bcp_data.json</code> snapshot (30 rows) with no numbers estimated or invented. Produced by graphic-designer-agent per the shadowrealm-agents pipeline.</p>
+  </footer>
+
+</div>
+</body>
+</html>
