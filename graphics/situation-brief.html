@@ -60,7 +60,7 @@
     rule: '#E7E9EF', track: '#F1F2F5'
   };
   const W = 1600;
-  const COL_X = 300, COL_W = 1000; // centered editorial column — generous side margins, not edge-to-edge dashboard fill
+  const COL_X = 260, COL_W = 1080; // centered editorial column — generous side margins, not edge-to-edge dashboard fill
   function esc(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
   function wrapText(text, maxChars) {
     const words = text.split(' '); const lines = []; let cur = '';
@@ -89,96 +89,96 @@
     const cx = COL_X, cw = COL_W;
 
     // ---- Masthead ----
-    y = 80;
+    y = 60;
     parts.push(`<circle cx="${cx+5}" cy="${y-6}" r="4.5" fill="${PAL.accent}"/>`);
-    parts.push(`<text x="${cx+16}" y="${y}" font-family="Inter" font-weight="700" font-size="14" letter-spacing="2.6" fill="${PAL.faint}">BUSINESS CONTINUITY &#8226; LEADERSHIP UPDATE</text>`);
-    parts.push(`<text x="${cx+cw}" y="${y-6}" text-anchor="end" font-family="Inter" font-weight="700" font-size="12.5" letter-spacing="1.4" fill="${PAL.faint}">INTERNAL &#8226; LEADERSHIP ONLY</text>`);
-    parts.push(`<text x="${cx+cw}" y="${y+13}" text-anchor="end" font-family="Inter" font-weight="500" font-size="12.5" fill="${PAL.faint}">bcp-heatmap-dashboard &#8226; 2026-08-25</text>`);
+    parts.push(`<text x="${cx+16}" y="${y}" font-family="Inter" font-weight="700" font-size="15" letter-spacing="2.4" fill="${PAL.faint}">BUSINESS CONTINUITY &#8226; LEADERSHIP UPDATE</text>`);
+    parts.push(`<text x="${cx+cw}" y="${y-6}" text-anchor="end" font-family="Inter" font-weight="700" font-size="14" letter-spacing="1.2" fill="${PAL.faint}">INTERNAL &#8226; LEADERSHIP ONLY</text>`);
+    parts.push(`<text x="${cx+cw}" y="${y+15}" text-anchor="end" font-family="Inter" font-weight="500" font-size="14" fill="${PAL.faint}">bcp-heatmap-dashboard &#8226; 2026-08-25</text>`);
 
-    y += 66;
-    parts.push(`<text x="${cx}" y="${y}" font-family="Archivo" font-weight="900" font-size="58" fill="${PAL.ink}">Situation Brief</text>`);
+    y += 58;
+    parts.push(`<text x="${cx}" y="${y}" font-family="Archivo" font-weight="900" font-size="54" fill="${PAL.ink}">Situation Brief</text>`);
 
-    y += 46;
+    y += 34;
     const headline = 'Critical exposure is concentrated in Metro Manila, increasing the need for shared contingency capacity.';
-    const hLines = wrapText(headline, 62);
-    hLines.forEach((line, i) => parts.push(`<text x="${cx}" y="${y + i*32}" font-family="Inter" font-weight="500" font-size="24" fill="${PAL.muted}">${esc(line)}</text>`));
-    y += (hLines.length - 1) * 32 + 44;
+    const hLines = wrapText(headline, 68);
+    hLines.forEach((line, i) => parts.push(`<text x="${cx}" y="${y + i*26}" font-family="Inter" font-weight="500" font-size="20" fill="${PAL.muted}">${esc(line)}</text>`));
+    y += (hLines.length - 1) * 26 + 30;
 
-    const rule = () => { parts.push(`<line x1="${cx}" y1="${y}" x2="${cx+cw}" y2="${y}" stroke="${PAL.rule}" stroke-width="1"/>`); y += 50; };
+    const rule = () => { parts.push(`<line x1="${cx}" y1="${y}" x2="${cx+cw}" y2="${y}" stroke="${PAL.rule}" stroke-width="1"/>`); y += 26; };
     rule();
 
     // ---- Hero: 12 ----
-    parts.push(`<text x="${cx}" y="${y}" font-family="Inter" font-weight="800" font-size="17" letter-spacing="2" fill="${PAL.accentDeep}">CRITICAL &#8212; ACTIVE / UNDISPATCHED</text>`);
-    y += 234;
-    parts.push(`<text x="${cx}" y="${y}" font-family="Archivo" font-weight="900" font-size="256" fill="${PAL.accent}">12</text>`);
-    y += 40;
-    parts.push(`<text x="${cx}" y="${y}" font-family="Inter" font-weight="500" font-size="24" fill="${PAL.muted}">of 21 open cases have no assistance in motion yet</text>`);
-    y += 60;
-    const stat2X = numLabel(parts, cx, y, '21', 26, 800, 'open cases', 17, 600, 24, PAL.ink, PAL.faint) + estWidth('open cases', 17, 'Inter', 600) + 70;
-    numLabel(parts, stat2X, y, '8', 26, 800, 'provinces affected', 17, 600, 24, PAL.ink, PAL.faint);
-    y += 60;
+    parts.push(`<text x="${cx}" y="${y}" font-family="Inter" font-weight="800" font-size="16" letter-spacing="2" fill="${PAL.accentDeep}">CRITICAL &#8212; ACTIVE / UNDISPATCHED</text>`);
+    y += 96;
+    parts.push(`<text x="${cx}" y="${y}" font-family="Archivo" font-weight="900" font-size="168" fill="${PAL.accent}">12</text>`);
+    y += 32;
+    parts.push(`<text x="${cx}" y="${y}" font-family="Inter" font-weight="500" font-size="20" fill="${PAL.muted}">of 21 open cases have no assistance in motion yet</text>`);
+    y += 36;
+    const stat2X = numLabel(parts, cx, y, '21', 24, 800, 'open cases', 16, 600, 22, PAL.ink, PAL.faint) + estWidth('open cases', 16, 'Inter', 600) + 60;
+    numLabel(parts, stat2X, y, '8', 24, 800, 'provinces affected', 16, 600, 22, PAL.ink, PAL.faint);
+    y += 44;
     rule();
 
     // ---- Where is the exposure ----
     parts.push(`<text x="${cx}" y="${y}" font-family="Inter" font-weight="800" font-size="16" letter-spacing="2" fill="${PAL.faint}">WHERE IS THE EXPOSURE?</text>`);
-    y += 78;
-    numLabel(parts, cx, y, '15', 72, 900, 'LUZON', 20, 700, 30, PAL.ink, PAL.muted);
-    y += 30;
+    y += 48;
+    numLabel(parts, cx, y, '15', 52, 900, 'LUZON', 18, 700, 26, PAL.ink, PAL.muted);
+    y += 22;
     // Nested subset indicator — Metro Manila reads as PART OF Luzon, not a sibling
-    const nestTop = y, indent = cx + 46;
-    y += 58;
-    numLabel(parts, indent, y, '8', 46, 800, 'METRO MANILA', 16, 700, 24, PAL.accentDeep, PAL.muted);
-    parts.push(`<line x1="${cx+8}" y1="${nestTop}" x2="${cx+8}" y2="${y-16}" stroke="${PAL.rule}" stroke-width="2"/>`);
-    parts.push(`<line x1="${cx+8}" y1="${y-16}" x2="${indent-10}" y2="${y-16}" stroke="${PAL.rule}" stroke-width="2"/>`);
-    y += 66;
+    const nestTop = y, indent = cx + 42;
+    y += 38;
+    numLabel(parts, indent, y, '8', 34, 800, 'METRO MANILA', 15, 700, 20, PAL.accentDeep, PAL.muted);
+    parts.push(`<line x1="${cx+8}" y1="${nestTop}" x2="${cx+8}" y2="${y-12}" stroke="${PAL.rule}" stroke-width="2"/>`);
+    parts.push(`<line x1="${cx+8}" y1="${y-12}" x2="${indent-8}" y2="${y-12}" stroke="${PAL.rule}" stroke-width="2"/>`);
+    y += 40;
     let bx = cx;
     [['3','VISAYAS'], ['3','MINDANAO']].forEach(([v,k]) => {
-      bx = numLabel(parts, bx, y, v, 40, 800, k, 15, 700, 22, PAL.ink, PAL.faint) + estWidth(k, 15, 'Inter', 700) + 70;
+      bx = numLabel(parts, bx, y, v, 30, 800, k, 14, 700, 18, PAL.ink, PAL.faint) + estWidth(k, 14, 'Inter', 700) + 60;
     });
-    y += 58;
+    y += 34;
     rule();
 
     // ---- What is driving it ----
     parts.push(`<text x="${cx}" y="${y}" font-family="Inter" font-weight="800" font-size="16" letter-spacing="2" fill="${PAL.faint}">WHAT IS DRIVING IT?</text>`);
-    y += 40;
+    y += 28;
     const hazards = [['Power Outage', 7], ['Typhoon', 6], ['Earthquake', 4], ['Internet Outage', 4]];
     const maxH = Math.max(...hazards.map(h => h[1]));
     hazards.forEach(([label, val]) => {
-      numLabel(parts, cx, y, String(val).padStart(2,'0'), 24, 800, label, 19, 600, 26, PAL.ink, PAL.muted);
-      const barY = y + 12, barMaxW = cw - 260;
-      parts.push(`<rect x="${cx+260}" y="${barY}" width="${barMaxW}" height="6" rx="3" fill="${PAL.track}"/>`);
-      parts.push(`<rect x="${cx+260}" y="${barY}" width="${barMaxW*(val/maxH)}" height="6" rx="3" fill="${PAL.accent}" fill-opacity="0.85"/>`);
-      y += 50;
+      numLabel(parts, cx, y, String(val).padStart(2,'0'), 20, 800, label, 17, 600, 22, PAL.ink, PAL.muted);
+      const barY = y - 6, barMaxW = cw - 250;
+      parts.push(`<rect x="${cx+250}" y="${barY}" width="${barMaxW}" height="6" rx="3" fill="${PAL.track}"/>`);
+      parts.push(`<rect x="${cx+250}" y="${barY}" width="${barMaxW*(val/maxH)}" height="6" rx="3" fill="${PAL.accent}" fill-opacity="0.85"/>`);
+      y += 34;
     });
-    y += 8;
+    y += 10;
     rule();
 
     // ---- Executive implication ----
     parts.push(`<text x="${cx}" y="${y}" font-family="Inter" font-weight="800" font-size="16" letter-spacing="2" fill="${PAL.faint}">EXECUTIVE IMPLICATION</text>`);
-    y += 38;
+    y += 28;
     const implication = 'Metro Manila represents 8 of 21 open cases, while Luzon accounts for 15. The concentration suggests a shared contingency response could address multiple exposures at once.';
-    const iLines = wrapText(implication, 78);
-    iLines.forEach((line, i) => parts.push(`<text x="${cx}" y="${y + i*32}" font-family="Inter" font-weight="500" font-size="21" fill="${PAL.muted}">${esc(line)}</text>`));
-    y += (iLines.length - 1) * 32 + 50;
+    const iLines = wrapText(implication, 88);
+    iLines.forEach((line, i) => parts.push(`<text x="${cx}" y="${y + i*25}" font-family="Inter" font-weight="500" font-size="18" fill="${PAL.muted}">${esc(line)}</text>`));
+    y += (iLines.length - 1) * 25 + 30;
     rule();
 
     // ---- Recommended action ----
     parts.push(`<text x="${cx}" y="${y}" font-family="Inter" font-weight="800" font-size="16" letter-spacing="2" fill="${PAL.faint}">RECOMMENDED ACTION</text>`);
-    y += 46;
-    const actionLines = wrapText('Stand up a Metro Manila contingency pool', 30);
-    actionLines.forEach((line, i) => parts.push(`<text x="${cx}" y="${y + i*46}" font-family="Archivo" font-weight="900" font-size="38" fill="${PAL.accentDeep}">${esc(line.toUpperCase())}</text>`));
-    y += (actionLines.length - 1) * 46 + 40;
-    parts.push(`<text x="${cx}" y="${y}" font-family="Inter" font-weight="700" font-size="19" fill="${PAL.ink}">Shared generators + backup ISP capacity</text>`);
     y += 32;
-    parts.push(`<text x="${cx}" y="${y}" font-family="Inter" font-weight="500" font-size="15.5" font-style="italic" fill="${PAL.faint}">Prioritize shared response capacity where unresolved exposure is most concentrated.</text>`);
+    const actionLines = wrapText('Stand up a Metro Manila contingency pool', 38);
+    actionLines.forEach((line, i) => parts.push(`<text x="${cx}" y="${y + i*36}" font-family="Archivo" font-weight="900" font-size="30" fill="${PAL.accentDeep}">${esc(line.toUpperCase())}</text>`));
+    y += (actionLines.length - 1) * 36 + 32;
+    parts.push(`<text x="${cx}" y="${y}" font-family="Inter" font-weight="700" font-size="17" fill="${PAL.ink}">Shared generators + backup ISP capacity</text>`);
+    y += 26;
+    parts.push(`<text x="${cx}" y="${y}" font-family="Inter" font-weight="500" font-size="14.5" font-style="italic" fill="${PAL.faint}">Prioritize shared response capacity where unresolved exposure is most concentrated.</text>`);
 
     // ---- Footer ----
-    y += 56;
+    y += 32;
     parts.push(`<line x1="${cx}" y1="${y}" x2="${cx+cw}" y2="${y}" stroke="${PAL.rule}" stroke-width="1"/>`);
-    y += 30;
-    parts.push(`<text x="${cx}" y="${y}" font-family="Inter" font-weight="500" font-size="13" fill="${PAL.faint}">Synthetic demonstration data (confirmed by data-privacy-agent) &#8226; figures pulled directly from bcp_data.json &#8226; no numbers invented.</text>`);
-    parts.push(`<text x="${cx+cw}" y="${y}" text-anchor="end" font-family="Inter" font-weight="700" font-size="13" fill="${PAL.faint}">Prepared by graphic-designer-agent</text>`);
-    y += 46; // bottom margin
+    y += 24;
+    parts.push(`<text x="${cx}" y="${y}" font-family="Inter" font-weight="500" font-size="14" fill="${PAL.faint}">Synthetic demonstration data (confirmed by data-privacy-agent) &#8226; figures pulled directly from bcp_data.json &#8226; no numbers invented.</text>`);
+    parts.push(`<text x="${cx+cw}" y="${y}" text-anchor="end" font-family="Inter" font-weight="700" font-size="14" fill="${PAL.faint}">Prepared by graphic-designer-agent</text>`);
+    y += 34; // bottom margin
 
     const H = Math.ceil(y);
     const fontStyle = `<style>@import url('https://fonts.googleapis.com/css2?family=Archivo:wght@600;700;800;900&amp;family=Inter:wght@400;500;600;700;800&amp;display=swap');</style>`;
