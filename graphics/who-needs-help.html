@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Who Needs Help — BCP Assistance Brief</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Archivo:wght@700;800;900&family=Inter:wght@400;500;600;700;800&display=swap');
+  :root {
+    --ground: #E7EAF0; --surface: #FFFFFF; --ink: #1B2036; --ink-faint: #8891A3; --line: #E2E5EC;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) { --ground: #0B1220; --surface: #1E293B; --ink: #F1F5F9; --ink-faint: #7C879C; --line: rgba(255,255,255,0.10); }
+  }
+  :root[data-theme="dark"] { --ground: #0B1220; --surface: #1E293B; --ink: #F1F5F9; --ink-faint: #7C879C; --line: rgba(255,255,255,0.10); }
+
+  * { box-sizing: border-box; }
+  html, body { height: 100%; margin: 0; overflow: hidden; }
+  body { background: var(--ground); color: var(--ink); font-family: "Inter", sans-serif; display: flex; flex-direction: column; }
+
+  .toolbar { flex: 0 0 auto; display: flex; align-items: center; justify-content: space-between; padding: 10px 18px; gap: 12px; background: var(--surface); border-bottom: 1px solid var(--line); }
+  .toolbar .app-name { font-family: "Archivo", sans-serif; font-weight: 800; font-size: 14px; }
+  .toolbar .actions { display: flex; gap: 8px; align-items: center; }
+  .btn { font-family: "Inter", sans-serif; font-size: 12.5px; font-weight: 700; border-radius: 7px; padding: 8px 13px; border: 1px solid var(--line); cursor: pointer; display: inline-flex; align-items: center; gap: 6px; background: var(--ground); color: var(--ink); }
+  .btn.primary { background: #F97316; color: #fff; border-color: transparent; }
+  .btn:active { transform: translateY(1px); }
+  .btn[disabled] { opacity: 0.5; cursor: default; }
+  .status-msg { font-size: 11.5px; color: var(--ink-faint); }
+
+  .stage { flex: 1 1 auto; min-height: 0; display: flex; align-items: center; justify-content: center; padding: 14px; }
+  #posterWrap { height: 100%; max-width: 100%; display: flex; }
+  #posterWrap svg { height: 100%; width: auto; max-width: 100%; border-radius: 16px; box-shadow: 0 12px 40px rgba(0,0,0,0.18); display: block; }
+
+  @media print {
+    body { height: auto; overflow: visible; background: #fff; }
+    .toolbar { display: none; }
+    .stage { padding: 0; height: 100vh; align-items: stretch; }
+    #posterWrap { height: 100vh; }
+    #posterWrap svg { border-radius: 0; box-shadow: none; height: 100vh; width: auto; margin: 0 auto; }
+    @page { size: portrait; margin: 0; }
+  }
+</style>
+</head>
+<body>
+
+<div class="toolbar">
+  <span class="app-name">Who Needs Help &mdash; BCP Assistance Brief</span>
+  <div class="actions">
+    <span class="status-msg" id="statusMsg"></span>
+    <button class="btn" id="pdfBtn" type="button">&#128196; Download PDF</button>
+    <button class="btn primary" id="downloadBtn" type="button">&#8681; Download PNG</button>
+  </div>
+</div>
+
+<div class="stage">
+  <div id="posterWrap"></div>
+</div>
+
+<script>
+  // ---------- Data (pulled directly from bcp_data.json — no numbers invented) ----------
+  const CRITICAL = [
+    ['Maria Santos','Metro Manila','Typhoon','Generator, water requested'],
+    ['John Dela Cruz','Metro Manila','Power Outage','UPS, flashlight needed'],
+    ['Patricia Go','Metro Manila','Internet Outage','Backup ISP needed'],
+    ['Mark Gomez','Benguet','Typhoon','Evacuation plan needed'],
+    ['Mark Reyes','Metro Manila','Internet Outage','Router replacement needed'],
+    ['Angela Cruz','Iloilo','Typhoon','Boats and water pumps requested'],
+    ['Carlos Tan','Metro Manila','Power Outage','Portable chargers needed'],
+    ['Daniel Reyes','Pampanga','Typhoon','Personnel relocation needed'],
+    ['Patricia Santos','Metro Manila','Earthquake','Structural braces needed'],
+    ['George Cruz','Metro Manila','Power Outage','Technical crew dispatched'],
+    ['Angela Martinez','Metro Manila','Typhoon','Evacuation route established'],
+    ['Catherine Lim','Negros Occidental','Earthquake','Engineer inspection required'],
+  ];
+
+  const W = 1080, H = 1560; // computed from actual layout: content bottoms out at ~1536, +24px margin
+  const PAL = { ink: '#1B2036', muted: '#5B6478', faint: '#8891A3', line: '#E7E9EF', surface: '#FFFFFF', surface2: '#F4F5F8',
+    active: '#F97316', activeTint: '#FFF1E6', monitor: '#B45309', monitorTint: '#FDF1E4', resolved: '#16A34A', resolvedTint: '#EAF9EF' };
+
+  function esc(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+  function buildSVG() {
+    const M = 64; // outer margin
+    let y = 0;
+    const parts = [];
+    parts.push(`<rect x="0" y="0" width="${W}" height="${H}" fill="${PAL.surface}"/>`);
+
+    // Masthead
+    y = M + 20;
+    parts.push(`<circle cx="${M+5}" cy="${y-6}" r="5" fill="${PAL.active}"/>`);
+    parts.push(`<text x="${M+18}" y="${y}" font-family="Inter" font-weight="700" font-size="17" letter-spacing="2" fill="#9A3412">BCP INCIDENT RESPONSE &#8226; ASSISTANCE PRIORITY BRIEF</text>`);
+    y += 58;
+    parts.push(`<text x="${M}" y="${y}" font-family="Archivo" font-weight="900" font-size="66" fill="${PAL.ink}">Who Needs Help</text>`);
+    y += 34;
+    parts.push(`<text x="${M}" y="${y}" font-family="Inter" font-weight="500" font-size="16" fill="${PAL.faint}">Source: Executive BCP Dashboard &#8226; 30-record snapshot &#8226; Prepared 2026-08-25</text>`);
+
+    // Hero stat
+    y += 60;
+    const heroBase = y + 92;
+    parts.push(`<text x="${M}" y="${heroBase}" font-family="Archivo" font-weight="900" font-size="148" fill="${PAL.active}">21<tspan font-size="46" fill="${PAL.faint}" dy="-8">/30</tspan></text>`);
+    parts.push(`<text x="${M+430}" y="${heroBase-56}" font-family="Inter" font-weight="700" font-size="21" fill="${PAL.muted}">of employees have an open</text>`);
+    parts.push(`<text x="${M+430}" y="${heroBase-28}" font-family="Inter" font-weight="700" font-size="21" fill="${PAL.muted}">request for material assistance</text>`);
+    parts.push(`<text x="${M+430}" y="${heroBase+16}" font-family="Archivo" font-weight="900" font-size="34" fill="${PAL.ink}">70% NEED HELP</text>`);
+    y = heroBase + 46;
+
+    // Composition bar
+    y += 34;
+    const barW = W - 2*M, barH = 46;
+    const seg1 = barW*0.571, seg2 = barW*0.333, seg3 = barW - seg1 - seg2;
+    parts.push(`<rect x="${M}" y="${y}" width="${barW}" height="${barH}" rx="10" fill="${PAL.line}"/>`);
+    parts.push(`<rect x="${M}" y="${y}" width="${seg1}" height="${barH}" rx="10" fill="${PAL.active}"/>`);
+    parts.push(`<rect x="${M+seg1}" y="${y}" width="${seg2}" height="${barH}" fill="${PAL.monitorTint}"/>`);
+    parts.push(`<rect x="${M+seg1+seg2}" y="${y}" width="${seg3}" height="${barH}" rx="10" fill="${PAL.resolvedTint}"/>`);
+    parts.push(`<text x="${M+seg1/2}" y="${y+barH/2+7}" text-anchor="middle" font-family="Inter" font-weight="800" font-size="18" fill="#fff">12 Active</text>`);
+    parts.push(`<text x="${M+seg1+seg2/2}" y="${y+barH/2+7}" text-anchor="middle" font-family="Inter" font-weight="800" font-size="16" fill="${PAL.monitor}">7 Monitoring</text>`);
+    parts.push(`<text x="${M+seg1+seg2+seg3/2}" y="${y+barH/2+7}" text-anchor="middle" font-family="Inter" font-weight="800" font-size="16" fill="${PAL.resolved}">2</text>`);
+    y += barH + 30;
+    const legend = [['Active — undispatched, top priority', PAL.active], ['Monitoring — tracked', PAL.monitor], ['Resolved — case closed', PAL.resolved]];
+    let lx = M;
+    legend.forEach(([label, color]) => {
+      parts.push(`<rect x="${lx}" y="${y-13}" width="14" height="14" rx="4" fill="${color}"/>`);
+      parts.push(`<text x="${lx+22}" y="${y-2}" font-family="Inter" font-weight="600" font-size="16" fill="${PAL.muted}">${esc(label)}</text>`);
+      lx += 26 + label.length * 8.2 + 46;
+    });
+
+    // Findings row
+    y += 46;
+    const fw = (barW - 24) / 2, fh = 96;
+    [['TOP HAZARD','Power Outage','7 of 21 cases'], ['HOTSPOT PROVINCE','Metro Manila','11 cases · 52%']].forEach(([k,v,d], i) => {
+      const fx = M + i*(fw+24);
+      parts.push(`<rect x="${fx}" y="${y}" width="${fw}" height="${fh}" rx="12" fill="${PAL.surface2}" stroke="${PAL.line}"/>`);
+      parts.push(`<text x="${fx+22}" y="${y+30}" font-family="Inter" font-weight="700" font-size="14" letter-spacing="1" fill="${PAL.faint}">${esc(k)}</text>`);
+      parts.push(`<text x="${fx+22}" y="${y+62}" font-family="Archivo" font-weight="800" font-size="27" fill="${PAL.ink}">${esc(v)}</text>`);
+      parts.push(`<text x="${fx+22}" y="${y+85}" font-family="Inter" font-weight="500" font-size="15" fill="${PAL.muted}">${esc(d)}</text>`);
+    });
+    y += fh + 44;
+
+    // Roster header
+    parts.push(`<text x="${M}" y="${y}" font-family="Archivo" font-weight="800" font-size="27" fill="${PAL.ink}">Priority Roster</text>`);
+    parts.push(`<text x="${W-M}" y="${y}" text-anchor="end" font-family="Inter" font-weight="700" font-size="15" letter-spacing="0.5" fill="${PAL.active}">ALL 12 ACTIVE CASES &#8226; NOT YET DISPATCHED</text>`);
+    y += 22;
+
+    // Roster rows — ALL 12, no pagination/truncation of the list itself
+    const rowH = 56, rowGap = 8;
+    CRITICAL.forEach(([name, province, hazard, need], i) => {
+      const ry = y + i*(rowH+rowGap);
+      parts.push(`<rect x="${M}" y="${ry}" width="${barW}" height="${rowH}" rx="10" fill="${PAL.activeTint}"/>`);
+      parts.push(`<text x="${M+22}" y="${ry+rowH/2+8}" font-family="Archivo" font-weight="900" font-size="20" fill="${PAL.active}">${String(i+1).padStart(2,'0')}</text>`);
+      parts.push(`<text x="${M+70}" y="${ry+22}" font-family="Inter" font-weight="700" font-size="18" fill="${PAL.ink}">${esc(name)}</text>`);
+      parts.push(`<text x="${M+70}" y="${ry+43}" font-family="Inter" font-weight="500" font-size="14" fill="${PAL.faint}">${esc(province)} &#8226; ${esc(hazard)}</text>`);
+      const needTrunc = need.length > 42 ? need.slice(0,41)+'…' : need;
+      parts.push(`<text x="${M+barW-22}" y="${ry+rowH/2+6}" text-anchor="end" font-family="Inter" font-weight="500" font-size="16" fill="${PAL.muted}">${esc(needTrunc)}</text>`);
+    });
+    y += 12*(rowH+rowGap);
+
+    // Footer
+    y += 30;
+    parts.push(`<line x1="${M}" y1="${y}" x2="${W-M}" y2="${y}" stroke="${PAL.line}" stroke-width="1"/>`);
+    y += 26;
+    parts.push(`<text x="${M}" y="${y}" font-family="Inter" font-weight="600" font-size="14" fill="${PAL.faint}">Synthetic demonstration data (confirmed by data-privacy-agent) &#8226; no numbers invented, sourced directly from bcp_data.json.</text>`);
+    y += 20;
+    parts.push(`<text x="${M}" y="${y}" font-family="Inter" font-weight="600" font-size="14" fill="${PAL.faint}">Produced by graphic-designer-agent &#8226; bcp-heatmap-dashboard</text>`);
+
+    const fontStyle = `<style>@import url('https://fonts.googleapis.com/css2?family=Archivo:wght@700;800;900&amp;family=Inter:wght@400;500;600;700;800&amp;display=swap');</style>`;
+    return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}" width="${W}" height="${H}">${fontStyle}${parts.join('')}</svg>`;
+  }
+
+  const svgMarkup = buildSVG();
+  document.getElementById('posterWrap').innerHTML = svgMarkup;
+
+  // ---------- Rasterize the SAME svg markup (no foreignObject — plain
+  // SVG shapes/text only, which browsers reliably draw to canvas) ----------
+  async function rasterizeToCanvas(scale) {
+    await document.fonts.ready;
+    const blob = new Blob([svgMarkup], { type: 'image/svg+xml;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const img = new Image();
+    const loaded = new Promise((resolve, reject) => { img.onload = resolve; img.onerror = () => reject(new Error('SVG failed to rasterize')); });
+    img.src = url;
+    await loaded;
+    const canvas = document.createElement('canvas');
+    canvas.width = W * scale; canvas.height = H * scale;
+    const ctx = canvas.getContext('2d');
+    ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.scale(scale, scale);
+    ctx.drawImage(img, 0, 0, W, H);
+    URL.revokeObjectURL(url);
+    return canvas;
+  }
+
+  // ---------- Minimal single-page, single-image PDF, hand-built (no
+  // library, no CDN — just the PDF spec's own minimal object structure) ----------
+  async function canvasToPdfBlob(canvas) {
+    const jpegBlob = await new Promise((resolve, reject) => canvas.toBlob(b => b ? resolve(b) : reject(new Error('toBlob failed')), 'image/jpeg', 0.92));
+    const jpegBytes = new Uint8Array(await jpegBlob.arrayBuffer());
+    const w = canvas.width, h = canvas.height;
+    const enc = new TextEncoder();
+    const chunks = []; let pos = 0; const off = {};
+    function push(x) { const b = typeof x === 'string' ? enc.encode(x) : x; chunks.push(b); pos += b.length; }
+    push('%PDF-1.4\n');
+    off[1] = pos; push('1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n');
+    off[2] = pos; push('2 0 obj\n<< /Type /Pages /Kids [3 0 R] /Count 1 >>\nendobj\n');
+    off[3] = pos; push(`3 0 obj\n<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ${w} ${h}] /Resources << /XObject << /Im0 4 0 R >> >> /Contents 5 0 R >>\nendobj\n`);
+    off[4] = pos; push(`4 0 obj\n<< /Type /XObject /Subtype /Image /Width ${w} /Height ${h} /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length ${jpegBytes.length} >>\nstream\n`);
+    push(jpegBytes); push('\nendstream\nendobj\n');
+    const content = `q ${w} 0 0 ${h} 0 0 cm /Im0 Do Q`;
+    off[5] = pos; push(`5 0 obj\n<< /Length ${content.length} >>\nstream\n${content}\nendstream\nendobj\n`);
+    const xrefStart = pos;
+    let xref = 'xref\n0 6\n0000000000 65535 f \n';
+    for (let i = 1; i <= 5; i++) xref += String(off[i]).padStart(10,'0') + ' 00000 n \n';
+    push(xref);
+    push(`trailer\n<< /Size 6 /Root 1 0 R >>\nstartxref\n${xrefStart}\n%%EOF`);
+    return new Blob(chunks, { type: 'application/pdf' });
+  }
+
+  const statusMsg = document.getElementById('statusMsg');
+  function setStatus(text, ms) { statusMsg.textContent = text; if (ms) setTimeout(() => { if (statusMsg.textContent === text) statusMsg.textContent = ''; }, ms); }
+
+  async function offer(filename, blob) {
+    let downloads;
+    try { downloads = await claude.use('downloads'); } catch (e) { downloads = null; }
+    if (!downloads) {
+      const url = URL.createObjectURL(blob);
+      window.open(url, '_blank');
+      setStatus('Opened in a new tab — save it from there.', 6000);
+      return;
+    }
+    await downloads.save({ filename, data: blob });
+    setStatus('Saved.', 4000);
+  }
+
+  document.getElementById('downloadBtn').addEventListener('click', async (e) => {
+    const btn = e.currentTarget; btn.disabled = true; setStatus('Rendering…');
+    try {
+      const canvas = await rasterizeToCanvas(2);
+      const blob = await new Promise((resolve, reject) => canvas.toBlob(b => b ? resolve(b) : reject(new Error('toBlob failed')), 'image/png'));
+      await offer('who-needs-help-bcp-brief.png', blob);
+    } catch (err) {
+      setStatus((err && err.code === 'declined') ? 'Cancelled.' : 'Could not generate the PNG.', 5000);
+    } finally { btn.disabled = false; }
+  });
+
+  document.getElementById('pdfBtn').addEventListener('click', async (e) => {
+    const btn = e.currentTarget; btn.disabled = true; setStatus('Rendering…');
+    try {
+      const canvas = await rasterizeToCanvas(2);
+      const blob = await canvasToPdfBlob(canvas);
+      await offer('who-needs-help-bcp-brief.pdf', blob);
+    } catch (err) {
+      const code = err && err.code;
+      if (code === 'declined') setStatus('Cancelled.', 5000);
+      else if (code === 'extension_not_enabled') setStatus('PDF isn\'t available in this view — try Download PNG instead.', 7000);
+      else setStatus('Could not generate the PDF.', 5000);
+    } finally { btn.disabled = false; }
+  });
+</script>
+</body>
+</html>
